@@ -22,6 +22,7 @@ class UNREALPROJECT_7A_API AWeapon : public AActor
 public:	
 	AWeapon();
 	void ShowPickupWidget(bool bShowPickupWidget);
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;	//복제하는 항목을 정의하는 함수
 protected:
 	virtual void BeginPlay() override;
 	UFUNCTION()
@@ -39,16 +40,19 @@ protected:
 
 public:	
 	virtual void Tick(float DeltaTime) override;
-	FORCEINLINE void SetWeaponState(EWeaponState State) { WeaonState = State; }
+	void SetWeaponState(EWeaponState State);
+	FORCEINLINE class USphereComponent* GetAreaSphere() const { return AreaSphere; }
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	class USphereComponent* AreaSphere;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(ReplicatedUsing = OnRep_WeaponState, VisibleAnywhere)
 	EWeaponState WeaonState;
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	class UWidgetComponent* PickupWidget;
+	UFUNCTION()
+	void OnRep_WeaponState();
 };

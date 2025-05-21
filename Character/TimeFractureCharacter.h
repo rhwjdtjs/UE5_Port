@@ -37,6 +37,8 @@ private:
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon); //겹치는 무기가 바뀔 때 호출되는 함수
 	UPROPERTY(VisibleAnywhere, Category = "Combat")
 	class UCBComponent* CombatComponent; //전투 컴포넌트
+	UFUNCTION(Server, Reliable)
+	void ServerEquipButton(); //서버에서 장착 버튼을 누를 때 호출되는 함수
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon); //겹치는 무기를 설정하는 함수
 };

@@ -5,6 +5,7 @@
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h"
+#include "Net/UnrealNetwork.h"//네트워크 관련 헤더 파일 포함
 AWeapon::AWeapon()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -31,6 +32,13 @@ void AWeapon::ShowPickupWidget(bool bShowPickupWidget)
 	if (PickupWidget) {
 		PickupWidget->SetVisibility(bShowPickupWidget);//위젯의 가시성 설정
 	}
+}
+
+void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+	DOREPLIFETIME(AWeapon, WeaonState);//무기 상태를 복제
 }
 
 void AWeapon::BeginPlay()
@@ -73,5 +81,35 @@ void AWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void AWeapon::SetWeaponState(EWeaponState State)
+{
+	WeaonState = State;//무기 상태 설정
+	switch (WeaonState)
+	{
+	case EWeaponState::EWS_Equipped:
+		ShowPickupWidget(false);//무기 위젯 숨기기
+		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);//스피어 충돌 비활성화
+		break;
+	}
+	
+}
+
+void AWeapon::OnRep_WeaponState()
+{
+	switch (WeaonState)
+	{
+	case EWeaponState::EWS_Equipped:
+		ShowPickupWidget(false);//장착된 무기 위젯 숨기기
+		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);//스피어 충돌 비활성화
+		break;
+	case EWeaponState::EWS_Dropped:
+		break;
+	case EWeaponState::EWS_MAX:
+		break;
+	default:
+		break;
+	}
 }
 

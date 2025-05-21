@@ -33,26 +33,7 @@ void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ATimeFractureCharacter::EquipButton); //키보드의 E키를 눌렀을 때 EquipButton 함수를 호출한다.
 	//프로젝트 세팅에 저장된 키의 이름을 바인드한다. this ->이 함수의 있는 함수를 불러옴
 }
-void ATimeFractureCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME_CONDITION(ATimeFractureCharacter, OverlappingWeapon, COND_OwnerOnly); //OVERLAPPINGWEAPON을 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
-}
-void ATimeFractureCharacter::PostInitializeComponents()
-{
-	Super::PostInitializeComponents();
-	//캐릭터의 속성을 초기화하는 함수
-	//이 함수는 모든 컴포넌트가 초기화된 후에 호출된다.
-	//따라서 이 함수에서 캐릭터의 속성을 초기화하면, 모든 컴포넌트가 준비된 상태에서 속성이 초기화된다.
-	//이 함수는 서버와 클라이언트 모두에서 호출된다.
-	//따라서 이 함수에서 캐릭터의 속성을 초기화하면, 서버와 클라이언트 모두에서 캐릭터의 속성이 동일하게 초기화된다.
-	//이 함수는 모든 컴포넌트가 초기화된 후에 호출된다.
-	//따라서 이 함수에서 캐릭터의 속성을 초기화하면, 모든 컴포넌트가 준비된 상태에서 속성이 초기화된다.
-	if (CombatComponent) {
-		CombatComponent->Character = this; //캐릭터를 설정한다.
-	}
-}
 
 void ATimeFractureCharacter::MoveForward(float Value)//"컨트롤러가 바라보는 방향을 기준으로 캐릭터의 전방 벡터를 구하는 것"
 {
@@ -93,20 +74,51 @@ void ATimeFractureCharacter::LookUp(float Value)
 
 void ATimeFractureCharacter::EquipButton()
 {
-	if (CombatComponent && HasAuthority()) {
-		CombatComponent->EquipWeapon(OverlappingWeapon); //겹치는 무기를 장착한다.
+	if (CombatComponent) {
+		if (HasAuthority()) { //서버에서 실행되는 경우
+			CombatComponent->EquipWeapon(OverlappingWeapon);//겹치는 무기를 장착한다.
+		}
+		else { //클라이언트에서 실행되는 경우
+			ServerEquipButton(); //서버에서 장착 버튼을 누른다.
+		}
 	}
 }
+void ATimeFractureCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME_CONDITION(ATimeFractureCharacter, OverlappingWeapon, COND_OwnerOnly); //OVERLAPPINGWEAPON을 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
+}
+void ATimeFractureCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	//캐릭터의 속성을 초기화하는 함수
+	//이 함수는 모든 컴포넌트가 초기화된 후에 호출된다.
+	//따라서 이 함수에서 캐릭터의 속성을 초기화하면, 모든 컴포넌트가 준비된 상태에서 속성이 초기화된다.
+	//이 함수는 서버와 클라이언트 모두에서 호출된다.
+	//따라서 이 함수에서 캐릭터의 속성을 초기화하면, 서버와 클라이언트 모두에서 캐릭터의 속성이 동일하게 초기화된다.
+	//이 함수는 모든 컴포넌트가 초기화된 후에 호출된다.
+	//따라서 이 함수에서 캐릭터의 속성을 초기화하면, 모든 컴포넌트가 준비된 상태에서 속성이 초기화된다.
+	if (CombatComponent) {
+		CombatComponent->Character = this; //캐릭터를 설정한다.
+	}
+}
 void ATimeFractureCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 {
 	if (OverlappingWeapon) //겹치는 무기가 존재하면
 	{
-		OverlappingWeapon->ShowPickupWidget(false); //겹치는 무기 위젯을 표시한다.
+		OverlappingWeapon->ShowPickupWidget(true); //겹치는 무기 위젯을 표시한다.
 	}
 	if (LastWeapon) //겹치는 무기가 존재하면
 	{
 		LastWeapon->ShowPickupWidget(false); //겹치는 무기 위젯을 숨긴다.
+	}
+}
+
+void ATimeFractureCharacter::ServerEquipButton_Implementation()
+{
+	if (CombatComponent) {
+		CombatComponent->EquipWeapon(OverlappingWeapon); //겹치는 무기를 장착한다.
 	}
 }
 

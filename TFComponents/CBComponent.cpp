@@ -4,6 +4,7 @@
 #include "UnrealProject_7A/Weapon/Weapon.h"
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Components/SphereComponent.h"
 UCBComponent::UCBComponent()
 {
 
@@ -23,6 +24,7 @@ void UCBComponent::EquipWeapon(AWeapon* WeaponEquip)
 	}
 	EquippedWeapon->SetOwner(Character); //무기의 소유자를 캐릭터로 설정한다.
 	EquippedWeapon->ShowPickupWidget(false); //무기 위젯을 숨긴다.
+	EquippedWeapon->GetAreaSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision); //무기 스피어의 충돌을 비활성화한다.
 }
 
 
