@@ -1,0 +1,43 @@
+
+
+#include "CBComponent.h"
+#include "UnrealProject_7A/Weapon/Weapon.h"
+#include "UnrealProject_7A/Character/TimeFractureCharacter.h"
+#include "Engine/SkeletalMeshSocket.h"
+UCBComponent::UCBComponent()
+{
+
+	PrimaryComponentTick.bCanEverTick = false;
+
+}
+
+void UCBComponent::EquipWeapon(AWeapon* WeaponEquip)
+{
+	if (Character == nullptr || WeaponEquip==nullptr) return; //캐릭터가 없으면 리턴
+	EquippedWeapon = WeaponEquip; //장착된 무기를 설정한다.
+	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped); //장착된 무기 상태를 설정한다.
+	const USkeletalMeshSocket* HandSocket=Character->GetMesh()->GetSocketByName(FName("RightHandSocket"));//캐릭터의 오른손 소켓을 가져온다.
+	if (HandSocket) //소켓이 존재하면
+	{
+		HandSocket->AttachActor(EquippedWeapon, Character->GetMesh()); //소켓에 무기를 장착한다.
+	}
+	EquippedWeapon->SetOwner(Character); //무기의 소유자를 캐릭터로 설정한다.
+	EquippedWeapon->ShowPickupWidget(false); //무기 위젯을 숨긴다.
+}
+
+
+void UCBComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+
+}
+
+
+void UCBComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+
+}
+

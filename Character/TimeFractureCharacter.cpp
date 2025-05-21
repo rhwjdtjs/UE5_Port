@@ -5,6 +5,10 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Net/UnrealNetwork.h"
+#include "UnrealProject_7A/Weapon/Weapon.h"
+#include "UnrealProject_7A/TFComponents/CBComponent.h"
+
 ATimeFractureCharacter::ATimeFractureCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -15,6 +19,9 @@ ATimeFractureCharacter::ATimeFractureCharacter()
 
 	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
 	OverheadWidget->SetupAttachment(RootComponent); //루트컴포넌트에 부착
+
+	CombatComponent = CreateDefaultSubobject<UCBComponent>(TEXT("CombatComponent")); //전투 컴포넌트 생성
+	CombatComponent->SetIsReplicated(true); //복제 가능하게 설정
 }
 void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -23,8 +30,30 @@ void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	PlayerInputComponent->BindAxis("MoveRight", this, &ATimeFractureCharacter::MoveRight);
 	PlayerInputComponent->BindAxis("Turn", this, &ATimeFractureCharacter::Turn);
 	PlayerInputComponent->BindAxis("LookUp", this, &ATimeFractureCharacter::LookUp);
+	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ATimeFractureCharacter::EquipButton); //키보드의 E키를 눌렀을 때 EquipButton 함수를 호출한다.
 	//프로젝트 세팅에 저장된 키의 이름을 바인드한다. this ->이 함수의 있는 함수를 불러옴
 }
+void ATimeFractureCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ATimeFractureCharacter, OverlappingWeapon, COND_OwnerOnly); //OVERLAPPINGWEAPON을 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
+}
+void ATimeFractureCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	//캐릭터의 속성을 초기화하는 함수
+	//이 함수는 모든 컴포넌트가 초기화된 후에 호출된다.
+	//따라서 이 함수에서 캐릭터의 속성을 초기화하면, 모든 컴포넌트가 준비된 상태에서 속성이 초기화된다.
+	//이 함수는 서버와 클라이언트 모두에서 호출된다.
+	//따라서 이 함수에서 캐릭터의 속성을 초기화하면, 서버와 클라이언트 모두에서 캐릭터의 속성이 동일하게 초기화된다.
+	//이 함수는 모든 컴포넌트가 초기화된 후에 호출된다.
+	//따라서 이 함수에서 캐릭터의 속성을 초기화하면, 모든 컴포넌트가 준비된 상태에서 속성이 초기화된다.
+	if (CombatComponent) {
+		CombatComponent->Character = this; //캐릭터를 설정한다.
+	}
+}
+
 void ATimeFractureCharacter::MoveForward(float Value)//"컨트롤러가 바라보는 방향을 기준으로 캐릭터의 전방 벡터를 구하는 것"
 {
 	if (Controller != nullptr && Value != 0.f) //플레이어가 컨트롤러를 갖고 있나 && 움직이고있나
@@ -60,6 +89,42 @@ void ATimeFractureCharacter::Turn(float Value)
 void ATimeFractureCharacter::LookUp(float Value)
 {
 	AddControllerPitchInput(Value);
+}
+
+void ATimeFractureCharacter::EquipButton()
+{
+	if (CombatComponent && HasAuthority()) {
+		CombatComponent->EquipWeapon(OverlappingWeapon); //겹치는 무기를 장착한다.
+	}
+}
+
+void ATimeFractureCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
+{
+	if (OverlappingWeapon) //겹치는 무기가 존재하면
+	{
+		OverlappingWeapon->ShowPickupWidget(false); //겹치는 무기 위젯을 표시한다.
+	}
+	if (LastWeapon) //겹치는 무기가 존재하면
+	{
+		LastWeapon->ShowPickupWidget(false); //겹치는 무기 위젯을 숨긴다.
+	}
+}
+
+void ATimeFractureCharacter::SetOverlappingWeapon(AWeapon* Weapon)
+{
+	if (OverlappingWeapon) {
+		OverlappingWeapon->ShowPickupWidget(false); //겹치는 무기 위젯을 숨긴다.
+	}
+	OverlappingWeapon = Weapon; //겹치는 무기를 설정한다.
+	if (IsLocallyControlled()) //로컬에서 제어하는 경우
+	{
+		if (OverlappingWeapon) //겹치는 무기가 존재하면
+		{
+			OverlappingWeapon->ShowPickupWidget(true); //겹치는 무기 위젯을 표시한다.
+		}
+		
+	}
+
 }
 
 void ATimeFractureCharacter::BeginPlay()
