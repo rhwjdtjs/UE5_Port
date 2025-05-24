@@ -14,7 +14,9 @@ public:
 	UCBComponent();
 	friend class ATimeFractureCharacter;
 	void EquipWeapon(class AWeapon* WeaponEquip); //무기를 장착하는 함수
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;	//복제하는 항목을 정의하는 함수
 private:
+	UPROPERTY(Replicated)
 	class AWeapon* EquippedWeapon; //장착된 무기
 	class ATimeFractureCharacter* Character; //캐릭터
 protected:

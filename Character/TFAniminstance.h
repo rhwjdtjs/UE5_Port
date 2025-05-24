@@ -28,4 +28,6 @@ private:
 	bool bIsInAir; //캐릭터가 공중에 있는지 여부를 저장한다.
 	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	bool bIsAccelerating; //캐릭터가 가속중인지 여부를 저장한다.
+	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	bool bWeaponEquipped;// 캐릭터가 무기를 장착했는지 여부를 저장한다.
 };

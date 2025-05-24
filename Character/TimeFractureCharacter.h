@@ -41,4 +41,5 @@ private:
 	void ServerEquipButton(); //서버에서 장착 버튼을 누를 때 호출되는 함수
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon); //겹치는 무기를 설정하는 함수
+	bool IsWeaponEquipped(); //무기가 장착되어 있는지 확인하는 함수
 };

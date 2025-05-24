@@ -5,6 +5,7 @@
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Components/SphereComponent.h"
+#include "Net/UnrealNetwork.h" //복제를 위한 헤더파일을 포함시킨다.
 UCBComponent::UCBComponent()
 {
 
@@ -25,6 +26,13 @@ void UCBComponent::EquipWeapon(AWeapon* WeaponEquip)
 	EquippedWeapon->SetOwner(Character); //무기의 소유자를 캐릭터로 설정한다.
 	EquippedWeapon->ShowPickupWidget(false); //무기 위젯을 숨긴다.
 	EquippedWeapon->GetAreaSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision); //무기 스피어의 충돌을 비활성화한다.
+}
+
+void UCBComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(UCBComponent, EquippedWeapon); //장착된 무기를 복제한다.
+	//DOREPLIFETIME_CONDITION(UCBComponent, EquippedWeapon, COND_OwnerOnly); //장착된 무기를 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
 }
 
 

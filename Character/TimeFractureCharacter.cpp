@@ -139,6 +139,11 @@ void ATimeFractureCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 
 }
 
+bool ATimeFractureCharacter::IsWeaponEquipped()
+{
+	return (CombatComponent && CombatComponent->EquippedWeapon); //전투 컴포넌트가 존재하고, 전투 컴포넌트의 무기가 장착되어 있는지 확인한다.
+}
+
 void ATimeFractureCharacter::BeginPlay()
 {
 	Super::BeginPlay();

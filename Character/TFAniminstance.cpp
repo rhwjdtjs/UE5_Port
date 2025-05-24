@@ -28,5 +28,5 @@ void UTFAniminstance::NativeUpdateAnimation(float DeltaTime)
 	Speed = Velocity.Size(); //캐릭터의 속도를 저장한다.
 	bIsInAir = TFCharacter->GetCharacterMovement()->IsFalling(); //캐릭터가 공중에 있는지 여부를 저장한다.
 	bIsAccelerating = TFCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f ? true : false; //캐릭터가 가속중인지 여부를 저장한다.
-	
+	bWeaponEquipped = TFCharacter->IsWeaponEquipped(); //캐릭터가 무기를 장착했는지 여부를 저장한다.
 }
