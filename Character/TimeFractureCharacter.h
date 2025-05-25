@@ -24,6 +24,7 @@ protected:
 	void Turn(float Value);
 	void LookUp(float Value);
 	void EquipButton();
+	void CrouchButton(); //크라우치 버튼 함수
 	//움직임 함수
 private:
 	UPROPERTY(VisibleAnywhere, Category="카메라")
@@ -32,7 +33,12 @@ private:
 	class UWidgetComponent* OverheadWidget; //오버헤드 위젯
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
 	class AWeapon* OverlappingWeapon; //겹치는 무기	
-
+	UPROPERTY(EditAnywhere, Category = "Camera")
+	FVector StandingCameraOffset;
+	UPROPERTY(EditAnywhere, Category = "Camera")
+	FVector CrouchingCameraOffset;
+	UPROPERTY(EditAnywhere, Category = "Camera")
+	float CameraInterpSpeed = 12.0f; //카메라 보간 속도
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon); //겹치는 무기가 바뀔 때 호출되는 함수
 	UPROPERTY(VisibleAnywhere, Category = "Combat")

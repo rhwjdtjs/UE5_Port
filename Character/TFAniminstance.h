@@ -30,4 +30,6 @@ private:
 	bool bIsAccelerating; //캐릭터가 가속중인지 여부를 저장한다.
 	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	bool bWeaponEquipped;// 캐릭터가 무기를 장착했는지 여부를 저장한다.
+	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	bool bIsCrouching; //캐릭터가 크라우치 상태인지 여부를 저장한다.
 };

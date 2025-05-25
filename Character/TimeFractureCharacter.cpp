@@ -9,19 +9,26 @@
 #include "UnrealProject_7A/Weapon/Weapon.h"
 #include "UnrealProject_7A/TFComponents/CBComponent.h"
 
+
+#include "GameFramework/CharacterMovementComponent.h" // 추가된 헤더 파일
+
 ATimeFractureCharacter::ATimeFractureCharacter()
 {
-	PrimaryActorTick.bCanEverTick = true;
+   PrimaryActorTick.bCanEverTick = true;
 
-	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(GetMesh(), FName("Head")); //소켓네임을 이용해서 followcamera를 cameraarm에 부착
-	FollowCamera->bUsePawnControlRotation = true; //카메라회전하면 몸도회전
+   FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+   FollowCamera->SetupAttachment(GetMesh(), FName("Head")); //소켓네임을 이용해서 followcamera를 cameraarm에 부착
+   FollowCamera->bUsePawnControlRotation = true; //카메라회전하면 몸도회전
 
-	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
-	OverheadWidget->SetupAttachment(RootComponent); //루트컴포넌트에 부착
+   OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
+   OverheadWidget->SetupAttachment(RootComponent); //루트컴포넌트에 부착
 
-	CombatComponent = CreateDefaultSubobject<UCBComponent>(TEXT("CombatComponent")); //전투 컴포넌트 생성
-	CombatComponent->SetIsReplicated(true); //복제 가능하게 설정
+   CombatComponent = CreateDefaultSubobject<UCBComponent>(TEXT("CombatComponent")); //전투 컴포넌트 생성
+   CombatComponent->SetIsReplicated(true); //복제 가능하게 설정
+   GetCharacterMovement()->NavAgentProps.bCanCrouch = true; //캐릭터가 크라우치할 수 있도록 설정한다.
+   StandingCameraOffset = FVector(0.f, 30.f, 143.f);    //카메라의 상대 위치를 설정한다. 캐릭터의 머리 위에 카메라가 위치하도록 한다.
+   CrouchingCameraOffset = FVector(0.f, 0.f, 90.f); // 더 낮은 위치
+   FollowCamera->SetRelativeLocation(StandingCameraOffset); //카메라의 상대 위치를 설정한다. 캐릭터의 머리 위에 카메라가 위치하도록 한다.
 }
 void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -31,6 +38,7 @@ void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	PlayerInputComponent->BindAxis("Turn", this, &ATimeFractureCharacter::Turn);
 	PlayerInputComponent->BindAxis("LookUp", this, &ATimeFractureCharacter::LookUp);
 	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ATimeFractureCharacter::EquipButton); //키보드의 E키를 눌렀을 때 EquipButton 함수를 호출한다.
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ATimeFractureCharacter::CrouchButton); //키보드의 C키를 눌렀을 때 CrouchButton 함수를 호출한다.
 	//프로젝트 세팅에 저장된 키의 이름을 바인드한다. this ->이 함수의 있는 함수를 불러옴
 }
 
@@ -82,6 +90,13 @@ void ATimeFractureCharacter::EquipButton()
 			ServerEquipButton(); //서버에서 장착 버튼을 누른다.
 		}
 	}
+}
+void ATimeFractureCharacter::CrouchButton()
+{
+	if (bIsCrouched) {
+		UnCrouch(); //크라우치 상태가 아니면 크라우치를 해제한다.
+	}
+	Crouch(); //크라우치 버튼을 누르면 크라우치한다.
 }
 void ATimeFractureCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -151,6 +166,15 @@ void ATimeFractureCharacter::BeginPlay()
 void ATimeFractureCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	FVector TargetOffset = bIsCrouched ? CrouchingCameraOffset : StandingCameraOffset;// 크라우치 상태에 따라 카메라의 상대 위치를 설정한다.
 
+	FVector NewLocation = FMath::VInterpTo(
+		FollowCamera->GetRelativeLocation(),
+		TargetOffset,
+		DeltaTime,
+		CameraInterpSpeed
+	);// 카메라의 상대 위치를 보간한다.
+
+	FollowCamera->SetRelativeLocation(NewLocation);// 카메라의 상대 위치를 설정한다.
 }
 
