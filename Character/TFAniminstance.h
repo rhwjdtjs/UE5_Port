@@ -34,5 +34,8 @@ private:
 	bool bIsCrouching; //캐릭터가 크라우치 상태인지 여부를 저장한다.
 	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	bool bIsAiming; //캐릭터가 조준 상태인지 여부를 저장한다.
+	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	float YawOffset; //캐릭터의 Yaw 오프셋을 저장한다.
 
+	FRotator DeltaRotation; //회전 차이를 저장하는 변수
 };

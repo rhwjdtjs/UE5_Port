@@ -4,6 +4,7 @@
 #include "TFAniminstance.h"
 #include "TimeFractureCharacter.h" //캐릭터의 헤더파일을 포함시킨다
 #include "GameFramework/CharacterMovementComponent.h" //캐릭터의 이동 컴포넌트를 포함시킨다
+#include "Kismet/KismetMathLibrary.h" //수학 라이브러리를 포함시킨다
 void UTFAniminstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation(); //부모클래스의 초기화함수 호출
@@ -31,4 +32,10 @@ void UTFAniminstance::NativeUpdateAnimation(float DeltaTime)
 	bWeaponEquipped = TFCharacter->IsWeaponEquipped(); //캐릭터가 무기를 장착했는지 여부를 저장한다.
 	bIsCrouching = TFCharacter->bIsCrouched; //캐릭터가 크라우치 상태인지 여부를 저장한다.
 	bIsAiming = TFCharacter->IsAiming(); //캐릭터가 조준 상태인지 여부를 저장한다.
+
+	FRotator AimRotation=TFCharacter->GetBaseAimRotation(); //캐릭터의 기본 조준 회전을 가져온다.
+	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(TFCharacter->GetVelocity()); //캐릭터의 이동 회전을 가져온다.
+	FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation);//이동 회전과 조준 회전의 차이를 계산하여 Yaw 오프셋을 저장한다.
+	DeltaRotation = FMath::RInterpTo(DeltaRotation, DeltaRot,DeltaTime,15.f); //회전 차이를 보간한다.
+	YawOffset = DeltaRotation.Yaw; //Yaw 오프셋을 저장한다.	
 }

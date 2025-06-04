@@ -50,6 +50,14 @@ void UCBComponent::SetAiming(bool bAiming)
 	ServerSetAiming(bAiming); //서버에서 조준 여부를 설정한다.
 }
 
+void UCBComponent::OnRep_EquippedWeapon()
+{
+	if (EquippedWeapon) {
+
+
+	}
+}
+
 void UCBComponent::ServerSetAiming_Implementation(bool bAiming)
 {
 	bisAiming = bAiming; //서버에서 조준 여부를 설정한다.
