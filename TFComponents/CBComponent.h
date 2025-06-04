@@ -19,8 +19,13 @@ private:
 	UPROPERTY(Replicated)
 	class AWeapon* EquippedWeapon; //장착된 무기
 	class ATimeFractureCharacter* Character; //캐릭터
+	UPROPERTY(Replicated)
+	bool bisAiming; //조준 여부
 protected:
 	virtual void BeginPlay() override;
+	void SetAiming(bool bAiming); //조준 상태를 설정하는 함수
+	UFUNCTION(Server, Reliable)
+	void ServerSetAiming(bool bAiming); //서버에서 조준 상태를 설정하는 함수
 
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

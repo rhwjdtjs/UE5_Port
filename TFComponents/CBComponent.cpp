@@ -32,6 +32,7 @@ void UCBComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UCBComponent, EquippedWeapon); //장착된 무기를 복제한다.
+	DOREPLIFETIME(UCBComponent, bisAiming);// 조준 여부를 복제한다.
 	//DOREPLIFETIME_CONDITION(UCBComponent, EquippedWeapon, COND_OwnerOnly); //장착된 무기를 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
 }
 
@@ -41,6 +42,17 @@ void UCBComponent::BeginPlay()
 	Super::BeginPlay();
 
 
+}
+
+void UCBComponent::SetAiming(bool bAiming)
+{
+	bisAiming = bAiming; //조준 여부를 설정한다.
+	ServerSetAiming(bAiming); //서버에서 조준 여부를 설정한다.
+}
+
+void UCBComponent::ServerSetAiming_Implementation(bool bAiming)
+{
+	bisAiming = bAiming; //서버에서 조준 여부를 설정한다.
 }
 
 

@@ -25,6 +25,8 @@ protected:
 	void LookUp(float Value);
 	void EquipButton();
 	void CrouchButton(); //크라우치 버튼 함수
+	void AimButton(); //조준 버튼 함수
+	void AimButtonRelease(); //조준 버튼 해제 함수
 	//움직임 함수
 private:
 	UPROPERTY(VisibleAnywhere, Category="카메라")
@@ -38,6 +40,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	FVector CrouchingCameraOffset;
 	UPROPERTY(EditAnywhere, Category = "Camera")
+	FVector StandingAimCameraOffset;
+	UPROPERTY(EditAnywhere, Category = "Camera")
+	FVector CrouchingAimCameraOffset;
+	UPROPERTY(EditAnywhere, Category = "Camera")
 	float CameraInterpSpeed = 12.0f; //카메라 보간 속도
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon); //겹치는 무기가 바뀔 때 호출되는 함수
@@ -48,4 +54,6 @@ private:
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon); //겹치는 무기를 설정하는 함수
 	bool IsWeaponEquipped(); //무기가 장착되어 있는지 확인하는 함수
+	bool IsAiming();
+	
 };

@@ -39,6 +39,8 @@ void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	PlayerInputComponent->BindAxis("LookUp", this, &ATimeFractureCharacter::LookUp);
 	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ATimeFractureCharacter::EquipButton); //키보드의 E키를 눌렀을 때 EquipButton 함수를 호출한다.
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ATimeFractureCharacter::CrouchButton); //키보드의 C키를 눌렀을 때 CrouchButton 함수를 호출한다.
+	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &ATimeFractureCharacter::AimButton); //우클릭키를 눌렀을 때 AimButton 함수를 호출한다.
+	PlayerInputComponent->BindAction("Aim", IE_Released, this, &ATimeFractureCharacter::AimButtonRelease); //우클릭키를 떼었을 때 AimButtonRelease 함수를 호출한다.
 	//프로젝트 세팅에 저장된 키의 이름을 바인드한다. this ->이 함수의 있는 함수를 불러옴
 }
 
@@ -97,6 +99,18 @@ void ATimeFractureCharacter::CrouchButton()
 		UnCrouch(); //크라우치 상태가 아니면 크라우치를 해제한다.
 	}
 	Crouch(); //크라우치 버튼을 누르면 크라우치한다.
+}
+void ATimeFractureCharacter::AimButton()
+{
+	if (CombatComponent) {
+		CombatComponent->SetAiming(true); //전투 컴포넌트의 조준 여부를 true로 설정한다.
+	}
+}
+void ATimeFractureCharacter::AimButtonRelease()
+{
+	if (CombatComponent) {
+		CombatComponent->SetAiming(false); //전투 컴포넌트의 조준 여부를 false로 설정한다.
+	}
 }
 void ATimeFractureCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -159,6 +173,11 @@ bool ATimeFractureCharacter::IsWeaponEquipped()
 	return (CombatComponent && CombatComponent->EquippedWeapon); //전투 컴포넌트가 존재하고, 전투 컴포넌트의 무기가 장착되어 있는지 확인한다.
 }
 
+bool ATimeFractureCharacter::IsAiming()
+{
+	return (CombatComponent && CombatComponent->bisAiming); //전투 컴포넌트가 존재하고, 전투 컴포넌트의 조준 여부를 반환한다.
+}
+
 void ATimeFractureCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -167,7 +186,12 @@ void ATimeFractureCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	FVector TargetOffset = bIsCrouched ? CrouchingCameraOffset : StandingCameraOffset;// 크라우치 상태에 따라 카메라의 상대 위치를 설정한다.
-
+	if (bIsCrouched && IsAiming()) {
+		TargetOffset = CrouchingAimCameraOffset; // 크라우치 상태에서 조준을 하면 카메라의 상대 위치를 크라우치 조준 위치로 설정한다.
+	}
+	else if (!bIsCrouched && IsAiming()) {
+		TargetOffset = StandingAimCameraOffset; // 조준을 하면 카메라의 상대 위치를 서있는 조준 위치로 설정한다.
+	}
 	FVector NewLocation = FMath::VInterpTo(
 		FollowCamera->GetRelativeLocation(),
 		TargetOffset,
