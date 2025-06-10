@@ -44,6 +44,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	FVector CrouchingAimCameraOffset;
 	UPROPERTY(EditAnywhere, Category = "Camera")
+	FVector CrouchWalkAimCameraOffset; //크라우치 상태에서 조준 시 카메라의 상대 위치
+	UPROPERTY(EditAnywhere, Category = "Camera")
+	FVector StandingWalkAimCameraOffset; //서있는 상태에서 조준 시 카메라의 상대 위치
+	UPROPERTY(EditAnywhere, Category = "Camera")
 	float CameraInterpSpeed = 12.0f; //카메라 보간 속도
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon); //겹치는 무기가 바뀔 때 호출되는 함수

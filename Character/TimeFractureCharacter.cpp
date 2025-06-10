@@ -19,15 +19,15 @@ ATimeFractureCharacter::ATimeFractureCharacter()
    FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
    FollowCamera->SetupAttachment(GetMesh(), FName("Head")); //소켓네임을 이용해서 followcamera를 cameraarm에 부착
    FollowCamera->bUsePawnControlRotation = true; //카메라회전하면 몸도회전
-
+   FollowCamera->SetupAttachment(RootComponent); //루트컴포넌트에 부착
    OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
    OverheadWidget->SetupAttachment(RootComponent); //루트컴포넌트에 부착
-
+   FollowCamera->bUsePawnControlRotation = true;
    CombatComponent = CreateDefaultSubobject<UCBComponent>(TEXT("CombatComponent")); //전투 컴포넌트 생성
    CombatComponent->SetIsReplicated(true); //복제 가능하게 설정
    GetCharacterMovement()->NavAgentProps.bCanCrouch = true; //캐릭터가 크라우치할 수 있도록 설정한다.
-   StandingCameraOffset = FVector(0.f, 30.f, 143.f);    //카메라의 상대 위치를 설정한다. 캐릭터의 머리 위에 카메라가 위치하도록 한다.
-   CrouchingCameraOffset = FVector(0.f, 0.f, 90.f); // 더 낮은 위치
+  // StandingCameraOffset = FVector(0.f, 30.f, 143.f);    //카메라의 상대 위치를 설정한다. 캐릭터의 머리 위에 카메라가 위치하도록 한다.
+  // CrouchingCameraOffset = FVector(0.f, 0.f, 90.f); // 더 낮은 위치
    FollowCamera->SetRelativeLocation(StandingCameraOffset); //카메라의 상대 위치를 설정한다. 캐릭터의 머리 위에 카메라가 위치하도록 한다.
 }
 void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -181,17 +181,31 @@ bool ATimeFractureCharacter::IsAiming()
 void ATimeFractureCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	if (IsLocallyControlled())
+	{
+		GetMesh()->HideBoneByName(TEXT("head"), EPhysBodyOp::PBO_None);
+		GetMesh()->HideBoneByName(TEXT("neck_01"), EPhysBodyOp::PBO_None);
+	}
 }
 void ATimeFractureCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	FVector TargetOffset = bIsCrouched ? CrouchingCameraOffset : StandingCameraOffset;// 크라우치 상태에 따라 카메라의 상대 위치를 설정한다.
-	if (bIsCrouched && IsAiming()) {
+	if (bIsCrouched && IsAiming() && GetVelocity().Size() > 0.5f)
+	{ // 크라우치 상태에서 조준을 하고 이동 중이면 카메라의 상대 위치를 크라우치 이동 조준 위치로 설정한다.
+		TargetOffset = CrouchWalkAimCameraOffset;
+	}
+	else if (bIsCrouched && IsAiming()) {
 		TargetOffset = CrouchingAimCameraOffset; // 크라우치 상태에서 조준을 하면 카메라의 상대 위치를 크라우치 조준 위치로 설정한다.
+	}
+	else if (!bIsCrouched && IsAiming() && GetVelocity().Size() > 0.5f)
+	{
+		TargetOffset = StandingWalkAimCameraOffset;
 	}
 	else if (!bIsCrouched && IsAiming()) {
 		TargetOffset = StandingAimCameraOffset; // 조준을 하면 카메라의 상대 위치를 서있는 조준 위치로 설정한다.
 	}
+	
 	FVector NewLocation = FMath::VInterpTo(
 		FollowCamera->GetRelativeLocation(),
 		TargetOffset,

@@ -21,7 +21,10 @@ private:
 	class ATimeFractureCharacter* Character; //캐릭터
 	UPROPERTY(Replicated)
 	bool bisAiming; //조준 여부
-
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float baseWalkSpeed; //기본 걷는 속도
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float AimingWalkSpeed; //조준 상태의 걷는 속도
 protected:
 	virtual void BeginPlay() override;
 	void SetAiming(bool bAiming); //조준 상태를 설정하는 함수
