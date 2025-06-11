@@ -38,4 +38,8 @@ private:
 	float YawOffset; //캐릭터의 Yaw 오프셋을 저장한다.
 
 	FRotator DeltaRotation; //회전 차이를 저장하는 변수
+	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	float AO_Yaw; //캐릭터의 조준 회전 Yaw 값을 저장한다.
+	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	float AO_Pitch; //캐릭터의 조준 회전 Pitch 값을 저장한다.
 };

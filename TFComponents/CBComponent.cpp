@@ -17,17 +17,20 @@ UCBComponent::UCBComponent()
 
 void UCBComponent::EquipWeapon(AWeapon* WeaponEquip)
 {
-	if (Character == nullptr || WeaponEquip==nullptr) return; //캐릭터가 없으면 리턴
-	EquippedWeapon = WeaponEquip; //장착된 무기를 설정한다.
-	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped); //장착된 무기 상태를 설정한다.
-	const USkeletalMeshSocket* HandSocket=Character->GetMesh()->GetSocketByName(FName("RightHandSocket"));//캐릭터의 오른손 소켓을 가져온다.
-	if (HandSocket) //소켓이 존재하면
-	{
-		HandSocket->AttachActor(EquippedWeapon, Character->GetMesh()); //소켓에 무기를 장착한다.
-	}
-	EquippedWeapon->SetOwner(Character); //무기의 소유자를 캐릭터로 설정한다.
-	EquippedWeapon->ShowPickupWidget(false); //무기 위젯을 숨긴다.
-	EquippedWeapon->GetAreaSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision); //무기 스피어의 충돌을 비활성화한다.
+	if (Character == nullptr || WeaponEquip == nullptr) return;
+
+	EquippedWeapon = WeaponEquip;
+	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
+
+	EquippedWeapon->AttachToComponent(
+		Character->GetMesh(),
+		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+		FName("RightHandSocket")
+	);
+
+	EquippedWeapon->SetOwner(Character);
+	EquippedWeapon->ShowPickupWidget(false);
+	EquippedWeapon->GetAreaSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void UCBComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

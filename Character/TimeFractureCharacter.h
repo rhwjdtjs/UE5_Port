@@ -27,28 +27,30 @@ protected:
 	void CrouchButton(); //크라우치 버튼 함수
 	void AimButton(); //조준 버튼 함수
 	void AimButtonRelease(); //조준 버튼 해제 함수
+	void AimOffset(float DeltaTime); //조준 오프셋 함수
 	//움직임 함수
 private:
-	UPROPERTY(VisibleAnywhere, Category="카메라")
+	float AO_YAW;
+	float AO_PITCH; //조준 회전 Yaw, Pitch 값
+	FRotator BaseAimRotation; //기본 조준 회전
+	UPROPERTY(VisibleAnywhere, Category = "camera")
+	class USpringArmComponent* CameraBoom; //카메라 붐 컴포넌트, 카메라와 캐릭터 사이의 거리 조절
+	UPROPERTY(VisibleAnywhere, Category="camera")
 	class UCameraComponent* FollowCamera; //촬영하는 카메라
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess="true"))
 	class UWidgetComponent* OverheadWidget; //오버헤드 위젯
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
 	class AWeapon* OverlappingWeapon; //겹치는 무기	
-	UPROPERTY(EditAnywhere, Category = "Camera")
-	FVector StandingCameraOffset;
-	UPROPERTY(EditAnywhere, Category = "Camera")
-	FVector CrouchingCameraOffset;
-	UPROPERTY(EditAnywhere, Category = "Camera")
-	FVector StandingAimCameraOffset;
-	UPROPERTY(EditAnywhere, Category = "Camera")
-	FVector CrouchingAimCameraOffset;
-	UPROPERTY(EditAnywhere, Category = "Camera")
-	FVector CrouchWalkAimCameraOffset; //크라우치 상태에서 조준 시 카메라의 상대 위치
-	UPROPERTY(EditAnywhere, Category = "Camera")
-	FVector StandingWalkAimCameraOffset; //서있는 상태에서 조준 시 카메라의 상대 위치
-	UPROPERTY(EditAnywhere, Category = "Camera")
-	float CameraInterpSpeed = 12.0f; //카메라 보간 속도
+	UPROPERTY(EditAnywhere, Category = "camera")
+	FVector CrouchingCameraOffset; //크라우치 상태일 때 카메라의 상대 위치
+	UPROPERTY(EditAnywhere, Category = "camera")
+	FVector NormalOffset; //일반 상태일 때 카메라의 상대 위치
+	UPROPERTY(EditAnywhere, Category = "camera")
+	float AimCameraOffset; //조준 상태일 때 카메라의 상대 위치
+	UPROPERTY(EditAnywhere, Category = "camera")
+	float normalAimCameraOffset; //조준 상태일 때 카메라의 상대 위치
+	UPROPERTY(EditAnywhere, Category = "camera")
+	float CameraInterpSpeed = 15.f; //카메라 보간 속도
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon); //겹치는 무기가 바뀔 때 호출되는 함수
 	UPROPERTY(VisibleAnywhere, Category = "Combat")
@@ -59,5 +61,6 @@ public:
 	void SetOverlappingWeapon(AWeapon* Weapon); //겹치는 무기를 설정하는 함수
 	bool IsWeaponEquipped(); //무기가 장착되어 있는지 확인하는 함수
 	bool IsAiming();
-	
+	FORCEINLINE float GETAO_YAW() const { return AO_YAW; }
+	FORCEINLINE float GETAO_PITCH() const { return AO_PITCH; }
 };
