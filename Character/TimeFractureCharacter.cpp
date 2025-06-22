@@ -112,36 +112,38 @@ void ATimeFractureCharacter::AimButtonRelease()
 }
 void ATimeFractureCharacter::AimOffset(float DeltaTime)
 {
-	if (CombatComponent == nullptr || CombatComponent->EquippedWeapon == nullptr)
-	{
-		return;
-	}
-
-	FVector Velocity = GetVelocity();
+	if (CombatComponent && CombatComponent->EquippedWeapon == nullptr) return;
+		FVector Velocity = GetVelocity();
 	Velocity.Z = 0.f;
 	float Speed = Velocity.Size();
+	bool bIsInAir = GetCharacterMovement()->IsFalling();
 
-	FRotator CurrentAimRotation = FRotator(0.f, GetControlRotation().Yaw, 0.f);
-
-	// 항상 Delta 계산
-	FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotation, BaseAimRotation);
-	AO_YAW = DeltaAimRotation.Yaw;
-	AO_PITCH = GetBaseAimRotation().Pitch;
-
-	// 이동 중이면 BaseAimRotation 업데이트
-	if (Speed > 0.f)
+	if (Speed == 0.f && !bIsInAir) // standing still, not jumping
 	{
-		BaseAimRotation = CurrentAimRotation;
-		bUseControllerRotationYaw = false; // 이동 중에는 컨트롤러 회전을 사용하지 않도록 설정
+		FRotator CurrentAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
+		FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotation, BaseAimRotation);
+		AO_YAW = DeltaAimRotation.Yaw;
+		bUseControllerRotationYaw = false;
+	}
+	if (Speed > 0.f || bIsInAir) // running, or jumping
+	{
+		BaseAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
+		AO_YAW = 0.f;
+		bUseControllerRotationYaw = true;
 	}
 
-	// 이동 시 컨트롤러 회전 따라가게 할지 여부는 스타일에 따라
-	bUseControllerRotationYaw = (Speed > 0.f);
+	AO_PITCH = GetBaseAimRotation().Pitch;
+	if (AO_PITCH > 90.f && !IsLocallyControlled())
+	{
+		// map pitch from [270, 360) to [-90, 0)
+		FVector2D InRange(270.f, 360.f);
+		FVector2D OutRange(-90.f, 0.f);
+		AO_PITCH = FMath::GetMappedRangeValueClamped(InRange, OutRange, AO_PITCH);
+	}
 }
 void ATimeFractureCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);//부모 클래스의 복제 속성을 가져온다.
 	DOREPLIFETIME_CONDITION(ATimeFractureCharacter, OverlappingWeapon, COND_OwnerOnly); //OVERLAPPINGWEAPON을 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
 }
 void ATimeFractureCharacter::PostInitializeComponents()
@@ -202,6 +204,14 @@ bool ATimeFractureCharacter::IsWeaponEquipped()
 bool ATimeFractureCharacter::IsAiming()
 {
 	return (CombatComponent && CombatComponent->bisAiming); //전투 컴포넌트가 존재하고, 전투 컴포넌트의 조준 여부를 반환한다.
+}
+
+AWeapon* ATimeFractureCharacter::GetEquippedWeapon()
+{
+	if (CombatComponent == nullptr)
+		return nullptr;
+
+	return CombatComponent->EquippedWeapon; //전투 컴포넌트의 무기를 반환한다.
 }
 
 void ATimeFractureCharacter::BeginPlay()

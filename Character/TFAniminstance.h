@@ -20,6 +20,7 @@ public:
 		virtual void NativeInitializeAnimation() override; //beginplay와 비슷하다
 		virtual void NativeUpdateAnimation(float DeltaTime) override; //tick과 비슷하다
 private:
+	class AWeapon* EquippedWeapon; //장착된 무기를 저장하는 변수
 	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true")) //블루프린트에서 읽기전용으로 사용가능하다.
 	class ATimeFractureCharacter* TFCharacter; //캐릭터의 포인터를 저장한다.
 	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
@@ -42,4 +43,7 @@ private:
 	float AO_Yaw; //캐릭터의 조준 회전 Yaw 값을 저장한다.
 	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	float AO_Pitch; //캐릭터의 조준 회전 Pitch 값을 저장한다.
+
+	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	FTransform LeftHandTransform; //왼손의 변환 정보를 저장한다.
 };

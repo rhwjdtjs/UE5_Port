@@ -30,7 +30,7 @@ protected:
 	void AimOffset(float DeltaTime); //조준 오프셋 함수
 	//움직임 함수
 private:
-	float AO_YAW;
+	float AO_YAW; //조준 회전 Yaw 값, 서버에서 클라이언트로 복제되는 변수
 	float AO_PITCH; //조준 회전 Yaw, Pitch 값
 	FRotator BaseAimRotation; //기본 조준 회전
 	UPROPERTY(VisibleAnywhere, Category = "camera")
@@ -63,4 +63,5 @@ public:
 	bool IsAiming();
 	FORCEINLINE float GETAO_YAW() const { return AO_YAW; }
 	FORCEINLINE float GETAO_PITCH() const { return AO_PITCH; }
+	AWeapon* GetEquippedWeapon();
 };

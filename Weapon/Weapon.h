@@ -42,6 +42,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	void SetWeaponState(EWeaponState State);
 	FORCEINLINE class USphereComponent* GetAreaSphere() const { return AreaSphere; }
+	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;
