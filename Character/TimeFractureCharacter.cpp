@@ -116,16 +116,8 @@ void ATimeFractureCharacter::AimOffset(float DeltaTime)
 		FVector Velocity = GetVelocity();
 	Velocity.Z = 0.f;
 	float Speed = Velocity.Size();
-	bool bIsInAir = GetCharacterMovement()->IsFalling();
 
-	if (Speed == 0.f && !bIsInAir) // standing still, not jumping
-	{
-		FRotator CurrentAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
-		FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotation, BaseAimRotation);
-		AO_YAW = DeltaAimRotation.Yaw;
-		bUseControllerRotationYaw = false;
-	}
-	if (Speed > 0.f || bIsInAir) // running, or jumping
+	if (Speed > 0.f) // 움직일때만 좌우 yaw적용
 	{
 		BaseAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
 		AO_YAW = 0.f;

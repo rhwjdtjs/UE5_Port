@@ -11,8 +11,8 @@ UCBComponent::UCBComponent()
 {
 
 	PrimaryComponentTick.bCanEverTick = false;
-	baseWalkSpeed = 600.f; //기본 걷는 속도를 설정한다.
-	AimingWalkSpeed = 300.f; //조준 상태의 걷는 속도를 설정한다.
+//	//baseWalkSpeed = 600.f; //기본 걷는 속도를 설정한다.
+//	AimingWalkSpeed = 300.f; //조준 상태의 걷는 속도를 설정한다.
 }
 
 void UCBComponent::EquipWeapon(AWeapon* WeaponEquip)
