@@ -25,6 +25,8 @@ private:
 	float baseWalkSpeed; //기본 걷는 속도
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	float AimingWalkSpeed; //조준 상태의 걷는 속도
+
+	bool bFireButtonPressed; //발사 버튼이 눌렸는지 여부
 protected:
 	virtual void BeginPlay() override;
 	void SetAiming(bool bAiming); //조준 상태를 설정하는 함수
@@ -32,7 +34,7 @@ protected:
 	void ServerSetAiming(bool bAiming); //서버에서 조준 상태를 설정하는 함수
 	UFUNCTION()
 	void OnRep_EquippedWeapon(); //장착된 무기가 바뀔 때 호출되는 함수
-
+	void FireButtonPressed(bool bPressed); //발사 버튼이 눌렸을 때 호출되는 함수
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 

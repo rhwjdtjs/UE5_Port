@@ -68,6 +68,14 @@ void UCBComponent::OnRep_EquippedWeapon()
 	}
 }
 
+void UCBComponent::FireButtonPressed(bool bPressed)
+{
+	bFireButtonPressed = bPressed; //발사 버튼이 눌렸는지 여부를 설정한다.
+	if (Character && bFireButtonPressed) {
+		Character->PlayFireMontage(bisAiming); //캐릭터의 발사 모션을 재생한다.
+	}
+}
+
 void UCBComponent::ServerSetAiming_Implementation(bool bAiming)
 {
 	bisAiming = bAiming; //서버에서 조준 여부를 설정한다.

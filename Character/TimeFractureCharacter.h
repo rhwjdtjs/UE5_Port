@@ -28,6 +28,8 @@ protected:
 	void AimButton(); //조준 버튼 함수
 	void AimButtonRelease(); //조준 버튼 해제 함수
 	void AimOffset(float DeltaTime); //조준 오프셋 함수
+	void FireButtonPressed();
+	void FireButtonReleased(); //발사 버튼 해제 함수
 	//움직임 함수
 private:
 	float AO_YAW; //조준 회전 Yaw 값, 서버에서 클라이언트로 복제되는 변수
@@ -57,6 +59,8 @@ private:
 	class UCBComponent* CombatComponent; //전투 컴포넌트
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButton(); //서버에서 장착 버튼을 누를 때 호출되는 함수
+	UPROPERTY(EditAnywhere,Category=Combat)
+	class UAnimMontage* FireWeaponMontage;
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon); //겹치는 무기를 설정하는 함수
 	bool IsWeaponEquipped(); //무기가 장착되어 있는지 확인하는 함수
@@ -64,4 +68,5 @@ public:
 	FORCEINLINE float GETAO_YAW() const { return AO_YAW; }
 	FORCEINLINE float GETAO_PITCH() const { return AO_PITCH; }
 	AWeapon* GetEquippedWeapon();
+	void PlayFireMontage(bool bAiming); //무기 발사 모션 재생 함수
 };

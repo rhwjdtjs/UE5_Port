@@ -11,7 +11,7 @@
 #include "Kismet/KismetMathLibrary.h" // 추가된 헤더 파일
 
 #include "GameFramework/CharacterMovementComponent.h" // 추가된 헤더 파일
-
+#include "TFAniminstance.h"
 ATimeFractureCharacter::ATimeFractureCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -39,6 +39,8 @@ void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ATimeFractureCharacter::CrouchButton); //키보드의 C키를 눌렀을 때 CrouchButton 함수를 호출한다.
 	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &ATimeFractureCharacter::AimButton); //우클릭키를 눌렀을 때 AimButton 함수를 호출한다.
 	PlayerInputComponent->BindAction("Aim", IE_Released, this, &ATimeFractureCharacter::AimButtonRelease); //우클릭키를 떼었을 때 AimButtonRelease 함수를 호출한다.
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ATimeFractureCharacter::FireButtonPressed); //우클릭키를 눌렀을 때 AimButton 함수를 호출한다.
+	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ATimeFractureCharacter::FireButtonReleased); //우클릭키를 떼었을 때 AimButtonRelease 함수를 호출한다.
 	//프로젝트 세팅에 저장된 키의 이름을 바인드한다. this ->이 함수의 있는 함수를 불러옴
 }
 
@@ -133,6 +135,18 @@ void ATimeFractureCharacter::AimOffset(float DeltaTime)
 		AO_PITCH = FMath::GetMappedRangeValueClamped(InRange, OutRange, AO_PITCH);
 	}
 }
+void ATimeFractureCharacter::FireButtonPressed()
+{
+	if (CombatComponent) {
+		CombatComponent->FireButtonPressed(true); //전투 컴포넌트의 발사 버튼을 눌렀다고 설정한다.
+	}
+}
+void ATimeFractureCharacter::FireButtonReleased()
+{
+	if (CombatComponent) {
+		CombatComponent->FireButtonPressed(false); //전투 컴포넌트의 발사 버튼을 떼었다고 설정한다.
+	}
+}
 void ATimeFractureCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);//부모 클래스의 복제 속성을 가져온다.
@@ -204,6 +218,18 @@ AWeapon* ATimeFractureCharacter::GetEquippedWeapon()
 		return nullptr;
 
 	return CombatComponent->EquippedWeapon; //전투 컴포넌트의 무기를 반환한다.
+}
+
+void ATimeFractureCharacter::PlayFireMontage(bool bAiming)
+{
+	if (CombatComponent == nullptr || CombatComponent->EquippedWeapon == nullptr) return;
+	UAnimInstance* animInstance = GetMesh()->GetAnimInstance(); //캐릭터의 애니메이션 인스턴스를 가져온다.
+	if (animInstance && FireWeaponMontage) {
+		animInstance->Montage_Play(FireWeaponMontage); //애니메이션 몽타주를 재생한다.
+		FName SectionName;
+		SectionName = bAiming ? FName("RifleAim") : FName("RifleHip"); //조준 상태에 따라 섹션 이름을 설정한다.
+		animInstance->Montage_JumpToSection(SectionName); //애니메이션 몽타주의 섹션으로 점프한다.
+	}
 }
 
 void ATimeFractureCharacter::BeginPlay()
