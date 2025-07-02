@@ -49,7 +49,7 @@ void UTFAniminstance::NativeUpdateAnimation(float DeltaTime)
 
 		FVector OutPos;
 		FRotator OutRot;
-		TFCharacter->GetMesh()->TransformToBoneSpace(FName("hand_r"), LeftHandTransform.GetLocation(),
+		TFCharacter->GetMesh()->TransformToBoneSpace(FName("RightHand"), LeftHandTransform.GetLocation(),
 			FRotator::ZeroRotator, OutPos, OutRot);
 		LeftHandTransform.SetLocation(OutPos); //왼손의 위치를 설정한다.
 		LeftHandTransform.SetRotation(FQuat(OutRot)); //왼손의 회전을 설정한다.

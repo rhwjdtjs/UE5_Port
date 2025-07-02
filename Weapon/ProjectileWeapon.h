@@ -14,4 +14,12 @@ class UNREALPROJECT_7A_API AProjectileWeapon : public AWeapon
 {
 	GENERATED_BODY()
 	
+public:
+
+	virtual void Fire(const FVector& HitTarget) override; //발사 함수 오버라이드
+private:
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AProjectile> ProjectileClass; //발사체 클래스
 };
+

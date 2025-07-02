@@ -23,6 +23,7 @@ public:
 	AWeapon();
 	void ShowPickupWidget(bool bShowPickupWidget);
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;	//복제하는 항목을 정의하는 함수
+	virtual void Fire(const FVector& HitTarget); //발사 함수, 자식 클래스에서 구현할 수 있다.
 protected:
 	virtual void BeginPlay() override;
 	UFUNCTION()
@@ -51,7 +52,8 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponState, VisibleAnywhere)
 	EWeaponState WeaonState;
-
+	UPROPERTY(EditAnywhere)
+	class UAnimationAsset* FireAnimation; //발사 애니메이션
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	class UWidgetComponent* PickupWidget;
 	UFUNCTION()

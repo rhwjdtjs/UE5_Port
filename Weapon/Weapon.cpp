@@ -6,6 +6,8 @@
 #include "Components/WidgetComponent.h"
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h"
 #include "Net/UnrealNetwork.h"//네트워크 관련 헤더 파일 포함
+#include "Animation/AnimationAsset.h"//애니메이션 자산 관련 헤더 파일 포함
+#include "Components/SkeletalMeshComponent.h"
 AWeapon::AWeapon()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -39,6 +41,13 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME(AWeapon, WeaonState);//무기 상태를 복제
+}
+
+void AWeapon::Fire(const FVector& HitTarget)
+{
+	if (FireAnimation) {
+		WeaponMesh->PlayAnimation(FireAnimation, false);//발사 애니메이션 재생
+	}
 }
 
 void AWeapon::BeginPlay()

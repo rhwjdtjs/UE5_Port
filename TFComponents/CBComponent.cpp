@@ -7,10 +7,12 @@
 #include "Components/SphereComponent.h"
 #include "Net/UnrealNetwork.h" //복제를 위한 헤더파일을 포함시킨다.
 #include "GameFramework/CharacterMovementComponent.h" //캐릭터 이동 컴포넌트를 포함시킨다.
+#include "Kismet/GameplayStatics.h"
+#include "DrawDebugHelpers.h"
 UCBComponent::UCBComponent()
 {
 
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
 //	//baseWalkSpeed = 600.f; //기본 걷는 속도를 설정한다.
 //	AimingWalkSpeed = 300.f; //조준 상태의 걷는 속도를 설정한다.
 }
@@ -71,9 +73,14 @@ void UCBComponent::OnRep_EquippedWeapon()
 void UCBComponent::FireButtonPressed(bool bPressed)
 {
 	bFireButtonPressed = bPressed; //발사 버튼이 눌렸는지 여부를 설정한다.
-	if (Character && bFireButtonPressed) {
-		Character->PlayFireMontage(bisAiming); //캐릭터의 발사 모션을 재생한다.
+	if (bFireButtonPressed) {
+		ServerFire(); //서버에서 발사 버튼이 눌렸는지 여부를 설정한다.
 	}
+}
+
+void UCBComponent::ServerFire_Implementation()
+{
+	MulticastFire(); //서버에서 발사 멀티캐스트 함수를 호출한다.
 }
 
 void UCBComponent::ServerSetAiming_Implementation(bool bAiming)
@@ -85,10 +92,50 @@ void UCBComponent::ServerSetAiming_Implementation(bool bAiming)
 }
 
 
+void UCBComponent::MulticastFire_Implementation()
+{
+	if (EquippedWeapon == nullptr) return;
+	if (Character) {
+		Character->PlayFireMontage(bisAiming); //캐릭터의 발사 모션을 재생한다.
+		EquippedWeapon->Fire(HitTarget); //무기를 발사한다.
+	}
+}
+
+void UCBComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
+{
+	FVector2D ViewportSize; // 화면 크기를 저장할 변수
+	if (GEngine && GEngine->GameViewport) {
+		GEngine->GameViewport->GetViewportSize(ViewportSize); // 화면 크기를 가져온다.
+	}
+
+	FVector2D CrosshairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f); // 화면 중앙의 좌표를 계산한다.
+	FVector CrosshairWorldPostion; // 화면 중앙의 월드 위치를 저장할 변수
+	FVector CrosshairWorldDirection; // 화면 중앙의 월드 방향을 저장할 변수
+	bool bScreenToWorld =UGameplayStatics::DeprojectScreenToWorld(UGameplayStatics::GetPlayerController(this, 0),
+		CrosshairLocation, CrosshairWorldPostion, CrosshairWorldDirection); // 화면 중앙의 위치와 방향을 계산한다.
+	if (bScreenToWorld) {
+		FVector Start = CrosshairWorldPostion; // 시작 위치는 화면 중앙의 월드 위치
+		FVector End = Start + (CrosshairWorldDirection * 80000.f); // 끝 위치는 시작 위치에서 월드 방향으로 10000 단위 떨어진 위치
+
+		GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECollisionChannel::ECC_Visibility); // 라인 트레이스를 사용하여 화면 중앙 아래의 물체를 추적한다.
+		if (TraceHitResult.bBlockingHit) { // 히트된 물체가 있다면
+			TraceHitResult.ImpactPoint = End;
+			HitTarget = End; // 히트된 물체가 있다면, 끝 위치를 히트된 위치로 설정한다.
+			// 히트된 물체가 있다면, 여기서 추가적인 처리를 할 수 있다.
+			// 예를 들어, 히트된 물체의 정보를 출력하거나, 해당 물체에 대한 액션을 수행할 수 있다.
+		}
+		else { // 히트된 물체가 없다면
+			HitTarget = TraceHitResult.ImpactPoint; // 히트된 물체가 없다면, 끝 위치를 히트된 위치로 설정한다.
+			DrawDebugSphere(GetWorld(), TraceHitResult.ImpactPoint, 12.f, 12, FColor::Red);// 히트된 위치에 빨간색 구체를 그린다.
+		}
+	}
+}
+
 void UCBComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
+	FHitResult TraceHitResult; // 트레이스 결과를 저장할 변수
+	TraceUnderCrosshairs(TraceHitResult); // 매 프레임마다 화면 중앙 아래의 물체를 추적한다.
 
 }
 
