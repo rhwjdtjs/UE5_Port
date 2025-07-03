@@ -7,6 +7,8 @@
 void AProjectileWeapon::Fire(const FVector& HitTarget)
 {
 	Super::Fire(HitTarget); //부모 클래스의 Fire 함수 호출
+
+	if (!HasAuthority()) return; //서버에서만 실행
 	APawn* InstigatorPawn = Cast<APawn>(GetOwner()); //소유자를 Pawn으로 캐스팅
 	const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName(FName("muzz")); //무기 메시에서 "muzz" 소켓을 가져옴
 	if (MuzzleSocket) {

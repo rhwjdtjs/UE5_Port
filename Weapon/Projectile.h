@@ -25,4 +25,10 @@ public:
 private:
 	UPROPERTY(EditAnywhere)
 	class UBoxComponent* CollisionBox;
+	UPROPERTY(VisibleAnywhere)
+	class UProjectileMovementComponent* ProjectileMovementComponent;
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* TracerNiagara; // 발사체의 트레이서 효과를 위한 나이아가라 시스템 템플릿;
+
+	class UNiagaraComponent* TracerNiagaraComponent; // 발사체의 트레이서 효과를 위한 나이아가라 컴포넌트;
 };
