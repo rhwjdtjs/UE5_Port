@@ -27,7 +27,6 @@ private:
 	float AimingWalkSpeed; //조준 상태의 걷는 속도
 
 	bool bFireButtonPressed; //발사 버튼이 눌렸는지 여부
-	FVector HitTarget; //조준선 아래의 물체의 위치
 protected:
 	virtual void BeginPlay() override;
 	void SetAiming(bool bAiming); //조준 상태를 설정하는 함수
@@ -37,9 +36,9 @@ protected:
 	void OnRep_EquippedWeapon(); //장착된 무기가 바뀔 때 호출되는 함수
 	void FireButtonPressed(bool bPressed); //발사 버튼이 눌렸을 때 호출되는 함수
 	UFUNCTION(Server, Reliable)
-	void ServerFire(); //서버에서 발사 버튼이 눌렸을 때 호출되는 함수
+	void ServerFire(const FVector_NetQuantize& TraceHitTargert); //서버에서 발사 버튼이 눌렸는지 여부를 설정하는 함수
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastFire(); //발사 멀티캐스트 함수
+	void MulticastFire(const FVector_NetQuantize& TraceHitTargert); //발사 멀티캐스트 함수
 
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult); //조준선 아래의 물체를 추적하는 함수
 public:	
