@@ -6,6 +6,8 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 AProjectile::AProjectile()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -21,6 +23,11 @@ AProjectile::AProjectile()
 
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 	ProjectileMovementComponent->bRotationFollowsVelocity = true; // 발사체가 이동 방향을 따라 회전하도록 설정
+}
+
+void AProjectile::Destroyed()
+{
+	Super::Destroyed();
 }
 
 // Called when the game starts or when spawned
@@ -40,6 +47,15 @@ void AProjectile::BeginPlay()
 		);
 	}
 	
+	if (HasAuthority()) {
+		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnHit); // 서버에서만 Hit 이벤트를 바인딩
+	}
+}
+
+void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	MulticastImpactEffect(Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
+	Destroy(); // 충돌 후 발사체를 파괴
 }
 
 // Called every frame
@@ -47,5 +63,26 @@ void AProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void AProjectile::MulticastImpactEffect_Implementation(const FVector& Location, const FRotator& Rotation)
+{
+	if (ImpactNiagara)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			ImpactNiagara,
+			Location,
+			Rotation
+		);
+	}
+	if (ImpactSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			ImpactSound,
+			Location
+		);
+	}
 }
 
