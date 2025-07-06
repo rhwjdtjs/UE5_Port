@@ -9,6 +9,8 @@
 #include "GameFramework/CharacterMovementComponent.h" //캐릭터 이동 컴포넌트를 포함시킨다.
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "UnrealProject_7a/PlayerController/TFPlayerController.h"
+#include "UnrealProject_7a/HUD/TFHUD.h"
 UCBComponent::UCBComponent()
 {
 
@@ -47,7 +49,6 @@ void UCBComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 void UCBComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
 	if (Character) {
 		Character->GetCharacterMovement()->MaxWalkSpeed = baseWalkSpeed; //캐릭터의 최대 걷는 속도를 기본 속도로 설정한다.
 	}
@@ -123,9 +124,37 @@ void UCBComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 	}
 }
 
+void UCBComponent::SetHUDCrossharis(float DeltaTime)
+{
+	if (Character == nullptr || Character->Controller == nullptr) return;
+	Controller = Controller == nullptr ? Cast<ATFPlayerController>(Character->GetController()) : Controller; // 플레이어 컨트롤러를 가져온다.
+	if (Controller) {
+		TFHUD = TFHUD == nullptr ? Cast<ATFHUD>(Controller->GetHUD()) : TFHUD; // HUD를 가져온다.
+		if (TFHUD) {
+			FHUDPakage HUDPackage; // HUD 패키지를 생성한다.
+			if (EquippedWeapon) {
+				HUDPackage.CrosshairsCenter = EquippedWeapon->CrosshairsCenter; // 무기가 있으면 중앙 크로스헤어를 설정한다.
+				HUDPackage.CrosshairsLeft = EquippedWeapon->CrosshairsLeft; // 무기가 있으면 왼쪽 크로스헤어를 설정한다.
+				HUDPackage.CrosshairsRight = EquippedWeapon->CrosshairsRight; // 무기가 있으면 오른쪽 크로스헤어를 설정한다.
+				HUDPackage.CrosshairsTop = EquippedWeapon->CrosshairsTop; // 무기가 있으면 위쪽 크로스헤어를 설정한다.
+				HUDPackage.CrosshairsBottom = EquippedWeapon->CrosshairsBottom; // 무기가 있으면 아래쪽 크로스헤어를 설정한다.
+			}
+			else {
+				HUDPackage.CrosshairsCenter = nullptr; // 무기가 있으면 중앙 크로스헤어를 설정한다.
+				HUDPackage.CrosshairsLeft = nullptr; // 무기가 있으면 왼쪽 크로스헤어를 설정한다.
+					HUDPackage.CrosshairsRight = nullptr; // 무기가 있으면 오른쪽 크로스헤어를 설정한다.
+					HUDPackage.CrosshairsTop = nullptr; // 무기가 있으면 위쪽 크로스헤어를 설정한다.
+					HUDPackage.CrosshairsBottom = nullptr; // 무기가 있으면 아래쪽 크로스헤어를 설정한다.
+			}
+			UE_LOG(LogTemp, Warning, TEXT("Faileld"));
+			TFHUD->SetHUDPackage(HUDPackage); // HUD 패키지를 설정한다.
+		}
+	}
+}
+
 void UCBComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	
+	SetHUDCrossharis(DeltaTime); // 매 프레임마다 HUD의 크로스헤어를 설정한다.
 }
 

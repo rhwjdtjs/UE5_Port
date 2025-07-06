@@ -8,9 +8,11 @@
 #include "Net/UnrealNetwork.h"//네트워크 관련 헤더 파일 포함
 #include "Animation/AnimationAsset.h"//애니메이션 자산 관련 헤더 파일 포함
 #include "Components/SkeletalMeshComponent.h"
+#include "Casing.h"//케이싱 클래스 포함
+#include "Engine/SkeletalMeshSocket.h"
 AWeapon::AWeapon()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;//이 객체가 네트워크에서 복제 가능하도록 설정
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));//스켈레탈 메시 컴포넌트 생성
 	WeaponMesh->SetupAttachment(RootComponent);//루트 컴포넌트에 부착
@@ -47,6 +49,17 @@ void AWeapon::Fire(const FVector& HitTarget)
 {
 	if (FireAnimation) {
 		WeaponMesh->PlayAnimation(FireAnimation, false);//발사 애니메이션 재생
+	}
+	if (CasingClass) {
+		const USkeletalMeshSocket* AmmoEjectSockt = WeaponMesh->GetSocketByName(FName("AmmoEject")); //무기 메시에서 "muzz" 소켓을 가져옴
+		if (AmmoEjectSockt) {
+			FTransform SocketTransform = AmmoEjectSockt->GetSocketTransform(GetWeaponMesh()); //소켓의 변환 정보를 가져옴
+				UWorld* World = GetWorld();
+				if (World) {
+					World->SpawnActor<ACasing>(CasingClass, SocketTransform.GetLocation(),
+						SocketTransform.GetRotation().Rotator()); //발사체를 생성
+			}
+		}
 	}
 }
 

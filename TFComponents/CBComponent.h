@@ -19,6 +19,8 @@ private:
 	UPROPERTY(ReplicatedUsing=OnRep_EquippedWeapon)
 	class AWeapon* EquippedWeapon; //장착된 무기
 	class ATimeFractureCharacter* Character; //캐릭터
+	class ATFPlayerController* Controller; //플레이어 컨트롤러
+	class ATFHUD* TFHUD; //HUD
 	UPROPERTY(Replicated)
 	bool bisAiming; //조준 여부
 	UPROPERTY(EditAnywhere, Category = "Combat")
@@ -41,6 +43,7 @@ protected:
 	void MulticastFire(const FVector_NetQuantize& TraceHitTargert); //발사 멀티캐스트 함수
 
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult); //조준선 아래의 물체를 추적하는 함수
+	void SetHUDCrossharis(float DeltaTime); //HUD의 크로스헤어를 설정하는 함수
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 

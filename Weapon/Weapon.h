@@ -44,6 +44,17 @@ public:
 	void SetWeaponState(EWeaponState State);
 	FORCEINLINE class USphereComponent* GetAreaSphere() const { return AreaSphere; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
+	//크로스헤어 텍스쳐
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	class UTexture2D* CrosshairsCenter;
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	class UTexture2D* CrosshairsLeft;
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	class UTexture2D* CrosshairsRight;
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	class UTexture2D* CrosshairsBottom;
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	class UTexture2D* CrosshairsTop;
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;
@@ -58,4 +69,9 @@ private:
 	class UWidgetComponent* PickupWidget;
 	UFUNCTION()
 	void OnRep_WeaponState();
+	void SetWeaponStateMesh(EWeaponState State); //무기 상태에 따라 메쉬를 설정하는 함수
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class ACasing> CasingClass; //케이싱 클래스
+
+	
 };
