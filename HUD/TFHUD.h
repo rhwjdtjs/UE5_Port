@@ -14,6 +14,7 @@ public:
 	UTexture2D* CrosshairsRight;
 	UTexture2D* CrosshairsTop;
 	UTexture2D* CrosshairsBottom;
+	float CrosshairSpread;
 };
 /**
  * 
@@ -28,6 +29,7 @@ public:
 private:
 	FHUDPakage HUDPackage; //HUD 패키지 구조체를 사용하여 크로스헤어 텍스쳐를 저장
 	float ViewportDiv = 2.f;
-
-	void DrawCrosshair(UTexture2D* Texture, FVector2D ViewportCenter);
+	UPROPERTY(EditAnywhere)
+	float CrosshairSpreadMax = 16.f; //크로스헤어 스프레드 최대값
+	void DrawCrosshair(UTexture2D* Texture, FVector2D ViewportCenter, FVector2D Spread);
 };

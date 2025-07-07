@@ -29,6 +29,8 @@ private:
 	float AimingWalkSpeed; //조준 상태의 걷는 속도
 
 	bool bFireButtonPressed; //발사 버튼이 눌렸는지 여부
+	//허브 & 크로스헤어
+	float CrosshairVelocityFactor; //크로스헤어 속도 계수
 protected:
 	virtual void BeginPlay() override;
 	void SetAiming(bool bAiming); //조준 상태를 설정하는 함수

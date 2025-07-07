@@ -146,7 +146,16 @@ void UCBComponent::SetHUDCrossharis(float DeltaTime)
 					HUDPackage.CrosshairsTop = nullptr; // 무기가 있으면 위쪽 크로스헤어를 설정한다.
 					HUDPackage.CrosshairsBottom = nullptr; // 무기가 있으면 아래쪽 크로스헤어를 설정한다.
 			}
-			UE_LOG(LogTemp, Warning, TEXT("Faileld"));
+			//크로스헤어 스프레드 계산
+			FVector2D WalkSpeedRange(0.f, Character->GetCharacterMovement()->MaxWalkSpeed); // 걷는 속도 범위를 설정한다.
+			FVector2D VelocityMultiplierRange(0.f, 1.f); // 속도 곱셈 범위를 설정한다.
+			FVector Velocity = Character->GetVelocity(); // 캐릭터의 속도를 가져온다.
+			Velocity.Z = 0.f; // Z축의 속도를 0으로 만든다.
+
+			CrosshairVelocityFactor=FMath::GetMappedRangeValueClamped(WalkSpeedRange, VelocityMultiplierRange,
+				Velocity.Size()); // 걷는 속도에 따라 크로스헤어 스프레드를 계산한다.
+
+			HUDPackage.CrosshairSpread = CrosshairVelocityFactor; // 크로스헤어 스프레드를 설정한다.
 			TFHUD->SetHUDPackage(HUDPackage); // HUD 패키지를 설정한다.
 		}
 	}
