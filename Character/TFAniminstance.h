@@ -48,4 +48,8 @@ private:
 	FTransform LeftHandTransform; //왼손의 변환 정보를 저장한다.
 	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	FRotator RightHandRotation; //오른손의 회전을 저장하는 변수
+	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	FRotator LeftHandRotation; //오른손의 회전을 저장하는 변수
+	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	bool bLocallyControlled; //로컬 컨트롤러인지 여부를 저장하는 변수
 };
