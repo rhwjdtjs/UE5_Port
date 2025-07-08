@@ -53,5 +53,12 @@ void UTFAniminstance::NativeUpdateAnimation(float DeltaTime)
 			FRotator::ZeroRotator, OutPos, OutRot);
 		LeftHandTransform.SetLocation(OutPos); //왼손의 위치를 설정한다.
 		LeftHandTransform.SetRotation(FQuat(OutRot)); //왼손의 회전을 설정한다.
+
+
+		FTransform RightHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("RightHand"), ERelativeTransformSpace::RTS_World); //오른손의 변환 정보를 가져온다.
+		RightHandRotation = UKismetMathLibrary::FindLookAtRotation(RightHandTransform.GetLocation(), TFCharacter->GetHitTarget()); //오른손의 회전을 계산한다.
+		FTransform MuzzleTipTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("muzz"), ERelativeTransformSpace::RTS_World); //총구의 변환 정보를 가져온다.
+		FVector MuzzleX(FRotationMatrix(MuzzleTipTransform.GetRotation().Rotator()).GetUnitAxis(EAxis::X)); //총구의 X축 방향을 가져온다.
+	
 	}
 }

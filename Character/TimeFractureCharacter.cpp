@@ -232,6 +232,13 @@ void ATimeFractureCharacter::PlayFireMontage(bool bAiming)
 	}
 }
 
+FVector ATimeFractureCharacter::GetHitTarget() const
+{
+	if(CombatComponent==nullptr) 	return FVector();
+	return CombatComponent->HitTarget; //전투 컴포넌트의 히트 타겟을 반환한다.
+
+}
+
 void ATimeFractureCharacter::BeginPlay()
 {
 	Super::BeginPlay();

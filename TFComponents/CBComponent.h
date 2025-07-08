@@ -31,6 +31,7 @@ private:
 	bool bFireButtonPressed; //발사 버튼이 눌렸는지 여부
 	//허브 & 크로스헤어
 	float CrosshairVelocityFactor; //크로스헤어 속도 계수
+	FVector  HitTarget; //히트 타겟
 protected:
 	virtual void BeginPlay() override;
 	void SetAiming(bool bAiming); //조준 상태를 설정하는 함수

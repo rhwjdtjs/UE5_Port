@@ -69,4 +69,5 @@ public:
 	FORCEINLINE float GETAO_PITCH() const { return AO_PITCH; }
 	AWeapon* GetEquippedWeapon();
 	void PlayFireMontage(bool bAiming); //무기 발사 모션 재생 함수
+	FVector GetHitTarget() const; //히트 타겟을 반환하는 함수
 };

@@ -165,5 +165,12 @@ void UCBComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	SetHUDCrossharis(DeltaTime); // 매 프레임마다 HUD의 크로스헤어를 설정한다.
+	if (Character && Character->IsLocallyControlled()) // 로컬 플레이어 컨트롤러인 경우에만 실행한다.
+	{
+		FHitResult HitResult; // 트레이스 결과를 저장할 변수
+		TraceUnderCrosshairs(HitResult); // 매 프레임마다 화면 중앙 아래의 물체를 추적한다.
+		HitTarget = HitResult.ImpactPoint; // 히트 타겟을 트레이스 결과의 충돌 지점으로 설정한다.
+	}
+
 }
 
