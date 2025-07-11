@@ -41,9 +41,11 @@ protected:
 
 public:	
 	virtual void Tick(float DeltaTime) override;
-	void SetWeaponState(EWeaponState State);
+	void SetWeaponState(EWeaponState State); //무기 상태를 설정하는 함수
 	FORCEINLINE class USphereComponent* GetAreaSphere() const { return AreaSphere; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
+	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; } //줌된 FOV를 반환하는 함수
+	FORCEINLINE float GetZoomInterpSpeed() const { return ZoomInterpSpeed; } //줌 인터폴레이션 속도를 반환하는 함수
 	//크로스헤어 텍스쳐
 	UPROPERTY(EditAnywhere, Category = "Crosshairs")
 	class UTexture2D* CrosshairsCenter;
@@ -55,6 +57,12 @@ public:
 	class UTexture2D* CrosshairsBottom;
 	UPROPERTY(EditAnywhere, Category = "Crosshairs")
 	class UTexture2D* CrosshairsTop;
+
+	//줌 FOV 
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	float ZoomedFOV = 30.f; //줌 시 FOV
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	float ZoomInterpSpeed = 20.f; //줌 시 FOV 보간 속도
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;

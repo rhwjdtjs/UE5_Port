@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "UnrealProject_7a/HUD/TFHUD.h"
 #include "CBComponent.generated.h"
 
 
@@ -30,8 +31,24 @@ private:
 
 	bool bFireButtonPressed; //발사 버튼이 눌렸는지 여부
 	//허브 & 크로스헤어
+	FHUDPakage HUDPackage; //HUD 패키지 구조체
 	float CrosshairVelocityFactor; //크로스헤어 속도 계수
 	FVector  HitTarget; //히트 타겟
+	float CrosshairAimFactor; //크로스헤어 조준 계수
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float AimFactorValue1 = 0.58f; //조준 계수 값 1
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float AimFactorValue2 = 30.f; //조준 계수 값 1
+	float CrosshairShootingFactor; //크로스헤어 사격 계수
+	//FOV 에이밍
+	//조준중이 아닐때 FOV
+	float DefaultFOV; //기본 FOV
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float ZoomedFOV=30.f; //줌된 FOV
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float ZoomInterpSpeed=20.f; //줌 인터폴레이션 속도
+	float CurrentFOV; //현재 FOV
+	void InterpFOV(float DeltaTime); //FOV를 보간하는 함수
 protected:
 	virtual void BeginPlay() override;
 	void SetAiming(bool bAiming); //조준 상태를 설정하는 함수

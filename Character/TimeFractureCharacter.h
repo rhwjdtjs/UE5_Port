@@ -2,10 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "UnrealProject_7A/Interfaces/InteractWithCrosshairInterface.h"
 #include "TimeFractureCharacter.generated.h"
 
 UCLASS()
-class UNREALPROJECT_7A_API ATimeFractureCharacter : public ACharacter
+class UNREALPROJECT_7A_API ATimeFractureCharacter : public ACharacter, public IInteractWithCrosshairInterface
 {
 	GENERATED_BODY()
 
@@ -61,13 +62,23 @@ private:
 	void ServerEquipButton(); //서버에서 장착 버튼을 누를 때 호출되는 함수
 	UPROPERTY(EditAnywhere,Category=Combat)
 	class UAnimMontage* FireWeaponMontage;
+	UPROPERTY(EditAnywhere, Category = Combat)
+	class UAnimMontage* HitReactMontage;
+	UPROPERTY(EditAnywhere)
+	float CameraThreshold = 200.f; //카메라가 캐릭터와 얼마나 가까이 있을 때 카메라를 숨길지 결정하는 임계값
+	void HideCameraIfCharacterClose(); //캐릭터가 가까이 있을 때 카메라를 숨기는 함수
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon); //겹치는 무기를 설정하는 함수
 	bool IsWeaponEquipped(); //무기가 장착되어 있는지 확인하는 함수
 	bool IsAiming();
 	FORCEINLINE float GETAO_YAW() const { return AO_YAW; }
 	FORCEINLINE float GETAO_PITCH() const { return AO_PITCH; }
+	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; } //팔로우 카메라를 반환하는 함수
 	AWeapon* GetEquippedWeapon();
 	void PlayFireMontage(bool bAiming); //무기 발사 모션 재생 함수
+	void PlayHitReactMontage(); //히트 리액트 몽타주 재생 함수
+	UFUNCTION(NetMulticast, UnReliable)
+	void MultiCastHit(); //히트 이벤트를 멀티캐스트로 호출하는 함수
+	
 	FVector GetHitTarget() const; //히트 타겟을 반환하는 함수
 };

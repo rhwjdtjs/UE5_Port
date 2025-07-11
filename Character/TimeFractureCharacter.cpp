@@ -9,9 +9,9 @@
 #include "UnrealProject_7A/Weapon/Weapon.h"
 #include "UnrealProject_7A/TFComponents/CBComponent.h"
 #include "Kismet/KismetMathLibrary.h" // 추가된 헤더 파일
-
 #include "GameFramework/CharacterMovementComponent.h" // 추가된 헤더 파일
 #include "TFAniminstance.h"
+#include "UnrealProject_7A/UnrealProject_7A.h"
 ATimeFractureCharacter::ATimeFractureCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -25,6 +25,9 @@ ATimeFractureCharacter::ATimeFractureCharacter()
 	CombatComponent = CreateDefaultSubobject<UCBComponent>(TEXT("CombatComponent")); //전투 컴포넌트 생성
 	CombatComponent->SetIsReplicated(true); //복제 가능하게 설정
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true; //캐릭터가 크라우치할 수 있도록 설정한다.
+	GetMesh()->SetCollisionObjectType(ECC_SkelatalMesh); //메쉬의 충돌 객체 유형을 스켈레탈 메쉬로 설정한다.
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore); //메쉬가 시야 채널에 반응하지 않도록 설정한다.
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block); //메쉬가 시야 채널에 반응하지 않도록 설정한다.
 	// StandingCameraOffset = FVector(0.f, 30.f, 143.f);    //카메라의 상대 위치를 설정한다. 캐릭터의 머리 위에 카메라가 위치하도록 한다.
 	// CrouchingCameraOffset = FVector(0.f, 0.f, 90.f); // 더 낮은 위치
 }
@@ -185,6 +188,23 @@ void ATimeFractureCharacter::ServerEquipButton_Implementation()
 	}
 }
 
+void ATimeFractureCharacter::HideCameraIfCharacterClose()
+{
+	if (!IsLocallyControlled()) return; //로컬에서 제어하지 않는 경우 함수를 종료한다.
+	if ((FollowCamera->GetComponentLocation() - GetActorLocation()).Size() < CameraThreshold) {
+		GetMesh()->SetVisibility(false); //카메라가 캐릭터와 가까이 있을 때 메쉬를 숨긴다.
+		if (CombatComponent && CombatComponent->EquippedWeapon && CombatComponent->EquippedWeapon->GetWeaponMesh()) {
+			CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = true; //장착된 무기의 메쉬를 숨긴다.
+		}
+	}
+	else {
+		GetMesh()->SetVisibility(true); //카메라가 캐릭터와 가까이 있을 때 메쉬를 숨긴다.
+		if (CombatComponent && CombatComponent->EquippedWeapon && CombatComponent->EquippedWeapon->GetWeaponMesh()) {
+			CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false; //장착된 무기의 메쉬를 숨긴다.
+		}
+	}
+}
+
 void ATimeFractureCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
 	if (OverlappingWeapon) {
@@ -232,6 +252,22 @@ void ATimeFractureCharacter::PlayFireMontage(bool bAiming)
 	}
 }
 
+void ATimeFractureCharacter::PlayHitReactMontage()
+{
+	if (CombatComponent == nullptr || CombatComponent->EquippedWeapon == nullptr) return;
+	UAnimInstance* animInstance = GetMesh()->GetAnimInstance(); //캐릭터의 애니메이션 인스턴스를 가져온다.
+	if (animInstance && HitReactMontage) {
+		animInstance->Montage_Play(HitReactMontage); //애니메이션 몽타주를 재생한다.
+		FName SectionName("FromFront");
+		animInstance->Montage_JumpToSection(SectionName); //애니메이션 몽타주의 섹션으로 점프한다.
+	}
+}
+
+void ATimeFractureCharacter::MultiCastHit_Implementation()
+{
+	PlayHitReactMontage(); //히트 리액트 몽타주를 재생한다.
+}
+
 FVector ATimeFractureCharacter::GetHitTarget() const
 {
 	if(CombatComponent==nullptr) 	return FVector();
@@ -254,5 +290,6 @@ void ATimeFractureCharacter::Tick(float DeltaTime)
 	FVector NewSocketOffset = FMath::VInterpTo(CameraBoom->SocketOffset, TargetSocketOffset, DeltaTime, CameraInterpSpeed);
 	CameraBoom->SocketOffset = NewSocketOffset;
 	AimOffset(DeltaTime); //조준 오프셋을 계산한다.
+	HideCameraIfCharacterClose(); //캐릭터가 가까이 있을 때 카메라를 숨긴다.
 }
 

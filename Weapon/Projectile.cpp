@@ -8,6 +8,8 @@
 #include "NiagaraComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
+#include "UnrealProject_7A/Character/TimeFractureCharacter.h"
+#include "UnrealProject_7A/UnrealProject_7A.h"
 AProjectile::AProjectile()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -20,7 +22,7 @@ AProjectile::AProjectile()
 	CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
-
+	CollisionBox->SetCollisionResponseToChannel(ECC_SkelatalMesh, ECollisionResponse::ECR_Block);
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 	ProjectileMovementComponent->bRotationFollowsVelocity = true; // 발사체가 이동 방향을 따라 회전하도록 설정
 }
@@ -54,6 +56,11 @@ void AProjectile::BeginPlay()
 
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	ATimeFractureCharacter* TFCharacter = Cast<ATimeFractureCharacter>(OtherActor);
+	if (TFCharacter) {
+		UE_LOG(LogTemp, Warning, TEXT("Hit Character"));
+		TFCharacter->MultiCastHit(); // 플레이어 캐릭터가 맞았을 때 히트 리액트 몽타주 재생
+	}
 	MulticastImpactEffect(Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
 	Destroy(); // 충돌 후 발사체를 파괴
 }
@@ -67,13 +74,14 @@ void AProjectile::Tick(float DeltaTime)
 
 void AProjectile::MulticastImpactEffect_Implementation(const FVector& Location, const FRotator& Rotation)
 {
+	FRotator SpawnRotation = GetActorForwardVector().Rotation();
 	if (ImpactNiagara)
 	{
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
 			GetWorld(),
 			ImpactNiagara,
 			Location,
-			Rotation
+			SpawnRotation
 		);
 	}
 	if (ImpactSound)

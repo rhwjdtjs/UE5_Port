@@ -31,6 +31,6 @@ void ACasing::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitive
 	if (ShellEjectionSound) {
 		UGameplayStatics::PlaySoundAtLocation(this, ShellEjectionSound, GetActorLocation()); // 케이싱 발사 사운드 재생
 	}
-	SetLifeSpan(3.0f); // 3초 후 케이싱 자동 제거
+	SetLifeSpan(0.15f); // 케이싱의 생명주기를 0.15초로 설정하여 자동으로 제거되도록 함
 }
 
