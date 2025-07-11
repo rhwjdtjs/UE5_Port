@@ -47,8 +47,16 @@ private:
 	float ZoomedFOV=30.f; //줌된 FOV
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	float ZoomInterpSpeed=20.f; //줌 인터폴레이션 속도
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float TargetDistance;
 	float CurrentFOV; //현재 FOV
 	void InterpFOV(float DeltaTime); //FOV를 보간하는 함수
+	//자동화기
+	FTimerHandle FireTimer; //발사 타이머 핸들
+	void StartFireTimer(); //발사 타이머를 시작하는 함수
+	void FireTimerFinished(); //발사 타이머가 끝났을 때 호출되는 함수
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	bool bCanFire = true; //발사 가능 여부
 protected:
 	virtual void BeginPlay() override;
 	void SetAiming(bool bAiming); //조준 상태를 설정하는 함수
@@ -57,6 +65,7 @@ protected:
 	UFUNCTION()
 	void OnRep_EquippedWeapon(); //장착된 무기가 바뀔 때 호출되는 함수
 	void FireButtonPressed(bool bPressed); //발사 버튼이 눌렸을 때 호출되는 함수
+	void Fire();
 	UFUNCTION(Server, Reliable)
 	void ServerFire(const FVector_NetQuantize& TraceHitTargert); //서버에서 발사 버튼이 눌렸는지 여부를 설정하는 함수
 	UFUNCTION(NetMulticast, Reliable)

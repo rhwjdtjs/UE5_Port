@@ -57,7 +57,11 @@ public:
 	class UTexture2D* CrosshairsBottom;
 	UPROPERTY(EditAnywhere, Category = "Crosshairs")
 	class UTexture2D* CrosshairsTop;
-
+	//자동화기
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float FireRate = 0.15f; //발사 속도
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	bool bAutoMatickFire = true; //자동 발사 여부
 	//줌 FOV 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float ZoomedFOV = 30.f; //줌 시 FOV

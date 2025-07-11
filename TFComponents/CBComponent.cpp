@@ -12,6 +12,8 @@
 #include "UnrealProject_7a/PlayerController/TFPlayerController.h"
 #include "UnrealProject_7a/HUD/TFHUD.h"
 #include "Camera/CameraComponent.h"
+#include "TimerManager.h"
+#include "UnrealProject_7A/UnrealProject_7A.h"
 UCBComponent::UCBComponent()
 {
 
@@ -63,6 +65,20 @@ void UCBComponent::InterpFOV(float DeltaTime)
 	}
 }
 
+void UCBComponent::StartFireTimer()
+{
+	if (EquippedWeapon == nullptr || Character == nullptr) return; //장착된 무기가 없으면 함수를 종료한다.
+	Character->GetWorldTimerManager().SetTimer(FireTimer, this, &UCBComponent::FireTimerFinished, EquippedWeapon->FireRate); //발사 타이머를 시작한다.
+}
+void UCBComponent::FireTimerFinished()
+{
+	if (EquippedWeapon == nullptr) return; //장착된 무기가 없으면 함수를 종료한다.
+	bCanFire = true; //발사 가능 여부를 true로 설정한다.
+	if (bFireButtonPressed && EquippedWeapon->bAutoMatickFire) {
+		Fire(); //발사 버튼이 눌렸으면 발사한다.
+	}
+}
+
 void UCBComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -97,13 +113,20 @@ void UCBComponent::FireButtonPressed(bool bPressed)
 {
 	bFireButtonPressed = bPressed; //발사 버튼이 눌렸는지 여부를 설정한다.
 	if (bFireButtonPressed) {
-		FHitResult HitResult; // 트레이스 결과를 저장할 변수
-		TraceUnderCrosshairs(HitResult); // 매 프레임마다 화면 중앙 아래의 물체를 추적한다.
-		ServerFire(HitResult.ImpactPoint); //서버에서 발사 버튼이 눌렸는지 여부를 설정한다.
+		Fire();
+	}
+}
 
+void UCBComponent::Fire()
+{
+	if (bCanFire)
+	{
+		ServerFire(HitTarget); // 서버에 올바른 타겟 전달
 		if (EquippedWeapon) {
+			bCanFire = false; //발사 가능 여부를 false로 설정한다.
 			CrosshairShootingFactor = 0.85f; //발사 버튼이 눌렸을 때 크로스헤어 사격 계수를 증가시킨다.
 		}
+		StartFireTimer(); //발사 타이머를 시작한다.
 	}
 }
 
@@ -132,6 +155,7 @@ void UCBComponent::MulticastFire_Implementation(const FVector_NetQuantize& Trace
 
 void UCBComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 {
+	
 	FVector2D ViewportSize; // 화면 크기를 저장할 변수
 	if (GEngine && GEngine->GameViewport) {
 		GEngine->GameViewport->GetViewportSize(ViewportSize); // 화면 크기를 가져온다.
@@ -143,15 +167,20 @@ void UCBComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 	bool bScreenToWorld =UGameplayStatics::DeprojectScreenToWorld(UGameplayStatics::GetPlayerController(this, 0),
 		CrosshairLocation, CrosshairWorldPostion, CrosshairWorldDirection); // 화면 중앙의 위치와 방향을 계산한다.
 	if (bScreenToWorld) {
-		FVector Start = CrosshairWorldPostion; // 시작 위치는 화면 중앙의 월드 위치
+		FVector Start = CrosshairWorldPostion; // 시작 위치는 화면 중앙의 월드 위치로 설정한다.
 
 		if (Character) {
 			float DistanceToCharacter = (Character->GetActorLocation() - Start).Size(); // 캐릭터와 시작 위치 사이의 거리를 계산한다.
-			Start += CrosshairWorldDirection * (DistanceToCharacter + 100.f); // 시작 위치를 캐릭터와의 거리만큼 앞으로 이동시킨다.
+			Start += CrosshairWorldDirection * (DistanceToCharacter + TargetDistance); // 시작 위치를 캐릭터와의 거리만큼 앞으로 이동시킨다.
 		}
 		FVector End = Start + (CrosshairWorldDirection * 80000.f); // 끝 위치는 시작 위치에서 월드 방향으로 10000 단위 떨어진 위치
-
-		GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECollisionChannel::ECC_Visibility); // 라인 트레이스를 사용하여 화면 중앙 아래의 물체를 추적한다.
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(Character);
+		GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECC_Visibility, QueryParams); // 라인 트레이스를 사용하여 화면 중앙 아래의 물체를 추적한다.
+		if (TraceHitResult.GetActor() == Character)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("자기 자신 맞음"));
+		}
 		if (TraceHitResult.GetActor() && TraceHitResult.GetActor()->Implements<UInteractWithCrosshairInterface>()) {
 			HUDPackage.CrosshairColor = FLinearColor::Red; // 히트된 액터가 인터페이스를 구현하고 있으면 크로스헤어 색상을 빨간색으로 설정한다.
 		}
@@ -197,7 +226,7 @@ void UCBComponent::SetHUDCrossharis(float DeltaTime)
 			else {
 				CrosshairAimFactor = FMath::FInterpTo(CrosshairAimFactor, 0.f, DeltaTime, AimFactorValue2); // 조준 상태가 아닐 때 크로스헤어 스프레드를 보간한다.
 			}
-			CrosshairShootingFactor = FMath::FInterpTo(CrosshairShootingFactor, 0.f, DeltaTime, 40.f); // 사격 상태일 때 크로스헤어 스프레드를 보간한다.
+			CrosshairShootingFactor = FMath::FInterpTo(CrosshairShootingFactor, 0.f, DeltaTime, 10.f); // 사격 상태일 때 크로스헤어 스프레드를 보간한다.
 			HUDPackage.CrosshairSpread = 0.5f+ CrosshairVelocityFactor - CrosshairAimFactor+CrosshairShootingFactor; // 크로스헤어 스프레드를 설정한다.
 			TFHUD->SetHUDPackage(HUDPackage); // HUD 패키지를 설정한다.
 		}
