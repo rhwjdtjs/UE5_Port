@@ -14,8 +14,8 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 	if (MuzzleSocket) {
 		FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetWeaponMesh()); //소켓의 변환 정보를 가져옴
 		FVector SpawnLocation = SocketTransform.GetLocation();
-		SpawnLocation.Y += 20.f; //Y축 위치를 약간 조정하여 발사 위치를 조정
-		SpawnLocation.Z += 40.f; //Y축 위치를 약간 조정하여 발사 위치를 조정
+		SpawnLocation.Y += 30.f; //Y축 위치를 약간 조정하여 발사 위치를 조정
+		SpawnLocation.Z += 50.f; //Y축 위치를 약간 조정하여 발사 위치를 조정
 		FVector ToTarget =HitTarget - SpawnLocation; //타겟 위치에서 소켓 위치를 뺀 벡터 계산
 		FRotator TargetRotation = ToTarget.Rotation(); //타겟 벡터의 회전 정보를 계산
 		if (ProjectileClass && InstigatorPawn) {

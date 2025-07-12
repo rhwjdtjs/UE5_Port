@@ -175,8 +175,8 @@ void UCBComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 		}
 		FVector End = Start + (CrosshairWorldDirection * 80000.f); // 끝 위치는 시작 위치에서 월드 방향으로 10000 단위 떨어진 위치
 		FCollisionQueryParams QueryParams;
-		QueryParams.AddIgnoredActor(Character);
-		GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECC_Visibility, QueryParams); // 라인 트레이스를 사용하여 화면 중앙 아래의 물체를 추적한다.
+		QueryParams.AddIgnoredActor(Character); // 캐릭터를 무시하는 쿼리 파라미터를 설정한다.
+		GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECC_Visibility, QueryParams);// 라인 트레이스를 수행한다.
 		if (TraceHitResult.GetActor() == Character)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("자기 자신 맞음"));
