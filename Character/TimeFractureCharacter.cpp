@@ -154,6 +154,7 @@ void ATimeFractureCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);//부모 클래스의 복제 속성을 가져온다.
 	DOREPLIFETIME_CONDITION(ATimeFractureCharacter, OverlappingWeapon, COND_OwnerOnly); //OVERLAPPINGWEAPON을 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
+	DOREPLIFETIME(ATimeFractureCharacter, Health); //Health를 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
 }
 void ATimeFractureCharacter::PostInitializeComponents()
 {
@@ -203,6 +204,10 @@ void ATimeFractureCharacter::HideCameraIfCharacterClose()
 			CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false; //장착된 무기의 메쉬를 숨긴다.
 		}
 	}
+}
+
+void ATimeFractureCharacter::OnRep_Health()
+{
 }
 
 void ATimeFractureCharacter::SetOverlappingWeapon(AWeapon* Weapon)

@@ -67,6 +67,14 @@ private:
 	UPROPERTY(EditAnywhere)
 	float CameraThreshold = 200.f; //카메라가 캐릭터와 얼마나 가까이 있을 때 카메라를 숨길지 결정하는 임계값
 	void HideCameraIfCharacterClose(); //캐릭터가 가까이 있을 때 카메라를 숨기는 함수
+
+	//플레이어 체력
+	UPROPERTY(EditAnywhere, Category="Player State")
+	float MaxHealtf = 100.f; //최대 체력
+	UPROPERTY(ReplicatedUsing=OnRep_Health, VisibleAnywhere, Category = "Player State")
+	float Health=100.f; //현재 체력
+	UFUNCTION()
+	void OnRep_Health(); //체력이 바뀔 때 호출되는 함수
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon); //겹치는 무기를 설정하는 함수
 	bool IsWeaponEquipped(); //무기가 장착되어 있는지 확인하는 함수
