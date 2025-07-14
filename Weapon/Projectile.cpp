@@ -56,11 +56,10 @@ void AProjectile::BeginPlay()
 
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	ATimeFractureCharacter* TFCharacter = Cast<ATimeFractureCharacter>(OtherActor);
-	if (TFCharacter) {
-		UE_LOG(LogTemp, Warning, TEXT("Hit Character"));
-		TFCharacter->MultiCastHit(); // 플레이어 캐릭터가 맞았을 때 히트 리액트 몽타주 재생
-	}
+//	ATimeFractureCharacter* TFCharacter = Cast<ATimeFractureCharacter>(OtherActor);
+//	if (TFCharacter) {
+//		TFCharacter->MultiCastHit(); // 플레이어 캐릭터가 맞았을 때 히트 리액트 몽타주 재생
+//	}
 	MulticastImpactEffect(Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
 	Destroy(); // 충돌 후 발사체를 파괴
 }

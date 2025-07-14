@@ -19,6 +19,7 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
+	void UpdateHUDHealth();
 	//
 	void MoveForward(float Value);
 	void MoveRight(float Value);
@@ -31,6 +32,9 @@ protected:
 	void AimOffset(float DeltaTime); //조준 오프셋 함수
 	void FireButtonPressed();
 	void FireButtonReleased(); //발사 버튼 해제 함수
+	UFUNCTION()
+	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController,
+		AActor* DamageCursor); //피해를 받았을 때 호출되는 함수
 	//움직임 함수
 private:
 	float AO_YAW; //조준 회전 Yaw 값, 서버에서 클라이언트로 복제되는 변수
@@ -70,11 +74,12 @@ private:
 
 	//플레이어 체력
 	UPROPERTY(EditAnywhere, Category="Player State")
-	float MaxHealtf = 100.f; //최대 체력
+	float MaxHealth = 100.f; //최대 체력
 	UPROPERTY(ReplicatedUsing=OnRep_Health, VisibleAnywhere, Category = "Player State")
 	float Health=100.f; //현재 체력
 	UFUNCTION()
 	void OnRep_Health(); //체력이 바뀔 때 호출되는 함수
+	class ATFPlayerController* TfPlayerController; //플레이어 컨트롤러
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon); //겹치는 무기를 설정하는 함수
 	bool IsWeaponEquipped(); //무기가 장착되어 있는지 확인하는 함수

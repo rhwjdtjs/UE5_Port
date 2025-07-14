@@ -20,6 +20,8 @@ protected:
 	virtual void BeginPlay() override;
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	UPROPERTY(EditAnywhere)
+	float Damage=20.f; // 발사체가 주는 피해량
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -37,4 +39,5 @@ private:
 	class USoundCue* ImpactSound; // 발사체가 충돌할 때 재생할 사운드 큐
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastImpactEffect(const FVector& Location, const FRotator& Rotation);
+	
 };

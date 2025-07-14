@@ -12,6 +12,7 @@
 #include "GameFramework/CharacterMovementComponent.h" // 추가된 헤더 파일
 #include "TFAniminstance.h"
 #include "UnrealProject_7A/UnrealProject_7A.h"
+#include "UnrealProject_7A/PlayerController/TFPlayerController.h"
 ATimeFractureCharacter::ATimeFractureCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -150,6 +151,12 @@ void ATimeFractureCharacter::FireButtonReleased()
 		CombatComponent->FireButtonPressed(false); //전투 컴포넌트의 발사 버튼을 떼었다고 설정한다.
 	}
 }
+void ATimeFractureCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCursor)
+{
+	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth); //체력을 감소시키고, 최소값은 0, 최대값은 최대 체력으로 제한한다.
+	UpdateHUDHealth(); //HUD의 체력을 업데이트한다.
+	PlayHitReactMontage(); //피격 애니메이션을 재생한다.
+}
 void ATimeFractureCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);//부모 클래스의 복제 속성을 가져온다.
@@ -208,6 +215,8 @@ void ATimeFractureCharacter::HideCameraIfCharacterClose()
 
 void ATimeFractureCharacter::OnRep_Health()
 {
+	UpdateHUDHealth(); //HUD의 체력을 업데이트한다.
+	PlayHitReactMontage(); //피격 애니메이션을 재생한다.
 }
 
 void ATimeFractureCharacter::SetOverlappingWeapon(AWeapon* Weapon)
@@ -284,6 +293,18 @@ void ATimeFractureCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	NormalOffset = CameraBoom->SocketOffset;
+	UpdateHUDHealth();
+	if (HasAuthority()) //서버에서 실행되는 경우
+	{
+		OnTakeAnyDamage.AddDynamic(this, &ATimeFractureCharacter::ReceiveDamage); //피해를 받았을 때 호출되는 함수를 바인딩한다.
+	}
+}
+void ATimeFractureCharacter::UpdateHUDHealth()
+{
+	TfPlayerController = TfPlayerController == nullptr ? Cast<ATFPlayerController>(Controller) : TfPlayerController;//플레이어 컨트롤러를 캐스팅하여 설정한다.
+	if (TfPlayerController) {
+		TfPlayerController->SetHUDHealth(Health, MaxHealth); //플레이어 컨트롤러의 HUD에 체력을 설정한다.
+	}
 }
 void ATimeFractureCharacter::Tick(float DeltaTime)
 {
