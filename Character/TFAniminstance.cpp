@@ -33,7 +33,7 @@ void UTFAniminstance::NativeUpdateAnimation(float DeltaTime)
 	bWeaponEquipped = TFCharacter->IsWeaponEquipped(); //캐릭터가 무기를 장착했는지 여부를 저장한다.
 	bIsCrouching = TFCharacter->bIsCrouched; //캐릭터가 크라우치 상태인지 여부를 저장한다.
 	bIsAiming = TFCharacter->IsAiming(); //캐릭터가 조준 상태인지 여부를 저장한다.
-
+	bEliminated = TFCharacter->IsElimmed(); //캐릭터가 제거되었는지 여부를 저장한다.
 	FRotator AimRotation=TFCharacter->GetBaseAimRotation(); //캐릭터의 기본 조준 회전을 가져온다.
 	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(TFCharacter->GetVelocity()); //캐릭터의 이동 회전을 가져온다.
 	FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation);//이동 회전과 조준 회전의 차이를 계산하여 Yaw 오프셋을 저장한다.

@@ -13,6 +13,8 @@
 #include "TFAniminstance.h"
 #include "UnrealProject_7A/UnrealProject_7A.h"
 #include "UnrealProject_7A/PlayerController/TFPlayerController.h"
+#include "UnrealProject_7A/GameMode/TFGameMode.h"
+#include "TimerManager.h"
 ATimeFractureCharacter::ATimeFractureCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -156,6 +158,27 @@ void ATimeFractureCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, c
 	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth); //체력을 감소시키고, 최소값은 0, 최대값은 최대 체력으로 제한한다.
 	UpdateHUDHealth(); //HUD의 체력을 업데이트한다.
 	PlayHitReactMontage(); //피격 애니메이션을 재생한다.
+	if (Health == 0.f)	//체력이 0이 되면{
+	{
+		ATFGameMode* TFGameMode = GetWorld()->GetAuthGameMode<ATFGameMode>(); //현재 게임 모드를 ATFGameMode로 캐스팅한다.
+		if (TFGameMode)
+		{
+            // 아래 코드는 TfPlayerController가 nullptr(아직 할당되지 않음)이면 Controller를 ATFPlayerController로 캐스팅하여 할당하고,
+            // 이미 할당되어 있다면 기존 값을 그대로 사용한다.
+            // 즉, TfPlayerController가 비어있을 때만 새로 캐스팅하여 할당하는 역할을 한다.
+            // 아래 코드는 TfPlayerController가 nullptr(아직 할당되지 않음)이면 Controller를 ATFPlayerController로 캐스팅하여 할당하고,
+            // 이미 할당되어 있다면 기존 값을 그대로 사용한다.
+            // 즉, TfPlayerController가 비어있을 때만 새로 캐스팅하여 할당하는 역할을 한다.
+            // 장점:
+            // 1. 불필요한 캐스팅을 반복하지 않아 성능이 최적화된다.
+            // 2. 코드가 간결해진다.
+            // 3. 이미 올바르게 할당된 포인터를 재사용하므로 안정성이 높아진다.
+            TfPlayerController = TfPlayerController == nullptr ? Cast<ATFPlayerController>(Controller) : TfPlayerController; //플레이어 컨트롤러를 가져온다.
+			ATFPlayerController* AttackerController = Cast<ATFPlayerController>(InstigatorController); //공격자의 컨트롤러를 가져온다.
+			TFGameMode->PlayerEliminated(this, TfPlayerController, AttackerController);
+		}
+	}
+	
 }
 void ATimeFractureCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -175,6 +198,23 @@ void ATimeFractureCharacter::PostInitializeComponents()
 	//따라서 이 함수에서 캐릭터의 속성을 초기화하면, 모든 컴포넌트가 준비된 상태에서 속성이 초기화된다.
 	if (CombatComponent) {
 		CombatComponent->Character = this; //캐릭터를 설정한다.
+	}
+}
+void ATimeFractureCharacter::Elim()
+{
+	MulticastElim(); //서버에서 클라이언트로 제거를 알린다.
+	GetWorldTimerManager().SetTimer(ElimTimer, this, &ATimeFractureCharacter::ElimTimerFinished, ElimDelay);
+}
+void ATimeFractureCharacter::MulticastElim_Implementation()
+{
+	bisElimmed = true; //캐릭터가 제거되었음을 표시한다.
+	PlayElimMontage(); //피격 애니메이션을 재생한다.
+}
+void ATimeFractureCharacter::ElimTimerFinished()
+{
+	ATFGameMode* TFGameMode = GetWorld()->GetAuthGameMode<ATFGameMode>(); //현재 게임 모드를 ATFGameMode로 캐스팅한다.
+	if (TFGameMode) {
+		TFGameMode->RequestRespawn(this, Controller); //게임 모드에 제거된 캐릭터의 재생성을 요청한다.
 	}
 }
 void ATimeFractureCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
@@ -212,6 +252,8 @@ void ATimeFractureCharacter::HideCameraIfCharacterClose()
 		}
 	}
 }
+
+
 
 void ATimeFractureCharacter::OnRep_Health()
 {
@@ -263,6 +305,14 @@ void ATimeFractureCharacter::PlayFireMontage(bool bAiming)
 		FName SectionName;
 		SectionName = bAiming ? FName("RifleAim") : FName("RifleHip"); //조준 상태에 따라 섹션 이름을 설정한다.
 		animInstance->Montage_JumpToSection(SectionName); //애니메이션 몽타주의 섹션으로 점프한다.
+	}
+}
+
+void ATimeFractureCharacter::PlayElimMontage()
+{
+	UAnimInstance* animInstance = GetMesh()->GetAnimInstance(); //캐릭터의 애니메이션 인스턴스를 가져온다.
+	if (animInstance && ElimMontage) {
+		animInstance->Montage_Play(ElimMontage); //애니메이션 몽타주를 재생한다.
 	}
 }
 

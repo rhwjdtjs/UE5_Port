@@ -16,7 +16,9 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;	//복제하는 항목을 정의하는 함수
 	virtual void PostInitializeComponents() override; //속성 초기화 함수
-	
+	void Elim(); //플레이어 제거 함수
+	UFUNCTION(NetMulticast,Reliable)
+	void MulticastElim();
 protected:
 	virtual void BeginPlay() override;
 	void UpdateHUDHealth();
@@ -68,6 +70,8 @@ private:
 	class UAnimMontage* FireWeaponMontage;
 	UPROPERTY(EditAnywhere, Category = Combat)
 	class UAnimMontage* HitReactMontage;
+	UPROPERTY(EditAnywhere, Category = Combat)
+	class UAnimMontage* ElimMontage; //피격 애니메이션 몽타주
 	UPROPERTY(EditAnywhere)
 	float CameraThreshold = 200.f; //카메라가 캐릭터와 얼마나 가까이 있을 때 카메라를 숨길지 결정하는 임계값
 	void HideCameraIfCharacterClose(); //캐릭터가 가까이 있을 때 카메라를 숨기는 함수
@@ -77,6 +81,11 @@ private:
 	float MaxHealth = 100.f; //최대 체력
 	UPROPERTY(ReplicatedUsing=OnRep_Health, VisibleAnywhere, Category = "Player State")
 	float Health=100.f; //현재 체력
+	bool bisElimmed = false; //플레이어가 제거되었는지 여부
+	FTimerHandle ElimTimer; //플레이어 제거 타이머 핸들
+	UPROPERTY(EditDefaultsOnly)
+	float ElimDelay = 3.f; //플레이어 제거 지연 시간
+	void ElimTimerFinished(); //플레이어 제거 타이머가 끝났을 때 호출되는 함수
 	UFUNCTION()
 	void OnRep_Health(); //체력이 바뀔 때 호출되는 함수
 	class ATFPlayerController* TfPlayerController; //플레이어 컨트롤러
@@ -87,8 +96,10 @@ public:
 	FORCEINLINE float GETAO_YAW() const { return AO_YAW; }
 	FORCEINLINE float GETAO_PITCH() const { return AO_PITCH; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; } //팔로우 카메라를 반환하는 함수
+	FORCEINLINE bool IsElimmed() const { return bisElimmed; } //플레이어가 제거되었는지 여부를 반환하는 함수
 	AWeapon* GetEquippedWeapon();
 	void PlayFireMontage(bool bAiming); //무기 발사 모션 재생 함수
+	void PlayElimMontage(); //피격 애니메이션 몽타주 재생 함수
 	void PlayHitReactMontage(); //히트 리액트 몽타주 재생 함수
 	UFUNCTION(NetMulticast, UnReliable)
 	void MultiCastHit(); //히트 이벤트를 멀티캐스트로 호출하는 함수
