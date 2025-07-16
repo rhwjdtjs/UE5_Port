@@ -104,8 +104,13 @@ void UCBComponent::SetAiming(bool bAiming)
 void UCBComponent::OnRep_EquippedWeapon()
 {
 	if (EquippedWeapon) {
+		EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
 
-
+		EquippedWeapon->AttachToComponent(
+			Character->GetMesh(),
+			FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+			FName("RightHandSocket")
+		);
 	}
 }
 

@@ -15,6 +15,7 @@
 #include "UnrealProject_7A/PlayerController/TFPlayerController.h"
 #include "UnrealProject_7A/GameMode/TFGameMode.h"
 #include "TimerManager.h"
+#include "Components/CapsuleComponent.h" // 캡슐 컴포넌트 헤더 파일 추가
 ATimeFractureCharacter::ATimeFractureCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -202,6 +203,9 @@ void ATimeFractureCharacter::PostInitializeComponents()
 }
 void ATimeFractureCharacter::Elim()
 {
+	if (CombatComponent && CombatComponent->EquippedWeapon) {
+		CombatComponent->EquippedWeapon->DropWeapon(); //장착된 무기를 떨어뜨린다.
+	}
 	MulticastElim(); //서버에서 클라이언트로 제거를 알린다.
 	GetWorldTimerManager().SetTimer(ElimTimer, this, &ATimeFractureCharacter::ElimTimerFinished, ElimDelay);
 }
@@ -209,6 +213,15 @@ void ATimeFractureCharacter::MulticastElim_Implementation()
 {
 	bisElimmed = true; //캐릭터가 제거되었음을 표시한다.
 	PlayElimMontage(); //피격 애니메이션을 재생한다.
+	//캐릭터 이동 비활성화
+	GetCharacterMovement()->DisableMovement(); //캐릭터의 이동을 비활성화한다.
+	GetCharacterMovement()->StopMovementImmediately(); //캐릭터의 이동을 즉시 중지한다.
+	if (TfPlayerController) {
+		DisableInput(TfPlayerController); //플레이어 컨트롤러의 입력을 비활성화한다.
+	}
+	//콜리전 비활성화
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision); //캐릭터의 캡슐 콜리전을 비활성화한다.
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision); //캐릭터의 메쉬 콜리전을 비활성화한다.
 }
 void ATimeFractureCharacter::ElimTimerFinished()
 {

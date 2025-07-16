@@ -24,6 +24,7 @@ public:
 	void ShowPickupWidget(bool bShowPickupWidget);
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;	//복제하는 항목을 정의하는 함수
 	virtual void Fire(const FVector& HitTarget); //발사 함수, 자식 클래스에서 구현할 수 있다.
+	void DropWeapon(); //무기를 떨어뜨리는 함수
 protected:
 	virtual void BeginPlay() override;
 	UFUNCTION()

@@ -63,6 +63,14 @@ void AWeapon::Fire(const FVector& HitTarget)
 	}
 }
 
+void AWeapon::DropWeapon()
+{
+	SetWeaponState(EWeaponState::EWS_Dropped);//무기 상태를 떨어뜨린 상태로 설정
+	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
+	WeaponMesh->DetachFromComponent(DetachRules);
+	SetOwner(nullptr);//무기의 소유자를 해제
+}
+
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
@@ -113,6 +121,18 @@ void AWeapon::SetWeaponState(EWeaponState State)
 	case EWeaponState::EWS_Equipped:
 		ShowPickupWidget(false);//무기 위젯 숨기기
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);//스피어 충돌 비활성화
+		WeaponMesh->SetSimulatePhysics(false);//무기 메시 물리 시뮬레이션 활성화
+		WeaponMesh->SetEnableGravity(false);//무기 메시 중력 활성화
+		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);//무기 메시 충돌 활성화
+		break;
+
+	case EWeaponState::EWS_Dropped:
+		if (HasAuthority()) {
+			AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);//스피어 충돌 활성화
+		}
+		WeaponMesh->SetSimulatePhysics(true);//무기 메시 물리 시뮬레이션 활성화
+		WeaponMesh->SetEnableGravity(true);//무기 메시 중력 활성화
+		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);//무기 메시 충돌 활성화
 		break;
 	}
 	
@@ -125,8 +145,14 @@ void AWeapon::OnRep_WeaponState()
 	case EWeaponState::EWS_Equipped:
 		ShowPickupWidget(false);//장착된 무기 위젯 숨기기
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);//스피어 충돌 비활성화
+		WeaponMesh->SetSimulatePhysics(false);//무기 메시 물리 시뮬레이션 활성화
+		WeaponMesh->SetEnableGravity(false);//무기 메시 중력 활성화
+		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);//무기 메시 충돌 활성화
 		break;
 	case EWeaponState::EWS_Dropped:
+		WeaponMesh->SetSimulatePhysics(true);//무기 메시 물리 시뮬레이션 활성화
+		WeaponMesh->SetEnableGravity(true);//무기 메시 중력 활성화
+		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);//무기 메시 충돌 활성화
 		break;
 	case EWeaponState::EWS_MAX:
 		break;
