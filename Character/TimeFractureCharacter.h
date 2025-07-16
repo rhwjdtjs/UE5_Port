@@ -97,6 +97,8 @@ public:
 	FORCEINLINE float GETAO_PITCH() const { return AO_PITCH; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; } //팔로우 카메라를 반환하는 함수
 	FORCEINLINE bool IsElimmed() const { return bisElimmed; } //플레이어가 제거되었는지 여부를 반환하는 함수
+	FORCEINLINE float GetHealth() const { return Health; } //현재 체력을 반환하는 함수
+	FORCEINLINE float GetMaxHealth() const { return MaxHealth; } //현재 체력을 반환하는 함수
 	AWeapon* GetEquippedWeapon();
 	void PlayFireMontage(bool bAiming); //무기 발사 모션 재생 함수
 	void PlayElimMontage(); //피격 애니메이션 몽타주 재생 함수

@@ -6,6 +6,7 @@
 #include "UnrealProject_7A/HUD/CharacterOverlay.h" 
 #include "Components/ProgressBar.h" // UProgressBar 헤더 파일 포함
 #include "Components/TextBlock.h" // UTextBlock 헤더 파일 포함
+#include "UnrealProject_7A/Character/TimeFractureCharacter.h" // TimeFractureCharacter 헤더파일을 포함시킨다.
 void ATFPlayerController::SetHUDHealth(float Health, float MaxHealth)
 {
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
@@ -15,6 +16,14 @@ void ATFPlayerController::SetHUDHealth(float Health, float MaxHealth)
 		TfHud->CharacterOverlay->HealthBar->SetPercent(HealthPercent); // 체력바의 비율을 설정한다.
 		FString HealthText = FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Health), FMath::CeilToInt(MaxHealth)); // 체력 텍스트를 포맷팅한다.
 		TfHud->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText)); // 체력 텍스트를 설정한다.
+	}
+}
+void ATFPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn); // 부모 클래스의 OnPossess 호출
+	ATimeFractureCharacter* TfCharacter = Cast<ATimeFractureCharacter>(InPawn); // InPawn을 TimeFractureCharacter로 캐스팅한다.
+	if(TfCharacter) {
+		SetHUDHealth(TfCharacter->GetHealth(), TfCharacter->GetMaxHealth()); // TfCharacter의 체력과 최대 체력을 HUD에 설정한다.
 	}
 }
 // CharacterHUD 헤더파일을 포함시킨다.

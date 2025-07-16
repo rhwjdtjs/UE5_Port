@@ -16,6 +16,7 @@ class UNREALPROJECT_7A_API ATFPlayerController : public APlayerController
 	
 public:
 	void SetHUDHealth(float Health, float MaxHealth); // 허드의 체력을 설정하는 함수
+	virtual void OnPossess(APawn* InPawn) override; // 플레이어가 Pawn을 소유할 때 호출되는 함수
 private:
 	class ATFHUD* TfHud; // 메인캐릭터 허드	
 
