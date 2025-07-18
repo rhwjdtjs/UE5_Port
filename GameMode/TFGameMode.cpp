@@ -6,8 +6,15 @@
 #include "UnrealProject_7A/PlayerController/TFPlayerController.h"
 #include "Kismet/gameplayStatics.h"
 #include "Gameframework/PlayerStart.h"
+#include "UnrealProject_7A/PlayerState/TFPlayerState.h"
 void ATFGameMode::PlayerEliminated(ATimeFractureCharacter* ElimmedCharacter, ATFPlayerController* VictimController, ATFPlayerController* AttackerController)
 {
+	ATFPlayerState* AttackerPlayerState = AttackerController ? Cast<ATFPlayerState>(AttackerController->PlayerState) : nullptr; //공격자 플레이어 상태를 초기화한다.
+	ATFPlayerState* VictimPlayerState = VictimController ? Cast<ATFPlayerState>(VictimController->PlayerState) : nullptr; //피해자 플레이어 상태를 초기화한다.
+
+	if (AttackerPlayerState && AttackerPlayerState != VictimPlayerState) {
+		AttackerPlayerState->AddToScore(1.f); //공격자 플레이어 상태에 점수를 추가한다.
+	}
 	if (ElimmedCharacter) {
 		ElimmedCharacter->Elim(); //제거된 캐릭터의 Elim 함수를 호출한다.
 	}

@@ -38,6 +38,8 @@ protected:
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController,
 		AActor* DamageCursor); //피해를 받았을 때 호출되는 함수
 	//움직임 함수
+	void PollInit(); //허드와 같은 함수 초기화
+	virtual void OnRep_PlayerState() override; //플레이어 상태가 변경되었을 때 호출되는 함수
 private:
 	float AO_YAW; //조준 회전 Yaw 값, 서버에서 클라이언트로 복제되는 변수
 	float AO_PITCH; //조준 회전 Yaw, Pitch 값
@@ -89,6 +91,7 @@ private:
 	UFUNCTION()
 	void OnRep_Health(); //체력이 바뀔 때 호출되는 함수
 	class ATFPlayerController* TfPlayerController; //플레이어 컨트롤러
+	class ATFPlayerState* TfPlayerState; //플레이어 상태
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon); //겹치는 무기를 설정하는 함수
 	bool IsWeaponEquipped(); //무기가 장착되어 있는지 확인하는 함수

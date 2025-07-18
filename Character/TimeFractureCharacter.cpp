@@ -16,6 +16,7 @@
 #include "UnrealProject_7A/GameMode/TFGameMode.h"
 #include "TimerManager.h"
 #include "Components/CapsuleComponent.h" // 캡슐 컴포넌트 헤더 파일 추가
+#include "UnrealProject_7A/PlayerState/TFPlayerState.h"
 ATimeFractureCharacter::ATimeFractureCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -180,6 +181,35 @@ void ATimeFractureCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, c
 		}
 	}
 	
+}
+void ATimeFractureCharacter::PollInit()
+{
+	if (TfPlayerState == nullptr)
+	{
+		TfPlayerState = GetPlayerState<ATFPlayerState>();
+		if (TfPlayerState)
+		{
+			if (HasAuthority())
+			{
+				// 서버에서만 점수 초기화 (복제됨)
+				TfPlayerState->AddToScore(0.f);
+			}
+			else
+			{
+				// 클라이언트에서는 직접 HUD 업데이트
+				TfPlayerController = TfPlayerController == nullptr ? Cast<ATFPlayerController>(Controller) : TfPlayerController;
+				if (TfPlayerController)
+				{
+					TfPlayerController->SetHUDScore(TfPlayerState->GetScore());
+				}
+			}
+		}
+	}
+}
+void ATimeFractureCharacter::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState(); //부모 클래스의 OnRep_PlayerState 함수를 호출한다.
+	PollInit(); //플레이어 상태를 초기화한다.
 }
 void ATimeFractureCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -372,10 +402,14 @@ void ATimeFractureCharacter::UpdateHUDHealth()
 void ATimeFractureCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	if (TfPlayerState == nullptr)
+	{
+		PollInit();
+	}
 	float TargetArmLength = IsAiming() ? AimCameraOffset : normalAimCameraOffset; // 앉으면 더 가까이
 	float NewArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArmLength, DeltaTime, CameraInterpSpeed);
 	CameraBoom->TargetArmLength = NewArmLength;
-	FVector TargetSocketOffset = bIsCrouched ?CrouchingCameraOffset : NormalOffset;
+	FVector TargetSocketOffset = bIsCrouched ? CrouchingCameraOffset : NormalOffset;
 	FVector NewSocketOffset = FMath::VInterpTo(CameraBoom->SocketOffset, TargetSocketOffset, DeltaTime, CameraInterpSpeed);
 	CameraBoom->SocketOffset = NewSocketOffset;
 	AimOffset(DeltaTime); //조준 오프셋을 계산한다.

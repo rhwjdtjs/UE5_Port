@@ -18,6 +18,15 @@ void ATFPlayerController::SetHUDHealth(float Health, float MaxHealth)
 		TfHud->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText)); // 체력 텍스트를 설정한다.
 	}
 }
+void ATFPlayerController::SetHUDScore(float Score)
+{
+	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
+	bool bHUDVaild = TfHud && TfHud->CharacterOverlay && TfHud->CharacterOverlay->ScoreAmount;
+	if(bHUDVaild) {
+		FString ScoreText = FString::Printf(TEXT("%d"), FMath::FloorToInt(Score)); // 점수 텍스트를 포맷팅한다.
+		TfHud->CharacterOverlay->ScoreAmount->SetText(FText::FromString(ScoreText));
+	}
+}
 void ATFPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn); // 부모 클래스의 OnPossess 호출
