@@ -193,6 +193,7 @@ void ATimeFractureCharacter::PollInit()
 			{
 				// 서버에서만 점수 초기화 (복제됨)
 				TfPlayerState->AddToScore(0.f);
+				TfPlayerState->AddToDefeats(0); //처치 수 초기화
 			}
 			else
 			{
@@ -201,6 +202,7 @@ void ATimeFractureCharacter::PollInit()
 				if (TfPlayerController)
 				{
 					TfPlayerController->SetHUDScore(TfPlayerState->GetScore());
+					TfPlayerState->AddToDefeats(0); //처치 수 초기화
 				}
 			}
 		}

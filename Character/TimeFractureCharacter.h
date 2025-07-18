@@ -91,6 +91,7 @@ private:
 	UFUNCTION()
 	void OnRep_Health(); //체력이 바뀔 때 호출되는 함수
 	class ATFPlayerController* TfPlayerController; //플레이어 컨트롤러
+	UPROPERTY()
 	class ATFPlayerState* TfPlayerState; //플레이어 상태
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon); //겹치는 무기를 설정하는 함수

@@ -4,6 +4,14 @@
 #include "TFPlayerState.h"
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h"
 #include "UnrealProject_7A/PlayerController/TFPlayerController.h"
+#include "Net/UnrealNetwork.h" //네트워크 관련 헤더 파일을 포함시킨다.
+
+void ATFPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps); //부모 클래스의 GetLifetimeReplicatedProps 함수를 호출한다.
+
+	DOREPLIFETIME(ATFPlayerState, Defeats); //Defeats 변수를 네트워크로 복제할 수 있도록 설정한다.
+}
 void ATFPlayerState::OnRep_Score()
 {
 	Super::OnRep_Score(); //부모 클래스의 OnRep_Score 함수를 호출한다.
@@ -17,6 +25,8 @@ void ATFPlayerState::OnRep_Score()
 	}
 }
 
+
+
 void ATFPlayerState::AddToScore(float ScoreAmount)
 {
 	if (HasAuthority())
@@ -28,3 +38,27 @@ void ATFPlayerState::AddToScore(float ScoreAmount)
 	}
 	
 }
+
+void ATFPlayerState::OnRep_Defeats()
+{
+	TFCharacter = TFCharacter == nullptr ? Cast<ATimeFractureCharacter>(GetPawn()) : TFCharacter; //캐릭터의 포인터를 저장한다.
+	if (TFCharacter) {
+		TFPlayerController = TFPlayerController == nullptr ? Cast<ATFPlayerController>(TFCharacter->Controller) : TFPlayerController; //플레이어 컨트롤러의 포인터를 저장한다.
+		if (TFPlayerController) {
+			TFPlayerController->SetHUDDefeats(Defeats); //플레이어 컨트롤러의 SetHUDDefeats 함수를 호출하여 HUD에 처치 수를 설정한다.
+		}
+	}
+}
+
+void ATFPlayerState::AddToDefeats(int32 DefeatAmount)
+{
+	Defeats += DefeatAmount; //Defeats 변수를 증가시킨다.
+	TFCharacter = TFCharacter == nullptr ? Cast<ATimeFractureCharacter>(GetPawn()) : TFCharacter; //캐릭터의 포인터를 저장한다.
+	if (TFCharacter) {
+		TFPlayerController = TFPlayerController == nullptr ? Cast<ATFPlayerController>(TFCharacter->Controller) : TFPlayerController; //플레이어 컨트롤러의 포인터를 저장한다.
+		if (TFPlayerController) {
+			TFPlayerController->SetHUDDefeats(Defeats); //플레이어 컨트롤러의 SetHUDDefeats 함수를 호출하여 HUD에 처치 수를 설정한다.
+		}
+	}
+}
+

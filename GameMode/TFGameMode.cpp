@@ -18,6 +18,9 @@ void ATFGameMode::PlayerEliminated(ATimeFractureCharacter* ElimmedCharacter, ATF
 	if (ElimmedCharacter) {
 		ElimmedCharacter->Elim(); //제거된 캐릭터의 Elim 함수를 호출한다.
 	}
+	if (VictimPlayerState) {
+		VictimPlayerState->AddToDefeats(1); //피해자 플레이어 상태에 처치 수를 추가한다.
+	}
 }
 
 void ATFGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)
