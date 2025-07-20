@@ -82,6 +82,12 @@ void UCBComponent::FireTimerFinished()
 	}
 }
 
+bool UCBComponent::CanFire()
+{
+	if (EquippedWeapon == nullptr) return false; //장착된 무기가 없으면 발사할 수 없다.
+	return !EquippedWeapon->IsEmpty() || !bCanFire; //장착된 무기가 비어있지 않거나 발사 가능 여부가 false인 경우 발사할 수 있다.
+}
+
 void UCBComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -127,7 +133,7 @@ void UCBComponent::FireButtonPressed(bool bPressed)
 
 void UCBComponent::Fire()
 {
-	if (bCanFire)
+	if (CanFire())
 	{
 		ServerFire(HitTarget); // 서버에 올바른 타겟 전달
 		if (EquippedWeapon) {

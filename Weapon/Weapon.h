@@ -71,6 +71,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float ZoomInterpSpeed = 20.f; //줌 시 FOV 보간 속도
 	void SetHUDAmmo();
+	bool IsEmpty(); //탄약이 없는지 확인하는 함수
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;

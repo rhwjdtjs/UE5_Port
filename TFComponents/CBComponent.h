@@ -57,6 +57,8 @@ private:
 	void FireTimerFinished(); //발사 타이머가 끝났을 때 호출되는 함수
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	bool bCanFire = true; //발사 가능 여부
+
+	bool CanFire(); //발사 가능 여부를 확인하는 함수
 protected:
 	virtual void BeginPlay() override;
 	void SetAiming(bool bAiming); //조준 상태를 설정하는 함수

@@ -60,7 +60,7 @@ void AWeapon::SetHUDAmmo()
 }
 
 void AWeapon::SpendRound() {
-	--Ammo;//탄약 감소
+	Ammo = FMath::Clamp(Ammo - 1, 0, MagCapacity); //탄약 감소 및 범위 제한
 	SetHUDAmmo();
 }
 void AWeapon::OnRep_Ammo() {
@@ -77,6 +77,10 @@ void AWeapon::OnRep_Owner()
 		SetHUDAmmo();//소유자가 변경되면 HUD의 탄약을 업데이트
 	}
 	
+}
+bool AWeapon::IsEmpty()
+{
+	return Ammo <= 0; //탄약이 0 이하인 경우 true 반환
 }
 void AWeapon::Fire(const FVector& HitTarget)
 {
