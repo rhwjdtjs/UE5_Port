@@ -25,7 +25,9 @@ UCBComponent::UCBComponent()
 void UCBComponent::EquipWeapon(AWeapon* WeaponEquip)
 {
 	if (Character == nullptr || WeaponEquip == nullptr) return;
-
+	if (EquippedWeapon) {
+		EquippedWeapon->DropWeapon(); //이미 장착된 무기가 있으면 드롭한다.
+	}
 	EquippedWeapon = WeaponEquip;
 	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
 
@@ -36,6 +38,7 @@ void UCBComponent::EquipWeapon(AWeapon* WeaponEquip)
 	);
 
 	EquippedWeapon->SetOwner(Character);
+	EquippedWeapon->SetHUDAmmo(); //장착된 무기의 HUD 탄약을 설정한다.
 	EquippedWeapon->ShowPickupWidget(false);
 	EquippedWeapon->GetAreaSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }

@@ -7,6 +7,7 @@
 #include "Components/ProgressBar.h" // UProgressBar 헤더 파일 포함
 #include "Components/TextBlock.h" // UTextBlock 헤더 파일 포함
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h" // TimeFractureCharacter 헤더파일을 포함시킨다.
+#include "UnrealProject_7A/Weapon/Weapon.h" // Weapon 헤더파일을 포함시킨다.
 void ATFPlayerController::SetHUDHealth(float Health, float MaxHealth)
 {
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
@@ -34,6 +35,15 @@ void ATFPlayerController::SetHUDDefeats(int32 Defeats)
 	if (bHUDVaild) {
 		FString DefeatText = FString::Printf(TEXT("%d"), Defeats); // 점수 텍스트를 포맷팅한다.
 		TfHud->CharacterOverlay->DefeatsAmount->SetText(FText::FromString(DefeatText));
+	}
+}
+void ATFPlayerController::SetHUDWeaponAmmo(int32 Ammos, int32 MagCapacity)
+{
+	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
+		bool bHUDVaild = TfHud && TfHud->CharacterOverlay && TfHud->CharacterOverlay->AmmoAmount;
+		if (bHUDVaild) {
+			FString AmmoText = FString::Printf(TEXT("%d / %d"), Ammos, MagCapacity); // 현재 탄약과 최대 탄약을 포맷팅한다.
+			TfHud->CharacterOverlay->AmmoAmount->SetText(FText::FromString(AmmoText));
 	}
 }
 void ATFPlayerController::OnPossess(APawn* InPawn)

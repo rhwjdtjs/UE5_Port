@@ -24,6 +24,7 @@ public:
 	void ShowPickupWidget(bool bShowPickupWidget);
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;	//복제하는 항목을 정의하는 함수
 	virtual void Fire(const FVector& HitTarget); //발사 함수, 자식 클래스에서 구현할 수 있다.
+	virtual void OnRep_Owner() override; //소유자가 변경될 때 호출되는 함수
 	void DropWeapon(); //무기를 떨어뜨리는 함수
 protected:
 	virtual void BeginPlay() override;
@@ -47,6 +48,7 @@ public:
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; } //줌된 FOV를 반환하는 함수
 	FORCEINLINE float GetZoomInterpSpeed() const { return ZoomInterpSpeed; } //줌 인터폴레이션 속도를 반환하는 함수
+	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; } //탄창 용량을 반환하는 함수
 	//크로스헤어 텍스쳐
 	UPROPERTY(EditAnywhere, Category = "Crosshairs")
 	class UTexture2D* CrosshairsCenter;
@@ -68,6 +70,7 @@ public:
 	float ZoomedFOV = 30.f; //줌 시 FOV
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float ZoomInterpSpeed = 20.f; //줌 시 FOV 보간 속도
+	void SetHUDAmmo();
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;
@@ -85,6 +88,18 @@ private:
 	void SetWeaponStateMesh(EWeaponState State); //무기 상태에 따라 메쉬를 설정하는 함수
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ACasing> CasingClass; //케이싱 클래스
-
+	UPROPERTY(EditAnywhere, Category = "Weapon Ammo", ReplicatedUsing = OnRep_Ammo)
+	int32 Ammo;
+	UPROPERTY(EditAnywhere, Category = "Weapon Ammo")
+	int32 MagCapacity; //탄창 용량
+	UFUNCTION()
+	void OnRep_Ammo(); //탄약을 복제할 때 호출되는 함수
 	
+	
+
+	void SpendRound(); //탄약을 소모하는 함수
+	UPROPERTY()
+	class ATimeFractureCharacter* TFOwnerCharacter;
+	UPROPERTY()
+	class ATFPlayerController* TFOwnerController; //플레이어 컨트롤러
 };

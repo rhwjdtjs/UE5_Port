@@ -10,6 +10,8 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Casing.h"//케이싱 클래스 포함
 #include "Engine/SkeletalMeshSocket.h"
+#include "UnrealProject_7A/PlayerController/TFPlayerController.h"//플레이어 컨트롤러 클래스 포함
+
 AWeapon::AWeapon()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -43,15 +45,46 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME(AWeapon, WeaonState);//무기 상태를 복제
+	DOREPLIFETIME(AWeapon, Ammo);//탄약을 복제
 }
 
+void AWeapon::SetHUDAmmo()
+{
+	TFOwnerCharacter = TFOwnerCharacter == nullptr ? Cast<ATimeFractureCharacter>(GetOwner()) : TFOwnerCharacter; //소유자가 캐릭터인지 확인
+	if (TFOwnerCharacter) {
+		TFOwnerController = TFOwnerController == nullptr ? Cast<ATFPlayerController>(TFOwnerCharacter->Controller) : TFOwnerController; //소유자의 컨트롤러가 플레이어 컨트롤러인지 확인
+		if (TFOwnerController) {
+			TFOwnerController->SetHUDWeaponAmmo(Ammo, MagCapacity); //HUD에 남은 탄약을 업데이트
+		}
+	}
+}
+
+void AWeapon::SpendRound() {
+	--Ammo;//탄약 감소
+	SetHUDAmmo();
+}
+void AWeapon::OnRep_Ammo() {
+	SetHUDAmmo();
+}
+void AWeapon::OnRep_Owner()
+{
+	Super::OnRep_Owner();
+	if (Owner == nullptr) {
+		TFOwnerCharacter = nullptr; //소유자 캐릭터를 nullptr로 설정
+		TFOwnerController = nullptr;//소유자 캐릭터와 플레이어 컨트롤러를 nullptr로 설정
+	}
+	else {
+		SetHUDAmmo();//소유자가 변경되면 HUD의 탄약을 업데이트
+	}
+	
+}
 void AWeapon::Fire(const FVector& HitTarget)
 {
 	if (FireAnimation) {
 		WeaponMesh->PlayAnimation(FireAnimation, false);//발사 애니메이션 재생
 	}
 	if (CasingClass) {
-		const USkeletalMeshSocket* AmmoEjectSockt = WeaponMesh->GetSocketByName(FName("AmmoEject")); //무기 메시에서 "muzz" 소켓을 가져옴
+		const USkeletalMeshSocket* AmmoEjectSockt = WeaponMesh->GetSocketByName(FName("AmmoEject")); //탄피 배출 소켓을 가져옴
 		if (AmmoEjectSockt) {
 			FTransform SocketTransform = AmmoEjectSockt->GetSocketTransform(GetWeaponMesh()); //소켓의 변환 정보를 가져옴
 				UWorld* World = GetWorld();
@@ -61,7 +94,10 @@ void AWeapon::Fire(const FVector& HitTarget)
 			}
 		}
 	}
+	SpendRound();//탄약 감소
 }
+
+
 
 void AWeapon::DropWeapon()
 {
@@ -69,6 +105,8 @@ void AWeapon::DropWeapon()
 	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
 	WeaponMesh->DetachFromComponent(DetachRules);
 	SetOwner(nullptr);//무기의 소유자를 해제
+	TFOwnerCharacter = nullptr; //소유자 캐릭터를 nullptr로 설정
+	TFOwnerController = nullptr;//소유자 캐릭터와 플레이어 컨트롤러를 nullptr로 설정
 }
 
 void AWeapon::BeginPlay()

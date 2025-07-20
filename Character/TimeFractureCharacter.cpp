@@ -243,6 +243,9 @@ void ATimeFractureCharacter::Elim()
 }
 void ATimeFractureCharacter::MulticastElim_Implementation()
 {
+	if (TfPlayerController) {
+		TfPlayerController->SetHUDWeaponAmmo(0, 0); //HUD의 무기 탄약을 0으로 설정한다.
+	}
 	bisElimmed = true; //캐릭터가 제거되었음을 표시한다.
 	PlayElimMontage(); //피격 애니메이션을 재생한다.
 	//캐릭터 이동 비활성화
