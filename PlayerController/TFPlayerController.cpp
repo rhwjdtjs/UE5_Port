@@ -37,13 +37,22 @@ void ATFPlayerController::SetHUDDefeats(int32 Defeats)
 		TfHud->CharacterOverlay->DefeatsAmount->SetText(FText::FromString(DefeatText));
 	}
 }
-void ATFPlayerController::SetHUDWeaponAmmo(int32 Ammos, int32 MagCapacity)
+void ATFPlayerController::SetHUDWeaponAmmo(int32 Ammos)
 {
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
 		bool bHUDVaild = TfHud && TfHud->CharacterOverlay && TfHud->CharacterOverlay->AmmoAmount;
 		if (bHUDVaild) {
-			FString AmmoText = FString::Printf(TEXT("%d / %d"), Ammos, MagCapacity); // 현재 탄약과 최대 탄약을 포맷팅한다.
+			FString AmmoText = FString::Printf(TEXT("%d"), Ammos); // 현재 탄약과 최대 탄약을 포맷팅한다.
 			TfHud->CharacterOverlay->AmmoAmount->SetText(FText::FromString(AmmoText));
+	}
+}
+void ATFPlayerController::SetHUDCarriedAmmo(int32 Ammos)
+{
+	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
+	bool bHUDVaild = TfHud && TfHud->CharacterOverlay && TfHud->CharacterOverlay->CarriedAmmoAmount;
+	if (bHUDVaild) {
+		FString CarriedAmmo = FString::Printf(TEXT("%d"), Ammos); // 현재 탄약과 최대 탄약을 포맷팅한다.
+		TfHud->CharacterOverlay->CarriedAmmoAmount->SetText(FText::FromString(CarriedAmmo));
 	}
 }
 void ATFPlayerController::OnPossess(APawn* InPawn)

@@ -39,6 +39,13 @@ void UCBComponent::EquipWeapon(AWeapon* WeaponEquip)
 
 	EquippedWeapon->SetOwner(Character);
 	EquippedWeapon->SetHUDAmmo(); //장착된 무기의 HUD 탄약을 설정한다.
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType())) {
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()]; //장착된 무기의 보유 탄약을 설정한다.
+	}
+	Controller = Controller == nullptr ? Cast<ATFPlayerController>(Character->Controller) : Controller; //컨트롤러를 가져온다.
+	if (Controller) {
+		Controller->SetHUDCarriedAmmo(CarriedAmmo); //컨트롤러가 있다면 HUD에 보유 탄약을 설정한다.
+	}
 	EquippedWeapon->ShowPickupWidget(false);
 	EquippedWeapon->GetAreaSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
@@ -48,9 +55,20 @@ void UCBComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UCBComponent, EquippedWeapon); //장착된 무기를 복제한다.
 	DOREPLIFETIME(UCBComponent, bisAiming);// 조준 여부를 복제한다.
+	DOREPLIFETIME_CONDITION(UCBComponent, CarriedAmmo, COND_OwnerOnly); // 소유자만 탄약을 복제한다.
 	//DOREPLIFETIME_CONDITION(UCBComponent, EquippedWeapon, COND_OwnerOnly); //장착된 무기를 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
 }
+void UCBComponent::OnRep_CarriedAmmo()
+{
+	if (Controller) {
+		Controller->SetHUDCarriedAmmo(CarriedAmmo); //컨트롤러가 있다면 HUD에 보유 탄약을 설정한다.
+	}
+}
 
+void UCBComponent::InitializeCarriedAmmo()
+{
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_AssaultRifle, StartingCarriedAmmo); //소총의 기본 탄약을 설정한다.
+}
 
 void UCBComponent::InterpFOV(float DeltaTime)
 {
@@ -88,6 +106,8 @@ bool UCBComponent::CanFire()
 	return !EquippedWeapon->IsEmpty() || !bCanFire; //장착된 무기가 비어있지 않거나 발사 가능 여부가 false인 경우 발사할 수 있다.
 }
 
+
+
 void UCBComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -97,7 +117,9 @@ void UCBComponent::BeginPlay()
 			DefaultFOV = Character->GetFollowCamera()->FieldOfView; //기본 FOV를 설정한다.
 			CurrentFOV = DefaultFOV; //현재 FOV를 기본 FOV로 설정한다.
 		}
-
+	}
+	if (Character->HasAuthority()) {
+		InitializeCarriedAmmo(); //서버에서 캐릭터의 보유 탄약을 초기화한다.
 	}
 }
 

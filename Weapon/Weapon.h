@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "WeaponTypes.h"
 #include "Weapon.generated.h"
 
 UENUM(BlueprintType)
@@ -49,6 +50,7 @@ public:
 	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; } //줌된 FOV를 반환하는 함수
 	FORCEINLINE float GetZoomInterpSpeed() const { return ZoomInterpSpeed; } //줌 인터폴레이션 속도를 반환하는 함수
 	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; } //탄창 용량을 반환하는 함수
+	FORCEINLINE EWeaponType GetWeaponType() const { return WeaponType; } //무기 타입을 반환하는 함수
 	//크로스헤어 텍스쳐
 	UPROPERTY(EditAnywhere, Category = "Crosshairs")
 	class UTexture2D* CrosshairsCenter;
@@ -73,6 +75,8 @@ public:
 	void SetHUDAmmo();
 	bool IsEmpty(); //탄약이 없는지 확인하는 함수
 private:
+	UPROPERTY(EditAnywhere)
+	EWeaponType WeaponType; //무기 타입
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")

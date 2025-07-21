@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "UnrealProject_7a/HUD/TFHUD.h"
+#include "UnrealProject_7A/Weapon/WeaponTypes.h"
+
 #include "CBComponent.generated.h"
 
 
@@ -59,6 +61,55 @@ private:
 	bool bCanFire = true; //발사 가능 여부
 
 	bool CanFire(); //발사 가능 여부를 확인하는 함수
+	UPROPERTY(ReplicatedUsing = OnRep_CarriedAmmo)
+	int32 CarriedAmmo; //보유 탄약
+	UFUNCTION()
+	void OnRep_CarriedAmmo(); //보유 탄약이 변경되었을 때 호출되는 함수
+	UPROPERTY(EditAnywhere)
+	int32 StartingCarriedAmmo = 30; //시작 보유 탄약 수
+	void InitializeCarriedAmmo(); //보유 탄약을 초기화하는 함수
+    // TMap은 언리얼 엔진의 템플릿 컨테이너로, 키-값 쌍을 저장하는 해시 맵입니다.
+    // TMap<KeyType, ValueType> 형태로 사용되며, 키를 통해 값에 빠르게 접근할 수 있습니다.
+
+    // 게임에서 TMap이 주로 사용되는 예시들:
+    // 1. 인벤토리 시스템 - TMap<int32, FItemData> Inventory; (아이템 ID -> 아이템 정보)
+    // 2. 플레이어 스탯 - TMap<FString, float> PlayerStats; ("Health" -> 100.0f, "Mana" -> 50.0f)
+    // 3. 무기별 탄약 관리 - TMap<EWeaponType, int32> AmmoCount; (무기 타입 -> 탄약 수)
+    // 4. 퀘스트 진행상황 - TMap<int32, bool> QuestProgress; (퀘스트 ID -> 완료 여부)
+    // 5. 게임 설정 - TMap<FString, FString> GameSettings; ("Resolution" -> "1920x1080")
+
+    // 현재 코드에서의 사용 예시:
+	TMap<EWeaponType, int32> CarriedAmmoMap;  // 무기 타입별 보유 탄약을 저장하는 맵
+
+    /*
+    무기 타입별 보유 탄약을 저장하는 맵
+    - 키(Key): EWeaponType - 무기의 종류 (예: 권총, 소총, 샷건 등)
+    - 값(Value): int32 - 해당 무기에 대한 보유 탄약 수
+
+    사용 예시:
+    CarriedAmmoMap.Add(EWeaponType::AssaultRifle, 120);  // 돌격소총 탄약 120발 추가
+    CarriedAmmoMap.Add(EWeaponType::Pistol, 60);         // 권총 탄약 60발 추가
+
+    int32 RifleAmmo = CarriedAmmoMap[EWeaponType::AssaultRifle]; // 돌격소총 탄약 조회
+    CarriedAmmoMap[EWeaponType::Pistol] = 30;            // 권총 탄약을 30발로 변경
+
+    // 주요 TMap 함수들:
+    // - Add(Key, Value): 새로운 키-값 쌍 추가
+    // - Remove(Key): 지정된 키의 항목 제거
+    // - Find(Key): 키에 해당하는 값의 포인터 반환 (없으면 nullptr)
+    // - Contains(Key): 키가 존재하는지 확인
+    // - Num(): 저장된 항목 수 반환
+    // - Empty(): 모든 항목 제거
+
+    장점:
+    - O(1) 평균 시간복잡도로 빠른 검색, 삽입, 삭제
+    - 키를 통한 직관적인 데이터 접근
+    - 동적 크기 조절
+
+    단점:
+    - 메모리 오버헤드 존재
+    - 순서가 보장되지 않음 (순서가 필요하면 TSortedMap 사용)
+    */
 protected:
 	virtual void BeginPlay() override;
 	void SetAiming(bool bAiming); //조준 상태를 설정하는 함수

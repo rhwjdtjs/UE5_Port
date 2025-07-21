@@ -54,7 +54,7 @@ void AWeapon::SetHUDAmmo()
 	if (TFOwnerCharacter) {
 		TFOwnerController = TFOwnerController == nullptr ? Cast<ATFPlayerController>(TFOwnerCharacter->Controller) : TFOwnerController; //소유자의 컨트롤러가 플레이어 컨트롤러인지 확인
 		if (TFOwnerController) {
-			TFOwnerController->SetHUDWeaponAmmo(Ammo, MagCapacity); //HUD에 남은 탄약을 업데이트
+			TFOwnerController->SetHUDWeaponAmmo(Ammo); //HUD에 남은 탄약을 업데이트
 		}
 	}
 }
