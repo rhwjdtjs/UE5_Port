@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "UnrealProject_7A/Interfaces/InteractWithCrosshairInterface.h"
+#include "UnrealProject_7A/TFComponents/CombatStates.h"
 #include "TimeFractureCharacter.generated.h"
 
 UCLASS()
@@ -34,6 +35,7 @@ protected:
 	void AimOffset(float DeltaTime); //조준 오프셋 함수
 	void FireButtonPressed();
 	void FireButtonReleased(); //발사 버튼 해제 함수
+	void ReloadButtonPressed(); //재장전 버튼 함수
 	UFUNCTION()
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController,
 		AActor* DamageCursor); //피해를 받았을 때 호출되는 함수
@@ -64,16 +66,23 @@ private:
 	float CameraInterpSpeed = 15.f; //카메라 보간 속도
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon); //겹치는 무기가 바뀔 때 호출되는 함수
-	UPROPERTY(VisibleAnywhere, Category = "Combat")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta=(AllowPrivateAccess="true"))
 	class UCBComponent* CombatComponent; //전투 컴포넌트
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButton(); //서버에서 장착 버튼을 누를 때 호출되는 함수
+
+	//
+	//애니메이션 몽타주
+	//
 	UPROPERTY(EditAnywhere,Category=Combat)
 	class UAnimMontage* FireWeaponMontage;
 	UPROPERTY(EditAnywhere, Category = Combat)
 	class UAnimMontage* HitReactMontage;
 	UPROPERTY(EditAnywhere, Category = Combat)
 	class UAnimMontage* ElimMontage; //피격 애니메이션 몽타주
+	UPROPERTY(EditAnywhere, Category = Combat)
+	class UAnimMontage* ReloadMontage; //재장전 애니메이션 몽타주
+
 	UPROPERTY(EditAnywhere)
 	float CameraThreshold = 200.f; //카메라가 캐릭터와 얼마나 가까이 있을 때 카메라를 숨길지 결정하는 임계값
 	void HideCameraIfCharacterClose(); //캐릭터가 가까이 있을 때 카메라를 숨기는 함수
@@ -103,10 +112,12 @@ public:
 	FORCEINLINE bool IsElimmed() const { return bisElimmed; } //플레이어가 제거되었는지 여부를 반환하는 함수
 	FORCEINLINE float GetHealth() const { return Health; } //현재 체력을 반환하는 함수
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; } //현재 체력을 반환하는 함수
+	ECombatState GetCombatState() const; //전투 상태를 반환하는 함수 
 	AWeapon* GetEquippedWeapon();
 	void PlayFireMontage(bool bAiming); //무기 발사 모션 재생 함수
 	void PlayElimMontage(); //피격 애니메이션 몽타주 재생 함수
 	void PlayHitReactMontage(); //히트 리액트 몽타주 재생 함수
+	void PlayReloadMontage(); //재장전 애니메이션 몽타주 재생 함수
 	UFUNCTION(NetMulticast, UnReliable)
 	void MultiCastHit(); //히트 이벤트를 멀티캐스트로 호출하는 함수
 	

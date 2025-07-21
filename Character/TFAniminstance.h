@@ -54,4 +54,6 @@ private:
 	bool bLocallyControlled; //로컬 컨트롤러인지 여부를 저장하는 변수
 	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	bool bEliminated; //캐릭터가 제거되었는지 여부를 저장하는 변수
+	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	bool bUseFABRIK; //FABRIK 애니메이션을 사용할지 여부를 저장하는 변수
 };

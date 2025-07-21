@@ -17,6 +17,7 @@
 #include "TimerManager.h"
 #include "Components/CapsuleComponent.h" // 캡슐 컴포넌트 헤더 파일 추가
 #include "UnrealProject_7A/PlayerState/TFPlayerState.h"
+#include "UnrealProject_7A/Weapon/WeaponTypes.h"
 ATimeFractureCharacter::ATimeFractureCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -49,6 +50,7 @@ void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	PlayerInputComponent->BindAction("Aim", IE_Released, this, &ATimeFractureCharacter::AimButtonRelease); //우클릭키를 떼었을 때 AimButtonRelease 함수를 호출한다.
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ATimeFractureCharacter::FireButtonPressed); //우클릭키를 눌렀을 때 AimButton 함수를 호출한다.
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ATimeFractureCharacter::FireButtonReleased); //우클릭키를 떼었을 때 AimButtonRelease 함수를 호출한다.
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ATimeFractureCharacter::ReloadButtonPressed); //키보드의 C키를 눌렀을 때 CrouchButton 함수를 호출한다.
 	//프로젝트 세팅에 저장된 키의 이름을 바인드한다. this ->이 함수의 있는 함수를 불러옴
 }
 
@@ -153,6 +155,12 @@ void ATimeFractureCharacter::FireButtonReleased()
 {
 	if (CombatComponent) {
 		CombatComponent->FireButtonPressed(false); //전투 컴포넌트의 발사 버튼을 떼었다고 설정한다.
+	}
+}
+void ATimeFractureCharacter::ReloadButtonPressed()
+{
+	if (CombatComponent) {
+		CombatComponent->Reload(); //전투 컴포넌트의 재장전을 호출한다.
 	}
 }
 void ATimeFractureCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCursor)
@@ -336,6 +344,12 @@ bool ATimeFractureCharacter::IsAiming()
 	return (CombatComponent && CombatComponent->bisAiming); //전투 컴포넌트가 존재하고, 전투 컴포넌트의 조준 여부를 반환한다.
 }
 
+ECombatState ATimeFractureCharacter::GetCombatState() const
+{
+	if (CombatComponent == nullptr) return ECombatState::ECS_MAX; //전투 컴포넌트가 존재하지 않으면 최대 전투 상태를 반환한다.
+	return CombatComponent->CombatState; //전투 컴포넌트의 전투 상태를 반환한다.
+}
+
 AWeapon* ATimeFractureCharacter::GetEquippedWeapon()
 {
 	if (CombatComponent == nullptr)
@@ -371,6 +385,23 @@ void ATimeFractureCharacter::PlayHitReactMontage()
 	if (animInstance && HitReactMontage) {
 		animInstance->Montage_Play(HitReactMontage); //애니메이션 몽타주를 재생한다.
 		FName SectionName("FromFront");
+		animInstance->Montage_JumpToSection(SectionName); //애니메이션 몽타주의 섹션으로 점프한다.
+	}
+}
+
+void ATimeFractureCharacter::PlayReloadMontage()
+{
+	if (CombatComponent == nullptr || CombatComponent->EquippedWeapon == nullptr) return;
+	UAnimInstance* animInstance = GetMesh()->GetAnimInstance(); //캐릭터의 애니메이션 인스턴스를 가져온다.
+	if (animInstance && ReloadMontage) {
+		animInstance->Montage_Play(ReloadMontage); //애니메이션 몽타주를 재생한다.
+		FName SectionName;
+		switch (CombatComponent->EquippedWeapon->GetWeaponType())
+		{
+		case EWeaponType::EWT_AssaultRifle:
+			SectionName = FName("Rifle");
+			break;
+		}
 		animInstance->Montage_JumpToSection(SectionName); //애니메이션 몽타주의 섹션으로 점프한다.
 	}
 }

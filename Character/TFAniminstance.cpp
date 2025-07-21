@@ -5,6 +5,7 @@
 #include "TimeFractureCharacter.h" //캐릭터의 헤더파일을 포함시킨다
 #include "GameFramework/CharacterMovementComponent.h" //캐릭터의 이동 컴포넌트를 포함시킨다
 #include "Kismet/KismetMathLibrary.h" //수학 라이브러리를 포함시킨다
+#include "UnrealProject_7A/TFComponents/CombatStates.h" //전투 상태를 포함시킨다
 #include "UnrealProject_7A/Weapon/Weapon.h" //무기의 헤더파일을 포함시킨다
 void UTFAniminstance::NativeInitializeAnimation()
 {
@@ -21,7 +22,7 @@ void UTFAniminstance::NativeUpdateAnimation(float DeltaTime)
 	{
 		TFCharacter = Cast<ATimeFractureCharacter>(TryGetPawnOwner());
 	}
-	if(TFCharacter == nullptr)
+	if (TFCharacter == nullptr)
 	{
 		return;
 	}
@@ -34,10 +35,10 @@ void UTFAniminstance::NativeUpdateAnimation(float DeltaTime)
 	bIsCrouching = TFCharacter->bIsCrouched; //캐릭터가 크라우치 상태인지 여부를 저장한다.
 	bIsAiming = TFCharacter->IsAiming(); //캐릭터가 조준 상태인지 여부를 저장한다.
 	bEliminated = TFCharacter->IsElimmed(); //캐릭터가 제거되었는지 여부를 저장한다.
-	FRotator AimRotation=TFCharacter->GetBaseAimRotation(); //캐릭터의 기본 조준 회전을 가져온다.
+	FRotator AimRotation = TFCharacter->GetBaseAimRotation(); //캐릭터의 기본 조준 회전을 가져온다.
 	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(TFCharacter->GetVelocity()); //캐릭터의 이동 회전을 가져온다.
 	FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation);//이동 회전과 조준 회전의 차이를 계산하여 Yaw 오프셋을 저장한다.
-	DeltaRotation = FMath::RInterpTo(DeltaRotation, DeltaRot,DeltaTime,15.f); //회전 차이를 보간한다.
+	DeltaRotation = FMath::RInterpTo(DeltaRotation, DeltaRot, DeltaTime, 15.f); //회전 차이를 보간한다.
 	YawOffset = DeltaRotation.Yaw; //Yaw 오프셋을 저장한다.	
 	AO_Yaw = TFCharacter->GETAO_YAW(); //캐릭터의 조준 회전 Yaw 값을 가져온다.
 	AO_Pitch = TFCharacter->GETAO_PITCH(); //캐릭터의 조준 회전 Pitch 값을 가져온다.
@@ -61,7 +62,8 @@ void UTFAniminstance::NativeUpdateAnimation(float DeltaTime)
 			FRotator RightHandAdd = RightHandRotation + FRotator(90.f, 90.f, 0.f); //오른손 회전에 90도씩 추가한다.
 			RightHandRotation = RightHandAdd; //오른손 회전을 설정한다.
 		}
-		
-		
 	}
+	// FABRIK 상태 확인 및 디버그 로그
+	ECombatState CurrentCombatState = TFCharacter->GetCombatState();
+	bUseFABRIK = (CurrentCombatState == ECombatState::ECS_Unoccupied) && bWeaponEquipped && !bEliminated;
 }

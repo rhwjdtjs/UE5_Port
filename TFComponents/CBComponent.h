@@ -4,7 +4,7 @@
 #include "Components/ActorComponent.h"
 #include "UnrealProject_7a/HUD/TFHUD.h"
 #include "UnrealProject_7A/Weapon/WeaponTypes.h"
-
+#include "CombatStates.h"
 #include "CBComponent.generated.h"
 
 
@@ -18,7 +18,15 @@ public:
 	friend class ATimeFractureCharacter;
 	void EquipWeapon(class AWeapon* WeaponEquip); //무기를 장착하는 함수
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;	//복제하는 항목을 정의하는 함수
+	UFUNCTION(BlueprintCallable)
+	void FinishReload(); //재장전 완료 함수
+	UFUNCTION(Server, Reliable)
+	void ServerFinishReload();
 private:
+	UPROPERTY(ReplicatedUsing = OnRep_CombatState)
+	ECombatState CombatState=ECombatState::ECS_Unoccupied; //전투 상태
+	UFUNCTION()
+	void OnRep_CombatState(); //전투 상태가 변경되었을 때 호출되는 함수
 	UPROPERTY(ReplicatedUsing=OnRep_EquippedWeapon)
 	class AWeapon* EquippedWeapon; //장착된 무기
 	class ATimeFractureCharacter* Character; //캐릭터
@@ -65,6 +73,7 @@ private:
 	int32 CarriedAmmo; //보유 탄약
 	UFUNCTION()
 	void OnRep_CarriedAmmo(); //보유 탄약이 변경되었을 때 호출되는 함수
+	void HandleReload(); //재장전 처리 함수
 	UPROPERTY(EditAnywhere)
 	int32 StartingCarriedAmmo = 30; //시작 보유 탄약 수
 	void InitializeCarriedAmmo(); //보유 탄약을 초기화하는 함수
@@ -112,6 +121,8 @@ private:
     */
 protected:
 	virtual void BeginPlay() override;
+	UFUNCTION(Server, Reliable)
+	void ServerReload(); //서버에서 재장전 요청을 처리하는 함수
 	void SetAiming(bool bAiming); //조준 상태를 설정하는 함수
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool bAiming); //서버에서 조준 상태를 설정하는 함수
@@ -128,6 +139,6 @@ protected:
 	void SetHUDCrossharis(float DeltaTime); //HUD의 크로스헤어를 설정하는 함수
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
+	void Reload();
 		
 };

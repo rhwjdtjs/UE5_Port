@@ -13,6 +13,7 @@
 #include "UnrealProject_7a/HUD/TFHUD.h"
 #include "Camera/CameraComponent.h"
 #include "TimerManager.h"
+#include "CombatStates.h"
 #include "UnrealProject_7A/UnrealProject_7A.h"
 UCBComponent::UCBComponent()
 {
@@ -55,15 +56,74 @@ void UCBComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UCBComponent, EquippedWeapon); //장착된 무기를 복제한다.
 	DOREPLIFETIME(UCBComponent, bisAiming);// 조준 여부를 복제한다.
+	DOREPLIFETIME(UCBComponent, CombatState); //전투 상태를 복제한다.
 	DOREPLIFETIME_CONDITION(UCBComponent, CarriedAmmo, COND_OwnerOnly); // 소유자만 탄약을 복제한다.
 	//DOREPLIFETIME_CONDITION(UCBComponent, EquippedWeapon, COND_OwnerOnly); //장착된 무기를 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
 }
+
+void UCBComponent::OnRep_CombatState()
+{
+	switch (CombatState)
+	{
+	case ECombatState::ECS_Unoccupied:
+		if (bFireButtonPressed) {
+			Fire(); //발사 버튼이 눌렸으면 발사한다.
+		}
+		break;
+	case ECombatState::ECS_Reloading:
+		UE_LOG(LogTemp, Warning, TEXT("Client: OnRep_CombatState - Reloading started"));
+			HandleReload(); //리로드를 처리한다.
+		
+		break;
+	case ECombatState::ECS_MAX:
+		break;
+	}
+}
+void UCBComponent::Reload() {
+	if (CarriedAmmo > 0 && CombatState !=ECombatState::ECS_Reloading && EquippedWeapon && !EquippedWeapon->IsEmpty()) {
+		ServerReload(); //서버에 리로드 요청을 보낸다.
+	}
+}
+void UCBComponent::HandleReload()
+{
+	if (Character) {
+		Character->PlayReloadMontage(); //캐릭터의 리로드 몽타주를 재생한다.
+	}
+}
+void UCBComponent::ServerReload_Implementation()
+{
+	if (Character == nullptr || EquippedWeapon==nullptr) return; //캐릭터가 없으면 함수를 종료한다.
+	CombatState = ECombatState::ECS_Reloading;//전투 상태를 리로드 상태로 설정한다
+	HandleReload();//리로드를 처리한다.
+	UE_LOG(LogTemp, Warning, TEXT("Client: OnRep_CombatState - Reloading started"));
+}
+void UCBComponent::FinishReload()
+{
+	if (Character == nullptr) return;
+
+	if (Character->HasAuthority()) {
+		// 서버에서 직접 실행
+		CombatState = ECombatState::ECS_Unoccupied;
+	}
+	else {
+		// 클라이언트에서는 서버 RPC 호출
+		ServerFinishReload();
+	}
+}
+
+void UCBComponent::ServerFinishReload_Implementation()
+{
+	CombatState = ECombatState::ECS_Unoccupied;
+}
+	
 void UCBComponent::OnRep_CarriedAmmo()
 {
 	if (Controller) {
 		Controller->SetHUDCarriedAmmo(CarriedAmmo); //컨트롤러가 있다면 HUD에 보유 탄약을 설정한다.
 	}
 }
+
+
 
 void UCBComponent::InitializeCarriedAmmo()
 {
@@ -122,6 +182,8 @@ void UCBComponent::BeginPlay()
 		InitializeCarriedAmmo(); //서버에서 캐릭터의 보유 탄약을 초기화한다.
 	}
 }
+
+
 
 void UCBComponent::SetAiming(bool bAiming)
 {
