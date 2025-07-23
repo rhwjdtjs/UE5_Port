@@ -15,6 +15,8 @@
 #include "TimerManager.h"
 #include "CombatStates.h"
 #include "UnrealProject_7A/UnrealProject_7A.h"
+#include "GameFramework/Character.h"
+#include "Components/CapsuleComponent.h"
 UCBComponent::UCBComponent()
 {
 
@@ -100,7 +102,7 @@ void UCBComponent::ServerReload_Implementation()
 void UCBComponent::FinishReload()
 {
 	if (Character == nullptr) return;
-
+	
 	if (Character->HasAuthority()) {
 		// 서버에서 직접 실행
 		CombatState = ECombatState::ECS_Unoccupied;
@@ -108,6 +110,9 @@ void UCBComponent::FinishReload()
 	else {
 		// 클라이언트에서는 서버 RPC 호출
 		ServerFinishReload();
+	}
+	if (bFireButtonPressed) {
+		Fire(); //발사 버튼이 눌렸으면 발사한다.
 	}
 }
 
@@ -163,7 +168,7 @@ void UCBComponent::FireTimerFinished()
 bool UCBComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr) return false; //장착된 무기가 없으면 발사할 수 없다.
-	return !EquippedWeapon->IsEmpty() || !bCanFire; //장착된 무기가 비어있지 않거나 발사 가능 여부가 false인 경우 발사할 수 있다.
+	return !EquippedWeapon->IsEmpty() && bCanFire && CombatState==ECombatState::ECS_Unoccupied; //발사할 수 있는 상태인지 확인한다.
 }
 
 
@@ -245,7 +250,7 @@ void UCBComponent::ServerSetAiming_Implementation(bool bAiming)
 void UCBComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTargert)
 {
 	if (EquippedWeapon == nullptr) return;
-	if (Character) {
+	if (Character && CombatState==ECombatState::ECS_Unoccupied) {
 		Character->PlayFireMontage(bisAiming); //캐릭터의 발사 모션을 재생한다.
 		EquippedWeapon->Fire(TraceHitTargert); //무기를 발사한다.
 	}
@@ -253,37 +258,55 @@ void UCBComponent::MulticastFire_Implementation(const FVector_NetQuantize& Trace
 
 void UCBComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 {
-	
-	FVector2D ViewportSize; // 화면 크기를 저장할 변수
+	FVector2D ViewportSize;
 	if (GEngine && GEngine->GameViewport) {
-		GEngine->GameViewport->GetViewportSize(ViewportSize); // 화면 크기를 가져온다.
+		GEngine->GameViewport->GetViewportSize(ViewportSize);
 	}
 
-	FVector2D CrosshairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f); // 화면 중앙의 좌표를 계산한다.
-	FVector CrosshairWorldPostion; // 화면 중앙의 월드 위치를 저장할 변수
-	FVector CrosshairWorldDirection; // 화면 중앙의 월드 방향을 저장할 변수
-	bool bScreenToWorld =UGameplayStatics::DeprojectScreenToWorld(UGameplayStatics::GetPlayerController(this, 0),
-		CrosshairLocation, CrosshairWorldPostion, CrosshairWorldDirection); // 화면 중앙의 위치와 방향을 계산한다.
-	if (bScreenToWorld) {
-		FVector Start = CrosshairWorldPostion; // 시작 위치는 화면 중앙의 월드 위치로 설정한다.
+	FVector2D CrosshairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f);
+	FVector CrosshairWorldPosition;
+	FVector CrosshairWorldDirection;
+	bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld(
+		UGameplayStatics::GetPlayerController(this, 0),
+		CrosshairLocation, CrosshairWorldPosition, CrosshairWorldDirection);
 
-		if (Character) {
-			float DistanceToCharacter = (Character->GetActorLocation() - Start).Size(); // 캐릭터와 시작 위치 사이의 거리를 계산한다.
-			Start += CrosshairWorldDirection * (DistanceToCharacter + TargetDistance); // 시작 위치를 캐릭터와의 거리만큼 앞으로 이동시킨다.
-		}
-		FVector End = Start + (CrosshairWorldDirection * 80000.f); // 끝 위치는 시작 위치에서 월드 방향으로 10000 단위 떨어진 위치
+	if (bScreenToWorld && Character && Character->GetFollowCamera()) {
+		FVector CameraLocation = Character->GetFollowCamera()->GetComponentLocation();
+		// 캡슐 반지름만큼 더 멀리 시작 (자기 콜리전 밖에서 시작)
+		float CapsuleRadius = Character->GetCapsuleComponent() ? Character->GetCapsuleComponent()->GetScaledCapsuleRadius() : 34.f;
+		FVector Start = CameraLocation + CrosshairWorldDirection * (CapsuleRadius + 20.f);
+		FVector End = Start + (CrosshairWorldDirection * 80000.f);
+
 		FCollisionQueryParams QueryParams;
-		QueryParams.AddIgnoredActor(Character); // 캐릭터를 무시하는 쿼리 파라미터를 설정한다.
-		GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECC_Visibility, QueryParams);// 라인 트레이스를 수행한다.
-		if (TraceHitResult.GetActor() == Character)
-		{
+		QueryParams.AddIgnoredActor(Character);
+		if (Character->GetCapsuleComponent())
+			QueryParams.AddIgnoredComponent(Character->GetCapsuleComponent());
+
+		TArray<FHitResult> HitResults;
+		GetWorld()->LineTraceMultiByChannel(HitResults, Start, End, ECC_Visibility, QueryParams);
+
+		bool bFoundValidHit = false;
+		for (const FHitResult& Hit : HitResults) {
+			if (Hit.GetActor() && Hit.GetActor() != Character) {
+				TraceHitResult = Hit;
+				bFoundValidHit = true;
+				break;
+			}
+		}
+		// 허공일 때는 ImpactPoint를 End로 설정
+		if (!bFoundValidHit) {
+			TraceHitResult = FHitResult();
+			TraceHitResult.ImpactPoint = End;
+		}
+
+		if (TraceHitResult.GetActor() == Character) {
 			UE_LOG(LogTemp, Warning, TEXT("자기 자신 맞음"));
 		}
 		if (TraceHitResult.GetActor() && TraceHitResult.GetActor()->Implements<UInteractWithCrosshairInterface>()) {
-			HUDPackage.CrosshairColor = FLinearColor::Red; // 히트된 액터가 인터페이스를 구현하고 있으면 크로스헤어 색상을 빨간색으로 설정한다.
+			HUDPackage.CrosshairColor = FLinearColor::Red;
 		}
 		else {
-			HUDPackage.CrosshairColor = FLinearColor::White; // 히트된 액터가 인터페이스를 구현하고 있지 않으면 크로스헤어 색상을 흰색으로 설정한다.
+			HUDPackage.CrosshairColor = FLinearColor::White;
 		}
 	}
 }

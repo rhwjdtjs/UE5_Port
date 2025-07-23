@@ -46,21 +46,34 @@ void UTFAniminstance::NativeUpdateAnimation(float DeltaTime)
 
 	if (bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMesh() && TFCharacter->GetMesh())
 	{
-		LeftHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"), ERelativeTransformSpace::RTS_World); //왼손의 변환 정보를 가져온다.
-
+		// 왼손 IK 설정 (기존 코드와 동일)
+		LeftHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"), ERelativeTransformSpace::RTS_World);
 		FVector OutPos;
 		FRotator OutRot;
-		TFCharacter->GetMesh()->TransformToBoneSpace(FName("RightHand"), LeftHandTransform.GetLocation(),
-			FRotator::ZeroRotator, OutPos, OutRot);
-		LeftHandTransform.SetLocation(OutPos); //왼손의 위치를 설정한다.
-		LeftHandTransform.SetRotation(FQuat(OutRot)); //왼손의 회전을 설정한다.
+		TFCharacter->GetMesh()->TransformToBoneSpace(FName("RightHand"), LeftHandTransform.GetLocation(), FRotator::ZeroRotator, OutPos, OutRot);
+		LeftHandTransform.SetLocation(OutPos);
+		LeftHandTransform.SetRotation(FQuat(OutRot));
 
-		if (TFCharacter->IsLocallyControlled()) {
-			bLocallyControlled = true; //로컬 컨트롤러인 경우 true로 설정한다.
-			FTransform RightHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("RightHand"), ERelativeTransformSpace::RTS_World); //오른손의 변환 정보를 가져온다.
-			RightHandRotation = UKismetMathLibrary::FindLookAtRotation(RightHandTransform.GetLocation(), TFCharacter->GetHitTarget()); //오른손의 회전을 계산한다.
-			FRotator RightHandAdd = RightHandRotation + FRotator(90.f, 90.f, 0.f); //오른손 회전에 90도씩 추가한다.
-			RightHandRotation = RightHandAdd; //오른손 회전을 설정한다.
+		if (TFCharacter->IsLocallyControlled()) { // 로컬 플레이어가 조작하는 캐릭터인지 확인
+			bLocallyControlled = true; // 로컬 플레이어가 조작하는 캐릭터인지 여부를 저장한다.
+			FTransform MuzzleTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("muzz"), ERelativeTransformSpace::RTS_World); // 무기 메쉬의 "muzz" 소켓의 변환 정보를 가져온다.
+			FVector MuzzleLocation = MuzzleTransform.GetLocation(); // 소켓의 위치를 가져온다.
+			FVector AimTarget = TFCharacter->GetHitTarget(); // 캐릭터의 조준 목표 위치를 가져온다.
+			FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(MuzzleLocation, AimTarget); // 소켓 위치에서 조준 목표 위치를 바라보는 회전을 계산한다.
+			FVector LookAtDirection = (AimTarget - MuzzleLocation).GetSafeNormal();// 조준 목표 방향을 계산한다.
+			FVector UpDirection = FVector::UpVector;// 위 방향 벡터를 사용하여 회전을 계산한다.
+			FRotator BaseRotation = UKismetMathLibrary::MakeRotFromYZ(-LookAtDirection, UpDirection);// YZ 평면에서 회전을 계산한다.
+			FQuat CorrectionQuat(FVector::YAxisVector, FMath::DegreesToRadians(-90.f));// Y축을 기준으로 -90도 회전하는 쿼터니언을 생성한다.
+			FQuat TargetWorldQuat = BaseRotation.Quaternion() * CorrectionQuat;// 계산된 회전을 쿼터니언으로 변환하고 -90도 회전을 적용한다.
+			const FTransform& ComponentToWorld = TFCharacter->GetMesh()->GetComponentToWorld();// 캐릭터 메쉬의 컴포넌트 월드 변환을 가져온다.
+			FQuat TargetComponentQuat = ComponentToWorld.InverseTransformRotation(TargetWorldQuat);// 컴포넌트 월드 변환을 사용하여 타겟 쿼터니언을 컴포넌트 공간으로 변환한다.
+			RightHandRotation = FMath::RInterpTo(
+				RightHandRotation,
+				TargetComponentQuat.Rotator(),
+				DeltaTime,
+				3000.f // 보간 속도
+			);// 오른손 회전 보간
+				
 		}
 	}
 	// FABRIK 상태 확인 및 디버그 로그
