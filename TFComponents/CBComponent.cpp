@@ -17,6 +17,7 @@
 #include "UnrealProject_7A/UnrealProject_7A.h"
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
+#include "Sound/SoundCue.h"
 UCBComponent::UCBComponent()
 {
 
@@ -49,8 +50,14 @@ void UCBComponent::EquipWeapon(AWeapon* WeaponEquip)
 	if (Controller) {
 		Controller->SetHUDCarriedAmmo(CarriedAmmo); //컨트롤러가 있다면 HUD에 보유 탄약을 설정한다.
 	}
+	if (EquippedWeapon->EquipSound) {
+		UGameplayStatics::PlaySoundAtLocation(this, EquippedWeapon->EquipSound, Character->GetActorLocation()); //장착 사운드를 재생한다.
+	}
 	EquippedWeapon->ShowPickupWidget(false);
 	EquippedWeapon->GetAreaSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (EquippedWeapon->IsEmpty()) {
+		Reload(); //장착된 무기가 비어있으면 리로드를 시도한다.
+	}
 }
 
 void UCBComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -82,7 +89,7 @@ void UCBComponent::OnRep_CombatState()
 	}
 }
 void UCBComponent::Reload() {
-	if (CarriedAmmo > 0 && CombatState !=ECombatState::ECS_Reloading && EquippedWeapon && !EquippedWeapon->IsEmpty()) {
+	if (CarriedAmmo > 0 && CombatState !=ECombatState::ECS_Reloading && EquippedWeapon) {
 		ServerReload(); //서버에 리로드 요청을 보낸다.
 	}
 }
@@ -189,6 +196,9 @@ void UCBComponent::FireTimerFinished()
 	if (bFireButtonPressed && EquippedWeapon->bAutoMatickFire) {
 		Fire(); //발사 버튼이 눌렸으면 발사한다.
 	}
+	if (EquippedWeapon->IsEmpty()) {
+		Reload(); //장착된 무기가 비어있으면 리로드를 시도한다.
+	}
 }
 
 bool UCBComponent::CanFire()
@@ -235,6 +245,9 @@ void UCBComponent::OnRep_EquippedWeapon()
 			FAttachmentTransformRules::SnapToTargetNotIncludingScale,
 			FName("RightHandSocket")
 		);
+	}
+	if (EquippedWeapon->EquipSound) {
+		UGameplayStatics::PlaySoundAtLocation(this, EquippedWeapon->EquipSound, Character->GetActorLocation()); //장착 사운드를 재생한다.
 	}
 }
 

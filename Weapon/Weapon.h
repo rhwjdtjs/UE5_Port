@@ -53,6 +53,8 @@ public:
 	FORCEINLINE int32 GetAmmo() const { return Ammo; } //현재 탄약을 반환하는 함수
 	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; } //탄창 용량을 반환하는 함수
 	FORCEINLINE EWeaponType GetWeaponType() const { return WeaponType; } //무기 타입을 반환하는 함수
+	UPROPERTY(EditAnywhere)
+	class USoundCue* EquipSound; //무기 장착 사운드
 	//크로스헤어 텍스쳐
 	UPROPERTY(EditAnywhere, Category = "Crosshairs")
 	class UTexture2D* CrosshairsCenter;
