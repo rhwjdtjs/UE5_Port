@@ -74,6 +74,8 @@ private:
 	UFUNCTION()
 	void OnRep_CarriedAmmo(); //보유 탄약이 변경되었을 때 호출되는 함수
 	void HandleReload(); //재장전 처리 함수
+	int32 AmountToReload(); //재장전할 양
+	void UpdateAmmoValues(); //탄약 값을 업데이트하는 함수
 	UPROPERTY(EditAnywhere)
 	int32 StartingCarriedAmmo = 30; //시작 보유 탄약 수
 	void InitializeCarriedAmmo(); //보유 탄약을 초기화하는 함수

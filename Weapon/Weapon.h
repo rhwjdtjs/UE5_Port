@@ -27,6 +27,7 @@ public:
 	virtual void Fire(const FVector& HitTarget); //발사 함수, 자식 클래스에서 구현할 수 있다.
 	virtual void OnRep_Owner() override; //소유자가 변경될 때 호출되는 함수
 	void DropWeapon(); //무기를 떨어뜨리는 함수
+	void AddAmmo(int32 AmmoToAdd); //탄약을 추가하는 함수
 protected:
 	virtual void BeginPlay() override;
 	UFUNCTION()
@@ -49,6 +50,7 @@ public:
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; } //줌된 FOV를 반환하는 함수
 	FORCEINLINE float GetZoomInterpSpeed() const { return ZoomInterpSpeed; } //줌 인터폴레이션 속도를 반환하는 함수
+	FORCEINLINE int32 GetAmmo() const { return Ammo; } //현재 탄약을 반환하는 함수
 	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; } //탄창 용량을 반환하는 함수
 	FORCEINLINE EWeaponType GetWeaponType() const { return WeaponType; } //무기 타입을 반환하는 함수
 	//크로스헤어 텍스쳐

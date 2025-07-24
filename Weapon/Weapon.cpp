@@ -113,6 +113,12 @@ void AWeapon::DropWeapon()
 	TFOwnerController = nullptr;//소유자 캐릭터와 플레이어 컨트롤러를 nullptr로 설정
 }
 
+void AWeapon::AddAmmo(int32 AmmoToAdd)
+{
+	Ammo = FMath::Clamp(Ammo - AmmoToAdd, 0, MagCapacity); //탄약을 추가하고 범위를 제한
+	SetHUDAmmo(); //HUD의 탄약 업데이트
+}
+
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();

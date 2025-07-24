@@ -92,12 +92,37 @@ void UCBComponent::HandleReload()
 		Character->PlayReloadMontage(); //캐릭터의 리로드 몽타주를 재생한다.
 	}
 }
+int32 UCBComponent::AmountToReload()
+{
+	if (EquippedWeapon == nullptr) return 0; //장착된 무기가 없으면 0을 반환한다.
+	int32 RoomInMag = EquippedWeapon->GetMagCapacity() - EquippedWeapon->GetAmmo(); //탄창에 남은 공간을 계산한다.
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType())) { // 장착된 무기의 타입이 보유 탄약 맵에 있는지 확인
+		int32 AmountCarried = CarriedAmmoMap[EquippedWeapon->GetWeaponType()]; // 장착된 무기 타입의 현재 보유 탄약 수를 가져옴
+		int32 Least = FMath::Min(RoomInMag, AmountCarried); // 탄창에 남은 공간과 보유 탄약 중 더 작은 값을 구함
+		return FMath::Clamp(RoomInMag, 0, Least); // 0과 Least 사이의 값으로 RoomInMag를 제한하여 반환 (최대 장전 가능한 탄약 수)
+	}
+	return 0;
+}
+void UCBComponent::UpdateAmmoValues()
+{
+	if (Character == nullptr || EquippedWeapon == nullptr) return; //캐릭터가 없으면 함수를 종료한다.
+	int32 ReloadAmount = AmountToReload(); //리로드할 양을 계산한다.
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType())) { // 장착된 무기의 타입이 보유 탄약 맵에 있는지 확인
+		CarriedAmmoMap[EquippedWeapon->GetWeaponType()] -= ReloadAmount; // 보유 탄약에서 리로드할 양을 차감한다.
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()]; //현재 보유 탄약을 업데이트한다.
+	}
+	Controller = Controller == nullptr ? Cast<ATFPlayerController>(Character->Controller) : Controller; //컨트롤러를 가져온다.
+	if (Controller) {
+		Controller->SetHUDCarriedAmmo(CarriedAmmo); //컨트롤러가 있다면 HUD에 보유 탄약을 설정한다.
+	}
+	EquippedWeapon->AddAmmo(-ReloadAmount); //장착된 무기에 리로드할 양을 추가한다.
+}
 void UCBComponent::ServerReload_Implementation()
 {
-	if (Character == nullptr || EquippedWeapon==nullptr) return; //캐릭터가 없으면 함수를 종료한다.
+	
+	
 	CombatState = ECombatState::ECS_Reloading;//전투 상태를 리로드 상태로 설정한다
 	HandleReload();//리로드를 처리한다.
-	UE_LOG(LogTemp, Warning, TEXT("Client: OnRep_CombatState - Reloading started"));
 }
 void UCBComponent::FinishReload()
 {
@@ -106,6 +131,7 @@ void UCBComponent::FinishReload()
 	if (Character->HasAuthority()) {
 		// 서버에서 직접 실행
 		CombatState = ECombatState::ECS_Unoccupied;
+		UpdateAmmoValues(); //탄약 값을 업데이트한다.
 	}
 	else {
 		// 클라이언트에서는 서버 RPC 호출
