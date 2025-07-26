@@ -55,6 +55,17 @@ void ATFPlayerController::SetHUDCarriedAmmo(int32 Ammos)
 		TfHud->CharacterOverlay->CarriedAmmoAmount->SetText(FText::FromString(CarriedAmmo));
 	}
 }
+void ATFPlayerController::SetHUDMatchCountdown(float CountdownTime)
+{
+	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
+	bool bHUDVaild = TfHud && TfHud->CharacterOverlay && TfHud->CharacterOverlay->MatchCountDownText;
+	if (bHUDVaild) {
+		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f); // 카운트다운 시간을 분 단위로 변환한다.
+		int32 Seconds = CountdownTime - (Minutes * 60); // 카운트다운 시간을 초 단위로 변환한다.
+		FString CountDownText=FString::Printf(TEXT("%02d:%02d"),Minutes,Seconds);
+		TfHud->CharacterOverlay->MatchCountDownText->SetText(FText::FromString(CountDownText));
+	}
+}
 void ATFPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn); // 부모 클래스의 OnPossess 호출
@@ -63,10 +74,25 @@ void ATFPlayerController::OnPossess(APawn* InPawn)
 		SetHUDHealth(TfCharacter->GetHealth(), TfCharacter->GetMaxHealth()); // TfCharacter의 체력과 최대 체력을 HUD에 설정한다.
 	}
 }
+
+void ATFPlayerController::SetHUDTime()
+{
+	uint32 SecondsLeft = FMath::CeilToInt(MatchTime - GetWorld()->GetTimeSeconds()); // 현재 시간에서 매치 시간을 빼서 남은 시간을 계산한다.
+	if(CountdownInt != SecondsLeft) // 남은 시간이 이전과 다르면
+	{
+		SetHUDMatchCountdown((MatchTime - GetWorld()->GetTimeSeconds())); // HUD의 매치 카운트다운을 설정한다.
+	}
+	CountdownInt = SecondsLeft; // 남은 시간을 정수형으로 저장한다.
+}
+void ATFPlayerController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime); // 부모 클래스의 Tick 호출
+	SetHUDTime(); // HUD의 시간을 설정한다.
+}
 // CharacterHUD 헤더파일을 포함시킨다.
 void ATFPlayerController::BeginPlay()
 {
 	Super::BeginPlay(); // 부모 클래스의 BeginPlay 호출
 
-	TfHud=Cast<ATFHUD>(GetHUD()); // HUD를 가져온다.
+	TfHud = Cast<ATFHUD>(GetHUD()); // HUD를 가져온다.
 }
