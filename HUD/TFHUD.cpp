@@ -38,7 +38,6 @@ void ATFHUD::DrawHUD()
 void ATFHUD::BeginPlay()
 {
 	Super::BeginPlay(); //베이스 클래스의 BeginPlay 함수를 호출
-	AddCharacterOverlay(); //캐릭터 오버레이 위젯을 추가
 }
 
 void ATFHUD::AddCharacterOverlay()

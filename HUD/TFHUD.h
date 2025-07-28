@@ -29,10 +29,12 @@ public:
 	FORCEINLINE void SetHUDPackage(const FHUDPakage& Package) { HUDPackage = Package; } //HUD 패키지를 설정하는 함수
 	UPROPERTY(EditAnywhere, Category="Player State")
 	TSubclassOf<UUserWidget> CharacterOverlayClass; //캐릭터 오버레이 위젯 클래스
+	UPROPERTY()
 	class UCharacterOverlay* CharacterOverlay; //캐릭터 오버레이 위젯을 저장하는 변수
+	void AddCharacterOverlay(); //캐릭터 오버레이 위젯을 추가하는 함수
 protected:
 	virtual void BeginPlay() override; //게임 시작 시 호출되는 함수, 자식 클래스에서 구현할 수 있다.
-	void AddCharacterOverlay(); //캐릭터 오버레이 위젯을 추가하는 함수
+	
 	private:
 	FHUDPakage HUDPackage; //HUD 패키지 구조체를 사용하여 크로스헤어 텍스쳐를 저장
 	float ViewportDiv = 2.f;

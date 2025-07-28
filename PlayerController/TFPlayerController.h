@@ -25,14 +25,29 @@ public:
 	virtual void Tick(float DeltaTime) override; // 매 프레임마다 호출되는 함수
 	virtual void ReceivedPlayer() override; // 플레이어가 컨트롤러를 받았을 때 호출되는 함수
 	virtual float GetServerTime(); // 서버 시간을 가져오는 함수
+	void OnMatchStateSet(FName State); // 매치 상태가 변경될 때 호출되는 함수
 private:
 	UPROPERTY()
 	class ATFHUD* TfHud; // 메인캐릭터 허드	
 	uint32 CountdownInt; // 카운트다운 시간 (초 단위)
 	float MatchTime = 60.f; // 매치 시간 (초 단위)
+	UPROPERTY(ReplicatedUsing=OnRep_MatchState)
+
+	FName MatchState;
+	UFUNCTION()
+	void OnRep_MatchState(); // 매치 상태가 변경되었을 때 호출되는 함수
+	UPROPERTY()
+	class UCharacterOverlay* CharacterOverlay; // 캐릭터 오버레이 위젯
+	bool bInitializeCharacterOverlay = false; // 캐릭터 오버레이 초기화 여부
+	float HUDHealth;
+	float HUDMaxHealth;
+	float HUDScore;
+	float HUDDefeats;
 protected:
 	virtual void BeginPlay() override; // 플레이어 컨트롤러가 시작될 때 호출되는 함수
 	void SetHUDTime(); // HUD의 시간을 설정하는 함수
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;	//복제하는 항목을 정의하는 함수
+	void PollInit(); // 허드와 같은 함수 초기화
 	//
 	//클라이언트와 서버 시간 맞추기
 	UFUNCTION(Server, Reliable)

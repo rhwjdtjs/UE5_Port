@@ -8,6 +8,8 @@
 #include "Components/TextBlock.h" // UTextBlock 헤더 파일 포함
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h" // TimeFractureCharacter 헤더파일을 포함시킨다.
 #include "UnrealProject_7A/Weapon/Weapon.h" // Weapon 헤더파일을 포함시킨다.
+#include "Net/UnrealNetwork.h" // 네트워크 관련 헤더 파일 포함
+#include "UnrealProject_7A/GameMode/TFGameMode.h" // TFGameMode 헤더파일을 포함시킨다.
 void ATFPlayerController::SetHUDHealth(float Health, float MaxHealth)
 {
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
@@ -18,6 +20,11 @@ void ATFPlayerController::SetHUDHealth(float Health, float MaxHealth)
 		FString HealthText = FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Health), FMath::CeilToInt(MaxHealth)); // 체력 텍스트를 포맷팅한다.
 		TfHud->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText)); // 체력 텍스트를 설정한다.
 	}
+	else {
+		bInitializeCharacterOverlay = true;
+		HUDHealth = Health;
+		HUDMaxHealth = MaxHealth; // HUDHealth와 HUDMaxHealth를 초기화한다.
+	}
 }
 void ATFPlayerController::SetHUDScore(float Score)
 {
@@ -27,6 +34,10 @@ void ATFPlayerController::SetHUDScore(float Score)
 		FString ScoreText = FString::Printf(TEXT("%d"), FMath::FloorToInt(Score)); // 점수 텍스트를 포맷팅한다.
 		TfHud->CharacterOverlay->ScoreAmount->SetText(FText::FromString(ScoreText));
 	}
+	else {
+		bInitializeCharacterOverlay = true;
+		HUDScore = Score; // HUDScore를 초기화한다.
+	}
 }
 void ATFPlayerController::SetHUDDefeats(int32 Defeats)
 {
@@ -35,6 +46,10 @@ void ATFPlayerController::SetHUDDefeats(int32 Defeats)
 	if (bHUDVaild) {
 		FString DefeatText = FString::Printf(TEXT("%d"), Defeats); // 점수 텍스트를 포맷팅한다.
 		TfHud->CharacterOverlay->DefeatsAmount->SetText(FText::FromString(DefeatText));
+	}
+	else {
+		bInitializeCharacterOverlay = true;
+		HUDDefeats = Defeats; // HUDDefeats를 초기화한다.
 	}
 }
 void ATFPlayerController::SetHUDWeaponAmmo(int32 Ammos)
@@ -117,12 +132,36 @@ float ATFPlayerController::GetServerTime()
 	if (HasAuthority()) return GetWorld()->GetTimeSeconds(); // 서버 권한이 있는 경우 현재 월드의 시간을 반환한다.
 	else return GetWorld()->GetTimeSeconds() + ClientServerDelta; // 서버 권한이 없는 경우 클라이언트와 서버 간의 시간 차이를 더하여 시간을 반환한다.
 }
-void ATFPlayerController::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime); // 부모 클래스의 Tick 호출
-	SetHUDTime(); // HUD의 시간을 설정한다.
-	CheckTimeSync(DeltaTime); // 시간 동기화를 확인한다.
 
+void ATFPlayerController::OnMatchStateSet(FName State) {
+	MatchState = State; // 매치 상태를 설정한다.
+
+	if (MatchState == MatchState::InProgress) {
+		TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
+		if (TfHud) {
+			TfHud->AddCharacterOverlay(); //게임이 진행중일때 허드 시작
+		}
+	}
+}
+void ATFPlayerController::OnRep_MatchState() {
+	if (MatchState == MatchState::InProgress) {
+		TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
+		if (TfHud) {
+			TfHud->AddCharacterOverlay(); //게임이 진행중일때 허드 시작
+		}
+	}
+}
+void ATFPlayerController::PollInit() {
+	if (CharacterOverlay == nullptr) {
+		if (TfHud && TfHud->CharacterOverlay) {
+			CharacterOverlay = TfHud->CharacterOverlay; // TfHud의 CharacterOverlay를 가져온다.
+			if (CharacterOverlay) {
+				SetHUDHealth(HUDHealth, HUDMaxHealth); // HUDHealth와 HUDMaxHealth를 설정한다.
+				SetHUDScore(HUDScore); // HUDScore를 설정한다.
+				SetHUDDefeats(HUDDefeats); // HUDDefeats를 설정한다.
+			}
+		}
+	}
 }
 // CharacterHUD 헤더파일을 포함시킨다.
 void ATFPlayerController::BeginPlay()
@@ -130,4 +169,16 @@ void ATFPlayerController::BeginPlay()
 	Super::BeginPlay(); // 부모 클래스의 BeginPlay 호출
 
 	TfHud = Cast<ATFHUD>(GetHUD()); // HUD를 가져온다.
+}
+void ATFPlayerController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime); // 부모 클래스의 Tick 호출
+	SetHUDTime(); // HUD의 시간을 설정한다.
+	CheckTimeSync(DeltaTime); // 시간 동기화를 확인한다.
+	PollInit(); // 허드와 같은 함수 초기화
+}
+void ATFPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps); // 부모 클래스의 GetLifetimeReplicatedProps 호출
+	DOREPLIFETIME(ATFPlayerController, MatchState); // MatchState 변수를 복제한다.
 }

@@ -7,6 +7,41 @@
 #include "Kismet/gameplayStatics.h"
 #include "Gameframework/PlayerStart.h"
 #include "UnrealProject_7A/PlayerState/TFPlayerState.h"
+ATFGameMode::ATFGameMode()
+{
+	bDelayedStart = true; //게임 시작을 지연시킨다.
+}
+
+void ATFGameMode::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime); //부모 클래스의 Tick 함수를 호출한다.
+	WarmupToStartMatch();
+}
+
+void ATFGameMode::BeginPlay()
+{
+	Super::BeginPlay(); //부모 클래스의 BeginPlay 함수를 호출한다.
+	LevelStartingTime = GetWorld()->GetTimeSeconds(); //레벨 시작 시간을 현재 월드 시간으로 설정한다.
+}
+void ATFGameMode::OnMatchStateSet()
+{
+	Super::OnMatchStateSet(); //부모 클래스의 OnMatchStateSet 함수를 호출한다.
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It) { //현재 월드의 모든 플레이어 컨트롤러를 반복한다.
+		ATFPlayerController* TFPlayer = Cast<ATFPlayerController>(*It); //현재 플레이어 컨트롤러를 ATFPlayerController로 캐스팅한다.
+		if (TFPlayer) {
+			TFPlayer->OnMatchStateSet(MatchState); //플레이어 컨트롤러의 OnMatchStateSet 함수를 호출한다.
+		}
+	}
+}
+void ATFGameMode::WarmupToStartMatch()
+{
+	if (MatchState == MatchState::WaitingToStart) {
+		CountdownTime = WarmupTime - GetWorld()->GetTimeSeconds() + LevelStartingTime; //게임 시작 전 대기 시간을 설정한다.
+		if (CountdownTime <= 0.f) {
+			StartMatch(); //대기 시간이 끝나면 게임을 시작한다.
+		}
+	}
+}
 void ATFGameMode::PlayerEliminated(ATimeFractureCharacter* ElimmedCharacter, ATFPlayerController* VictimController, ATFPlayerController* AttackerController)
 {
 	ATFPlayerState* AttackerPlayerState = AttackerController ? Cast<ATFPlayerState>(AttackerController->PlayerState) : nullptr; //공격자 플레이어 상태를 초기화한다.
@@ -38,3 +73,4 @@ void ATFGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* Elim
 		RestartPlayerAtPlayerStart(ElimmedController, PlayerStarts[Selection]);
 	}
 }
+
