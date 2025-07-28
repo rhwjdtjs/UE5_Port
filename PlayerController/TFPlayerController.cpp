@@ -10,6 +10,7 @@
 #include "UnrealProject_7A/Weapon/Weapon.h" // Weapon 헤더파일을 포함시킨다.
 #include "Net/UnrealNetwork.h" // 네트워크 관련 헤더 파일 포함
 #include "UnrealProject_7A/GameMode/TFGameMode.h" // TFGameMode 헤더파일을 포함시킨다.
+#include "UnrealProject_7A/HUD/Alert.h" // Alert 헤더파일을 포함시킨다.
 void ATFPlayerController::SetHUDHealth(float Health, float MaxHealth)
 {
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
@@ -135,19 +136,21 @@ float ATFPlayerController::GetServerTime()
 
 void ATFPlayerController::OnMatchStateSet(FName State) {
 	MatchState = State; // 매치 상태를 설정한다.
-
 	if (MatchState == MatchState::InProgress) {
-		TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
-		if (TfHud) {
-			TfHud->AddCharacterOverlay(); //게임이 진행중일때 허드 시작
-		}
+		HandleMatchHasStarted(); // 매치 상태가 InProgress로 변경되면 HandleMatchHasStarted 함수를 호출한다.
 	}
 }
 void ATFPlayerController::OnRep_MatchState() {
 	if (MatchState == MatchState::InProgress) {
-		TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
-		if (TfHud) {
-			TfHud->AddCharacterOverlay(); //게임이 진행중일때 허드 시작
+		HandleMatchHasStarted(); // 매치 상태가 InProgress로 변경되면 HandleMatchHasStarted 함수를 호출한다.
+	}
+}
+void ATFPlayerController::HandleMatchHasStarted() {
+	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
+	if (TfHud) {
+		TfHud->AddCharacterOverlay(); //게임이 진행중일때 허드 시작
+		if (TfHud->Alert) {
+			TfHud->Alert->SetVisibility(ESlateVisibility::Hidden); // Alert 위젯을 숨긴다.
 		}
 	}
 }
@@ -167,8 +170,10 @@ void ATFPlayerController::PollInit() {
 void ATFPlayerController::BeginPlay()
 {
 	Super::BeginPlay(); // 부모 클래스의 BeginPlay 호출
-
 	TfHud = Cast<ATFHUD>(GetHUD()); // HUD를 가져온다.
+	if (TfHud) {
+		TfHud->AddAlert(); // HUD에 알림 위젯을 추가한다.
+	}
 }
 void ATFPlayerController::Tick(float DeltaTime)
 {

@@ -32,6 +32,11 @@ public:
 	UPROPERTY()
 	class UCharacterOverlay* CharacterOverlay; //캐릭터 오버레이 위젯을 저장하는 변수
 	void AddCharacterOverlay(); //캐릭터 오버레이 위젯을 추가하는 함수
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> AlertClass; //알림 위젯 클래스
+	UPROPERTY()
+	class UAlert* Alert; //알림 위젯을 저장하는 변수
+	void AddAlert(); //알림 위젯을 추가하는 함수
 protected:
 	virtual void BeginPlay() override; //게임 시작 시 호출되는 함수, 자식 클래스에서 구현할 수 있다.
 	

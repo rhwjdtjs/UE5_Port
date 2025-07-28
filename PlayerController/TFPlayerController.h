@@ -48,6 +48,7 @@ protected:
 	void SetHUDTime(); // HUD의 시간을 설정하는 함수
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;	//복제하는 항목을 정의하는 함수
 	void PollInit(); // 허드와 같은 함수 초기화
+	void HandleMatchHasStarted(); // 매치가 시작되었을 때 호출되는 함수
 	//
 	//클라이언트와 서버 시간 맞추기
 	UFUNCTION(Server, Reliable)
