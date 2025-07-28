@@ -77,17 +77,52 @@ void ATFPlayerController::OnPossess(APawn* InPawn)
 
 void ATFPlayerController::SetHUDTime()
 {
-	uint32 SecondsLeft = FMath::CeilToInt(MatchTime - GetWorld()->GetTimeSeconds()); // 현재 시간에서 매치 시간을 빼서 남은 시간을 계산한다.
+	uint32 SecondsLeft = FMath::CeilToInt(MatchTime - GetServerTime()); // 서버 시간을 기준으로 남은 시간을 초 단위로 계산한다.
 	if(CountdownInt != SecondsLeft) // 남은 시간이 이전과 다르면
 	{
-		SetHUDMatchCountdown((MatchTime - GetWorld()->GetTimeSeconds())); // HUD의 매치 카운트다운을 설정한다.
+		SetHUDMatchCountdown((MatchTime - GetServerTime())); // HUD의 매치 카운트다운을 설정한다.
 	}
 	CountdownInt = SecondsLeft; // 남은 시간을 정수형으로 저장한다.
+}
+void ATFPlayerController::CheckTimeSync(float DeltaTime)
+{
+	TimeSyncRunningTime += DeltaTime; // 시간 동기화가 얼마나 진행되었는지 저장한다.
+	if (IsLocalController() && TimeSyncRunningTime >= TimeSyncFrequency) // 로컬 컨트롤러인 경우 시간 동기화 주기가 지났다면
+	{
+		ServerRequestimeSync(GetWorld()->GetTimeSeconds()); // 서버에 현재 시간을 요청한다.
+		TimeSyncRunningTime = 0.f; // 시간 동기화 진행 시간을 초기화한다.
+	}
+}
+void ATFPlayerController::ClientReportServerTime_Implementation(float TimeOfClientRequest, float TimeServerReceivedClientRequest)
+{
+	float RoundTripTime = GetWorld()->GetTimeSeconds() - TimeOfClientRequest; // 왕복 시간을 계산한다.
+	float ServerTime = TimeServerReceivedClientRequest + (RoundTripTime * 0.5f); // 서버 시간을 계산한다.
+	ClientServerDelta = ServerTime - GetWorld()->GetTimeSeconds(); // 클라이언트와 서버 간의 시간 차이를 계산한다.
+}
+void ATFPlayerController::ServerRequestimeSync_Implementation(float TimeOfClientRequest)
+{
+	float ServerTimeOfReceipt = GetWorld()->GetTimeSeconds(); // 서버의 현재 시간을 가져온다.
+	ClientReportServerTime(TimeOfClientRequest, ServerTimeOfReceipt); // 클라이언트에게 서버 시간을 보고한다.
+}
+
+void ATFPlayerController::ReceivedPlayer()
+{
+	Super::ReceivedPlayer(); // 부모 클래스의 ReceivedPlayer 호출
+	if (IsLocalController()) { // 로컬 컨트롤러인 경우
+		ServerRequestimeSync(GetWorld()->GetTimeSeconds()); // 로컬 컨트롤러인 경우 서버에 현재 시간을 요청한다.
+	}
+}
+float ATFPlayerController::GetServerTime()
+{
+	if (HasAuthority()) return GetWorld()->GetTimeSeconds(); // 서버 권한이 있는 경우 현재 월드의 시간을 반환한다.
+	else return GetWorld()->GetTimeSeconds() + ClientServerDelta; // 서버 권한이 없는 경우 클라이언트와 서버 간의 시간 차이를 더하여 시간을 반환한다.
 }
 void ATFPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime); // 부모 클래스의 Tick 호출
 	SetHUDTime(); // HUD의 시간을 설정한다.
+	CheckTimeSync(DeltaTime); // 시간 동기화를 확인한다.
+
 }
 // CharacterHUD 헤더파일을 포함시킨다.
 void ATFPlayerController::BeginPlay()

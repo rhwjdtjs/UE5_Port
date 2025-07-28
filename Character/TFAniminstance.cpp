@@ -12,7 +12,7 @@ void UTFAniminstance::NativeInitializeAnimation()
 	Super::NativeInitializeAnimation(); //부모클래스의 초기화함수 호출
 
 	TFCharacter = Cast<ATimeFractureCharacter>(TryGetPawnOwner()); //캐릭터의 포인터를 저장한다
-
+	
 }
 
 void UTFAniminstance::NativeUpdateAnimation(float DeltaTime)
