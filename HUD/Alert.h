@@ -13,7 +13,7 @@ UCLASS()
 class UNREALPROJECT_7A_API UAlert : public UUserWidget
 {
 	GENERATED_BODY()
-	
+public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* AlertText;
 	UPROPERTY(meta = (BindWidget))

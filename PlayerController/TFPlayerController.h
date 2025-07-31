@@ -21,6 +21,7 @@ public:
 	void SetHUDWeaponAmmo(int32 Ammos); // 허드의 처치 수를 설정하는 함수
 	void SetHUDCarriedAmmo(int32 Ammos); // 허드의 보유 탄약을 설정하는 함수
 	void SetHUDMatchCountdown(float CountdownTime); // 허드의 매치 카운트다운을 설정하는 함수 
+	void SetHUDAlertCountDown(float CountdownTime); // 허드의 카운트다운을 설정하는 함수
 	virtual void OnPossess(APawn* InPawn) override; // 플레이어가 Pawn을 소유할 때 호출되는 함수
 	virtual void Tick(float DeltaTime) override; // 매 프레임마다 호출되는 함수
 	virtual void ReceivedPlayer() override; // 플레이어가 컨트롤러를 받았을 때 호출되는 함수
@@ -29,8 +30,10 @@ public:
 private:
 	UPROPERTY()
 	class ATFHUD* TfHud; // 메인캐릭터 허드	
+	float LevelStartingTime = 0.f; // 레벨 시작 시간
 	uint32 CountdownInt; // 카운트다운 시간 (초 단위)
-	float MatchTime = 60.f; // 매치 시간 (초 단위)
+	float MatchTime = 0.f; // 매치 시간 (초 단위)
+	float WarmupTime = 0.f; // 웜업 시간 (초 단위)
 	UPROPERTY(ReplicatedUsing=OnRep_MatchState)
 
 	FName MatchState;
@@ -51,6 +54,10 @@ protected:
 	void HandleMatchHasStarted(); // 매치가 시작되었을 때 호출되는 함수
 	//
 	//클라이언트와 서버 시간 맞추기
+	UFUNCTION(Server, Reliable)
+	void ServerCheckMatchState(); // 서버가 매치 상태를 확인
+	UFUNCTION(Client, Reliable)
+	void ClientJoinMatch(FName StateOfMatch, float Warmup, float Match, float StartingTime); // 클라이언트가 매치 상태를 확인
 	UFUNCTION(Server, Reliable)
 	void ServerRequestimeSync(float TimeOfClientRequest); // 클라이언트가 서버의 현재 시간을 요청
 	UFUNCTION(Client, Reliable)
