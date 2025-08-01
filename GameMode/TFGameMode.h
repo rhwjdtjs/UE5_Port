@@ -6,6 +6,9 @@
 #include "GameFramework/GameMode.h"
 #include "TFGameMode.generated.h"
 
+namespace MatchState {
+	extern UNREALPROJECT_7A_API const FName CoolDown; //경기 시간이 끝나고 승자를 결정하는 상태
+}
 /**
  * 게임 모드 클래스
  */
@@ -26,6 +29,8 @@ public:
 	float WarmupTime = 10.f; // 게임 시작 전 대기 시간
 	UPROPERTY(EditDefaultsOnly)
 	float MatchTime = 60.f; // 게임 시작 전 대기 시간
+	UPROPERTY(EditDefaultsOnly)
+	float CoolDownTime = 10.f; // 경기 종료 후 승자를 결정하는 시간
 	float LevelStartingTime = 0.f; // 레벨 시작 시간
 private:
 	float CountdownTime = 0.f; // 카운트다운 시간

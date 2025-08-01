@@ -107,7 +107,7 @@ void ATFPlayerController::SetHUDTime()
 {
 	float TimeLeft = 0.f; // 남은 시간을 초기화한다.
 	if (MatchState == MatchState::WaitingToStart) {
-		TimeLeft = WarmupTime - (GetServerTime() + LevelStartingTime);
+		TimeLeft = WarmupTime - GetServerTime() + LevelStartingTime;
 	}// 웜업 상태일 때 남은 시간을 계산한다.
 	else if (MatchState == MatchState::InProgress) {
 		TimeLeft = WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
@@ -160,22 +160,41 @@ float ATFPlayerController::GetServerTime()
 }
 
 void ATFPlayerController::OnMatchStateSet(FName State) {
-	MatchState = State; // 매치 상태를 설정한다.
+	MatchState = State;
 	if (MatchState == MatchState::InProgress) {
-		HandleMatchHasStarted(); // 매치 상태가 InProgress로 변경되면 HandleMatchHasStarted 함수를 호출한다.
+		HandleMatchHasStarted();
+	}
+	else if (MatchState == MatchState::CoolDown) {
+		HandleCoolDown();
 	}
 }
+
 void ATFPlayerController::OnRep_MatchState() {
 	if (MatchState == MatchState::InProgress) {
-		HandleMatchHasStarted(); // 매치 상태가 InProgress로 변경되면 HandleMatchHasStarted 함수를 호출한다.
+		HandleMatchHasStarted();
+	}
+	else if (MatchState == MatchState::CoolDown) {
+		HandleCoolDown();
 	}
 }
 void ATFPlayerController::HandleMatchHasStarted() {
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
-	if (TfHud) {
-		TfHud->AddCharacterOverlay(); //게임이 진행중일때 허드 시작
+	if (IsLocalController() && TfHud) {
+		TfHud->AddCharacterOverlay();
 		if (TfHud->Alert) {
-			TfHud->Alert->SetVisibility(ESlateVisibility::Hidden); // Alert 위젯을 숨긴다.
+			TfHud->Alert->SetVisibility(ESlateVisibility::Hidden);
+		}
+	}
+}
+void ATFPlayerController::HandleCoolDown()
+{
+	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud;
+	if (IsLocalController() && TfHud) {
+		if (TfHud->CharacterOverlay) {
+			TfHud->CharacterOverlay->RemoveFromParent();
+			if (TfHud->Alert) {
+				TfHud->Alert->SetVisibility(ESlateVisibility::Visible); // Alert 위젯을 보이게 한다.
+			}
 		}
 	}
 }
@@ -192,6 +211,7 @@ void ATFPlayerController::ClientJoinMatch_Implementation(FName StateOfMatch, flo
 }
 void ATFPlayerController::ServerCheckMatchState_Implementation()
 {
+	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
 	ATFGameMode* GameMode = Cast<ATFGameMode>(UGameplayStatics::GetGameMode(this)); // 게임 모드를 가져온다.
 	if (GameMode) {
 		WarmupTime = GameMode->WarmupTime; // 게임 모드의 웜업 시간을 가져온다.
@@ -199,9 +219,6 @@ void ATFPlayerController::ServerCheckMatchState_Implementation()
 		LevelStartingTime = GameMode->LevelStartingTime; // 게임 모드의 레벨 시작 시간을 가져온다.
 		MatchState = GameMode->GetMatchState(); // 게임 모드의 매치 상태를 가져온다.
 		ClientJoinMatch(MatchState, WarmupTime, MatchTime, LevelStartingTime); // 클라이언트에게 매치 상태를 전송한다.
-		if (TfHud && MatchState == MatchState::WaitingToStart) {
-			TfHud->AddAlert(); // HUD에 알림 위젯을 추가한다.
-		}
 	}
 }
 void ATFPlayerController::PollInit() {
@@ -220,8 +237,6 @@ void ATFPlayerController::PollInit() {
 void ATFPlayerController::BeginPlay()
 {
 	Super::BeginPlay(); // 부모 클래스의 BeginPlay 호출
-	ServerCheckMatchState(); // 서버에 매치 상태를 확인 요청
-	TfHud = Cast<ATFHUD>(GetHUD()); // HUD를 가져온다.
 	ServerCheckMatchState(); // 서버에 매치 상태를 확인 요청
 }
 void ATFPlayerController::Tick(float DeltaTime)

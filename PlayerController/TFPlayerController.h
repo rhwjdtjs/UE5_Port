@@ -27,6 +27,7 @@ public:
 	virtual void ReceivedPlayer() override; // 플레이어가 컨트롤러를 받았을 때 호출되는 함수
 	virtual float GetServerTime(); // 서버 시간을 가져오는 함수
 	void OnMatchStateSet(FName State); // 매치 상태가 변경될 때 호출되는 함수
+	void HandleCoolDown(); // 쿨다운 상태를 처리하는 함수
 private:
 	UPROPERTY()
 	class ATFHUD* TfHud; // 메인캐릭터 허드	

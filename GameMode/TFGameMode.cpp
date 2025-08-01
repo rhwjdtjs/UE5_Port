@@ -7,6 +7,10 @@
 #include "Kismet/gameplayStatics.h"
 #include "Gameframework/PlayerStart.h"
 #include "UnrealProject_7A/PlayerState/TFPlayerState.h"
+
+namespace MatchState {
+	const FName CoolDown = FName(TEXT("CoolDown")); //경기 시간이 끝나고 승자를 결정하는 상태
+}
 ATFGameMode::ATFGameMode()
 {
 	bDelayedStart = true; //게임 시작을 지연시킨다.
@@ -41,6 +45,12 @@ void ATFGameMode::WarmupToStartMatch()
 			StartMatch(); //대기 시간이 끝나면 게임을 시작한다.
 		}
 	}
+		else if (MatchState == MatchState::InProgress) {
+			CountdownTime = WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime; //게임 진행 중 대기 시간을 설정한다.
+			if (CountdownTime <= 0.f) {
+				SetMatchState(MatchState::CoolDown); //게임 시간이 끝나면 쿨다운 상태로 전환한다.
+			}
+		}
 }
 void ATFGameMode::PlayerEliminated(ATimeFractureCharacter* ElimmedCharacter, ATFPlayerController* VictimController, ATFPlayerController* AttackerController)
 {
