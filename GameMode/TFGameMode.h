@@ -25,6 +25,7 @@ public:
 	virtual void RequestRespawn(class ACharacter* ElimmedCharacter, class AController* ElimmedController);
 	virtual void Tick(float DeltaTime) override;
 	void WarmupToStartMatch();
+	FORCEINLINE float GetCountdownTime() const { return CountdownTime; } // 카운트다운 시간 반환 함수
 	UPROPERTY(EditDefaultsOnly)
 	float WarmupTime = 10.f; // 게임 시작 전 대기 시간
 	UPROPERTY(EditDefaultsOnly)
@@ -33,7 +34,7 @@ public:
 	float CoolDownTime = 10.f; // 경기 종료 후 승자를 결정하는 시간
 	float LevelStartingTime = 0.f; // 레벨 시작 시간
 private:
-	float CountdownTime = 0.f; // 카운트다운 시간
+	float CountdownTime = 5.f; // 카운트다운 시간
 protected:
 	virtual void BeginPlay() override; // 게임 시작 시 호출되는 함수
 	virtual void OnMatchStateSet() override; // 매치 상태가 변경될 때 호출되는 함수

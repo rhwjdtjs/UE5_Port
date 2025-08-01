@@ -77,6 +77,10 @@ void ATFPlayerController::SetHUDMatchCountdown(float CountdownTime)
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
 	bool bHUDVaild = TfHud && TfHud->CharacterOverlay && TfHud->CharacterOverlay->MatchCountDownText;
 	if (bHUDVaild) {
+		if (CountdownTime < 0.f) {
+			TfHud->CharacterOverlay->MatchCountDownText->SetText(FText());
+			return; // 카운트다운 시간이 0보다 작으면 텍스트를 비운다.
+		}
 		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f); // 카운트다운 시간을 분 단위로 변환한다.
 		int32 Seconds = CountdownTime - (Minutes * 60); // 카운트다운 시간을 초 단위로 변환한다.
 		FString CountDownText=FString::Printf(TEXT("%02d:%02d"),Minutes,Seconds);
@@ -88,6 +92,10 @@ void ATFPlayerController::SetHUDAlertCountDown(float CountdownTime)
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
 	bool bHUDVaild = TfHud && TfHud->Alert && TfHud->Alert->WarmupTime;
 	if (bHUDVaild) {
+		if (CountdownTime < 0.f) {
+			TfHud->Alert->WarmupTime->SetText(FText());
+			return; // 카운트다운 시간이 0보다 작으면 텍스트를 비운다.
+		}
 		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f); // 카운트다운 시간을 분 단위로 변환한다.
 		int32 Seconds = CountdownTime - (Minutes * 60); // 카운트다운 시간을 초 단위로 변환한다.
 		FString CountDownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
@@ -112,17 +120,28 @@ void ATFPlayerController::SetHUDTime()
 	else if (MatchState == MatchState::InProgress) {
 		TimeLeft = WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
 	}
+	else if (MatchState == MatchState::CoolDown) {
+		TimeLeft = CoolDownTime + WarmupTime+MatchTime -GetServerTime() + LevelStartingTime;
+	}
 	
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft); // 서버 시간을 기준으로 남은 시간을 초 단위로 계산한다.
-	if(CountdownInt != SecondsLeft) // 남은 시간이 이전과 다르면
-	{
-		if (MatchState == MatchState::WaitingToStart) {
-			SetHUDAlertCountDown(TimeLeft); // 웜업 상태일 때 HUD에 카운트다운을 설정한다.
+	//if (HasAuthority()) // 서버 권한이 있는 경우
+//	{
+	//	TFGameMode = TFGameMode == nullptr ? Cast<ATFGameMode>(UGameplayStatics::GetGameMode(this)) : TFGameMode; // TFGameMode가 nullptr이면 현재 게임 모드를 가져오고, 그렇지 않으면 기존의 TFGameMode를 사용한다.
+	//	if (TFGameMode) {
+	//		SecondsLeft = FMath::CeilToInt(TFGameMode->GetCountdownTime() + LevelStartingTime); // TFGameMode에서 카운트다운 시간을 가져온다.
+	//	}
+	//}
+		if (CountdownInt != SecondsLeft) // 남은 시간이 이전과 다르면
+		{
+			if (MatchState == MatchState::WaitingToStart || MatchState == MatchState::CoolDown) {
+				SetHUDAlertCountDown(TimeLeft); // 웜업 상태일 때 HUD에 카운트다운을 설정한다.
+			}
+			if (MatchState == MatchState::InProgress) {
+				SetHUDMatchCountdown(TimeLeft); // 게임 진행 중일 때 HUD에 카운트다운을 설정한다.
+			}
 		}
-		if (MatchState == MatchState::InProgress) {
-			SetHUDMatchCountdown(TimeLeft); // 게임 진행 중일 때 HUD에 카운트다운을 설정한다.
-		}
-	}
+	
 	CountdownInt = SecondsLeft; // 남은 시간을 정수형으로 저장한다.
 }
 void ATFPlayerController::CheckTimeSync(float DeltaTime)
@@ -192,18 +211,23 @@ void ATFPlayerController::HandleCoolDown()
 	if (IsLocalController() && TfHud) {
 		if (TfHud->CharacterOverlay) {
 			TfHud->CharacterOverlay->RemoveFromParent();
-			if (TfHud->Alert) {
+			bool bHUDVaild = TfHud->Alert && TfHud->Alert->AlertText && TfHud->Alert->InfoText;
+			if (bHUDVaild) {
 				TfHud->Alert->SetVisibility(ESlateVisibility::Visible); // Alert 위젯을 보이게 한다.
+				FString AlertText(" New Match Starting In: ");
+				TfHud->Alert->AlertText->SetText(FText::FromString(AlertText)); // Alert 위젯의 텍스트를 설정한다.
+				TfHud->Alert->InfoText->SetText(FText()); // InfoText를 비운다.
 			}
 		}
 	}
 }
-void ATFPlayerController::ClientJoinMatch_Implementation(FName StateOfMatch, float Warmup, float Match, float StartingTime)
+void ATFPlayerController::ClientJoinMatch_Implementation(FName StateOfMatch, float Warmup, float Match, float StartingTime, float CoolDown)
 {
 	MatchState = StateOfMatch;// 매치 상태를 설정한다.
 	WarmupTime = Warmup;// 웜업 시간을 설정한다.
 	MatchTime = Match;// 매치 시간을 설정한다.
 	LevelStartingTime = StartingTime; // 레벨 시작 시간을 설정한다.
+	CoolDownTime = CoolDown; // 쿨다운 시간을 설정한다.
 	OnMatchStateSet(MatchState); // 매치 상태가 변경되었을 때 호출되는 함수를 실행한다.
 	if (TfHud && MatchState == MatchState::WaitingToStart) {
 		TfHud->AddAlert(); // HUD에 알림 위젯을 추가한다.
@@ -214,11 +238,12 @@ void ATFPlayerController::ServerCheckMatchState_Implementation()
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
 	ATFGameMode* GameMode = Cast<ATFGameMode>(UGameplayStatics::GetGameMode(this)); // 게임 모드를 가져온다.
 	if (GameMode) {
+		CoolDownTime = GameMode->CoolDownTime;// 게임 모드의 쿨다운 시간을 가져온다.
 		WarmupTime = GameMode->WarmupTime; // 게임 모드의 웜업 시간을 가져온다.
 		MatchTime = GameMode->MatchTime; // 게임 모드의 매치 시간을 가져온다.
 		LevelStartingTime = GameMode->LevelStartingTime; // 게임 모드의 레벨 시작 시간을 가져온다.
 		MatchState = GameMode->GetMatchState(); // 게임 모드의 매치 상태를 가져온다.
-		ClientJoinMatch(MatchState, WarmupTime, MatchTime, LevelStartingTime); // 클라이언트에게 매치 상태를 전송한다.
+		ClientJoinMatch(MatchState, WarmupTime, MatchTime, LevelStartingTime,CoolDownTime); // 클라이언트에게 매치 상태를 전송한다.
 	}
 }
 void ATFPlayerController::PollInit() {

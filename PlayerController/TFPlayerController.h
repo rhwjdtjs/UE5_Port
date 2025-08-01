@@ -31,10 +31,13 @@ public:
 private:
 	UPROPERTY()
 	class ATFHUD* TfHud; // 메인캐릭터 허드	
+	UPROPERTY()
+	class ATFGameMode* TFGameMode; // 게임 모드 클래스 포인터
 	float LevelStartingTime = 0.f; // 레벨 시작 시간
 	uint32 CountdownInt; // 카운트다운 시간 (초 단위)
 	float MatchTime = 0.f; // 매치 시간 (초 단위)
 	float WarmupTime = 0.f; // 웜업 시간 (초 단위)
+	float CoolDownTime = 0.f; // 쿨다운 시간 (초 단위)
 	UPROPERTY(ReplicatedUsing=OnRep_MatchState)
 
 	FName MatchState;
@@ -58,7 +61,7 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void ServerCheckMatchState(); // 서버가 매치 상태를 확인
 	UFUNCTION(Client, Reliable)
-	void ClientJoinMatch(FName StateOfMatch, float Warmup, float Match, float StartingTime); // 클라이언트가 매치 상태를 확인
+	void ClientJoinMatch(FName StateOfMatch, float Warmup, float Match, float StartingTime, float CoolDown); // 클라이언트가 매치 상태를 확인
 	UFUNCTION(Server, Reliable)
 	void ServerRequestimeSync(float TimeOfClientRequest); // 클라이언트가 서버의 현재 시간을 요청
 	UFUNCTION(Client, Reliable)
