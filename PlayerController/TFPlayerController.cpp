@@ -13,6 +13,8 @@
 #include "UnrealProject_7A/HUD/Alert.h" // Alert 헤더파일을 포함시킨다.
 #include "Kismet/GameplayStatics.h" // 게임플레이 스태틱스 헤더 파일 포함
 #include "UnrealProject_7A/TFComponents/CBComponent.h" // CBComponent 헤더파일을 포함시킨다.
+#include "UnrealProject_7A/GameState/TFGameState.h" // TFPlayerState 헤더파일을 포함시킨다.
+#include "UnrealProject_7A/PlayerState/TFPlayerState.h" // TFPlayerState 헤더파일을 포함시킨다.
 void ATFPlayerController::SetHUDHealth(float Health, float MaxHealth)
 {
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
@@ -217,7 +219,29 @@ void ATFPlayerController::HandleCoolDown()
 				TfHud->Alert->SetVisibility(ESlateVisibility::Visible); // Alert 위젯을 보이게 한다.
 				FString AlertText(" New Match Starting In: ");
 				TfHud->Alert->AlertText->SetText(FText::FromString(AlertText)); // Alert 위젯의 텍스트를 설정한다.
-				TfHud->Alert->InfoText->SetText(FText()); // InfoText를 비운다.
+				ATFGameState* TFGameState = Cast<ATFGameState>(UGameplayStatics::GetGameState(this)); // 게임 상태를 가져온다.
+				ATFPlayerState* TFPlayerState = GetPlayerState<ATFPlayerState>(); // 플레이어 상태를 가져온다.
+				if (TFGameState && TFPlayerState) {
+					TArray<ATFPlayerState*> TopPlayers = TFGameState->TopScorePlayers;// 상위 플레이어들을 가져온다.
+					FString InfoTextString;
+					if (TopPlayers.Num() == 0) {
+						InfoTextString = FString("There is no Winner");
+					}
+					else if (TopPlayers.Num() == 1 && TopPlayers[0]==TFPlayerState) {
+						InfoTextString = FString("You are the Winner");
+					}
+					else if (TopPlayers.Num() == 1) {
+						InfoTextString = FString::Printf(TEXT("Winner: \n%s"), *TopPlayers[0]->GetPlayerName());
+					}
+					else if (TopPlayers.Num() > 1) {
+						InfoTextString = FString("Players tield for the win: \n");
+						for (auto tiedPlayer : TopPlayers) {
+							InfoTextString.Append(FString::Printf(TEXT("%s\n"), *tiedPlayer->GetPlayerName())); // 각 플레이어의 이름을 추가한다.
+						}
+					}
+					TfHud->Alert->InfoText->SetText(FText::FromString(InfoTextString)); // InfoText를 비운다.
+				}
+				
 			}
 		}
 	}

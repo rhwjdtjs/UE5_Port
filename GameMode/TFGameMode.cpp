@@ -7,7 +7,7 @@
 #include "Kismet/gameplayStatics.h"
 #include "Gameframework/PlayerStart.h"
 #include "UnrealProject_7A/PlayerState/TFPlayerState.h"
-
+#include "UnrealProject_7A/GameState/TFGameState.h"
 namespace MatchState {
 	const FName CoolDown = FName(TEXT("CoolDown")); //경기 시간이 끝나고 승자를 결정하는 상태
 }
@@ -62,9 +62,10 @@ void ATFGameMode::PlayerEliminated(ATimeFractureCharacter* ElimmedCharacter, ATF
 {
 	ATFPlayerState* AttackerPlayerState = AttackerController ? Cast<ATFPlayerState>(AttackerController->PlayerState) : nullptr; //공격자 플레이어 상태를 초기화한다.
 	ATFPlayerState* VictimPlayerState = VictimController ? Cast<ATFPlayerState>(VictimController->PlayerState) : nullptr; //피해자 플레이어 상태를 초기화한다.
-
-	if (AttackerPlayerState && AttackerPlayerState != VictimPlayerState) {
+	ATFGameState* TFGameState = GetGameState<ATFGameState>(); //게임 상태를 가져온다.
+	if (AttackerPlayerState && AttackerPlayerState != VictimPlayerState && TFGameState) {
 		AttackerPlayerState->AddToScore(1.f); //공격자 플레이어 상태에 점수를 추가한다.
+		TFGameState->UpdateTopScorePlayers(AttackerPlayerState); //최고 점수를 가진 플레이어들을 업데이트한다.
 	}
 	if (ElimmedCharacter) {
 		ElimmedCharacter->Elim(); //제거된 캐릭터의 Elim 함수를 호출한다.

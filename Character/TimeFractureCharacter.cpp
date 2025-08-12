@@ -18,6 +18,7 @@
 #include "Components/CapsuleComponent.h" // 캡슐 컴포넌트 헤더 파일 추가
 #include "UnrealProject_7A/PlayerState/TFPlayerState.h"
 #include "UnrealProject_7A/Weapon/WeaponTypes.h"
+#include "Kismet/GameplayStatics.h"
 ATimeFractureCharacter::ATimeFractureCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -271,6 +272,9 @@ void ATimeFractureCharacter::MulticastElim_Implementation()
 	GetCharacterMovement()->DisableMovement(); //캐릭터의 이동을 비활성화한다.
 	GetCharacterMovement()->StopMovementImmediately(); //캐릭터의 이동을 즉시 중지한다.
 	bDisableGameplay = true; //게임플레이를 비활성화한다.
+	if (CombatComponent) {
+		CombatComponent->FireButtonPressed(false); //전투 컴포넌트의 발사 버튼을 떼었다고 설정한다.
+	}
 	//콜리전 비활성화
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision); //캐릭터의 캡슐 콜리전을 비활성화한다.
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision); //캐릭터의 메쉬 콜리전을 비활성화한다.
@@ -425,6 +429,16 @@ FVector ATimeFractureCharacter::GetHitTarget() const
 	if(CombatComponent==nullptr) 	return FVector();
 	return CombatComponent->HitTarget; //전투 컴포넌트의 히트 타겟을 반환한다.
 
+}
+
+void ATimeFractureCharacter::Destroyed()
+{
+	Super::Destroyed();
+	ATFGameMode* TFGameMode = Cast<ATFGameMode>(UGameplayStatics::GetGameMode(this)); //현재 게임 모드를 ATFGameMode로 캐스팅한다.
+	bool bMatchNotInProgress = TFGameMode && TFGameMode->GetMatchState() !=MatchState::InProgress; //게임 모드가 존재하고, 게임이 진행 중이지 않은 경우
+	if(CombatComponent && CombatComponent->EquippedWeapon && bMatchNotInProgress) {
+		CombatComponent->EquippedWeapon->Destroy(); //장착된 무기를 파괴한다.
+	}
 }
 
 void ATimeFractureCharacter::BeginPlay()
