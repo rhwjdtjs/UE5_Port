@@ -51,6 +51,12 @@ void ATFGameMode::WarmupToStartMatch()
 				SetMatchState(MatchState::CoolDown); //게임 시간이 끝나면 쿨다운 상태로 전환한다.
 			}
 		}
+		else if (MatchState == MatchState::CoolDown) {
+		CountdownTime = CoolDownTime+WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime; //게임 진행 중 대기 시간을 설정한다.
+		if (CountdownTime <= 0.f) {
+			RestartGame(); //쿨다운 시간이 끝나면 게임을 재시작한다.
+		}
+	}
 }
 void ATFGameMode::PlayerEliminated(ATimeFractureCharacter* ElimmedCharacter, ATFPlayerController* VictimController, ATFPlayerController* AttackerController)
 {

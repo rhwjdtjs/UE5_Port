@@ -20,6 +20,9 @@ public:
 	void Elim(); //플레이어 제거 함수
 	UFUNCTION(NetMulticast,Reliable)
 	void MulticastElim();
+	UPROPERTY(Replicated)
+	bool bDisableGameplay = false; //게임플레이 비활성화 여부
+
 protected:
 	virtual void BeginPlay() override;
 	void UpdateHUDHealth();
@@ -112,6 +115,7 @@ public:
 	FORCEINLINE bool IsElimmed() const { return bisElimmed; } //플레이어가 제거되었는지 여부를 반환하는 함수
 	FORCEINLINE float GetHealth() const { return Health; } //현재 체력을 반환하는 함수
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; } //현재 체력을 반환하는 함수
+	FORCEINLINE UCBComponent* GetCombatComponent() const { return CombatComponent; } //전투 컴포넌트를 반환하는 함수
 	ECombatState GetCombatState() const; //전투 상태를 반환하는 함수 
 	AWeapon* GetEquippedWeapon();
 	void PlayFireMontage(bool bAiming); //무기 발사 모션 재생 함수
@@ -122,4 +126,5 @@ public:
 	void MultiCastHit(); //히트 이벤트를 멀티캐스트로 호출하는 함수
 	
 	FVector GetHitTarget() const; //히트 타겟을 반환하는 함수
+	
 };

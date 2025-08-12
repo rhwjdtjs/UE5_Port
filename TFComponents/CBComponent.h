@@ -22,6 +22,7 @@ public:
 	void FinishReload(); //재장전 완료 함수
 	UFUNCTION(Server, Reliable)
 	void ServerFinishReload();
+	void FireButtonPressed(bool bPressed); //발사 버튼이 눌렸을 때 호출되는 함수
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_CombatState)
 	ECombatState CombatState=ECombatState::ECS_Unoccupied; //전투 상태
@@ -130,7 +131,7 @@ protected:
 	void ServerSetAiming(bool bAiming); //서버에서 조준 상태를 설정하는 함수
 	UFUNCTION()
 	void OnRep_EquippedWeapon(); //장착된 무기가 바뀔 때 호출되는 함수
-	void FireButtonPressed(bool bPressed); //발사 버튼이 눌렸을 때 호출되는 함수
+	
 	void Fire();
 	UFUNCTION(Server, Reliable)
 	void ServerFire(const FVector_NetQuantize& TraceHitTargert); //서버에서 발사 버튼이 눌렸는지 여부를 설정하는 함수

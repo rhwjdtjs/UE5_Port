@@ -13,7 +13,7 @@ void ALBGameMode::PostLogin(APlayerController* NewPlayer) //플레이어 컨트롤러를 
 		UWorld* World = GetWorld();
 		if (World) {
 			bUseSeamlessTravel = true; //서버 트래블을 사용한다.
-			World->ServerTravel(FString("/Game/Maps/InGame?listen")); //서버 트래블을 통해 맵을 이동한다.
+			World->ServerTravel(FString("/Game/Maps/testingame?listen")); //서버 트래블을 통해 맵을 이동한다.
 		}
 	}
 }

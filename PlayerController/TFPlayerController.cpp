@@ -12,6 +12,7 @@
 #include "UnrealProject_7A/GameMode/TFGameMode.h" // TFGameMode 헤더파일을 포함시킨다.
 #include "UnrealProject_7A/HUD/Alert.h" // Alert 헤더파일을 포함시킨다.
 #include "Kismet/GameplayStatics.h" // 게임플레이 스태틱스 헤더 파일 포함
+#include "UnrealProject_7A/TFComponents/CBComponent.h" // CBComponent 헤더파일을 포함시킨다.
 void ATFPlayerController::SetHUDHealth(float Health, float MaxHealth)
 {
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
@@ -219,6 +220,11 @@ void ATFPlayerController::HandleCoolDown()
 				TfHud->Alert->InfoText->SetText(FText()); // InfoText를 비운다.
 			}
 		}
+	}
+	ATimeFractureCharacter* TFCharacter = Cast<ATimeFractureCharacter>(GetPawn());
+	if (TFCharacter && TFCharacter->GetCombatComponent()) {
+		TFCharacter->bDisableGameplay = true; // 캐릭터의 게임플레이를 비활성화한다.
+		TFCharacter->GetCombatComponent()->FireButtonPressed(false); // 전투 컴포넌트의 발사 버튼을 눌렀다고 설정한다.
 	}
 }
 void ATFPlayerController::ClientJoinMatch_Implementation(FName StateOfMatch, float Warmup, float Match, float StartingTime, float CoolDown)

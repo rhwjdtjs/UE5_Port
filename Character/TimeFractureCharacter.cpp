@@ -57,6 +57,7 @@ void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 
 void ATimeFractureCharacter::MoveForward(float Value)//"컨트롤러가 바라보는 방향을 기준으로 캐릭터의 전방 벡터를 구하는 것"
 {
+	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
 	if (Controller != nullptr && Value != 0.f) //플레이어가 컨트롤러를 갖고 있나 && 움직이고있나
 	{
 		//컨트롤러의 전방으로 보낸다.
@@ -76,6 +77,7 @@ void ATimeFractureCharacter::MoveForward(float Value)//"컨트롤러가 바라보는 방향
 }
 void ATimeFractureCharacter::MoveRight(float Value)
 {
+	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
 	//컨트롤러의 전방으로 보낸다.
 	const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f); //컨트롤러의 회전을 담당한다.
 	const FVector Direction(FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y)); //전방벡터를 가져와서 초기화 , 
@@ -94,6 +96,7 @@ void ATimeFractureCharacter::LookUp(float Value)
 
 void ATimeFractureCharacter::EquipButton()
 {
+	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
 	if (CombatComponent) {
 		if (HasAuthority()) { //서버에서 실행되는 경우
 			CombatComponent->EquipWeapon(OverlappingWeapon);//겹치는 무기를 장착한다.
@@ -105,6 +108,7 @@ void ATimeFractureCharacter::EquipButton()
 }
 void ATimeFractureCharacter::CrouchButton()
 {
+	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
 	if (bIsCrouched) {
 		UnCrouch(); //크라우치 상태가 아니면 크라우치를 해제한다.
 	}
@@ -112,18 +116,21 @@ void ATimeFractureCharacter::CrouchButton()
 }
 void ATimeFractureCharacter::AimButton()
 {
+	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
 	if (CombatComponent) {
 		CombatComponent->SetAiming(true); //전투 컴포넌트의 조준 여부를 true로 설정한다.
 	}
 }
 void ATimeFractureCharacter::AimButtonRelease()
 {
+	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
 	if (CombatComponent) {
 		CombatComponent->SetAiming(false); //전투 컴포넌트의 조준 여부를 false로 설정한다.
 	}
 }
 void ATimeFractureCharacter::AimOffset(float DeltaTime)
 {
+	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
 	if (CombatComponent && CombatComponent->EquippedWeapon == nullptr) return;
 		FVector Velocity = GetVelocity();
 	Velocity.Z = 0.f;
@@ -147,18 +154,21 @@ void ATimeFractureCharacter::AimOffset(float DeltaTime)
 }
 void ATimeFractureCharacter::FireButtonPressed()
 {
+	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
 	if (CombatComponent) {
 		CombatComponent->FireButtonPressed(true); //전투 컴포넌트의 발사 버튼을 눌렀다고 설정한다.
 	}
 }
 void ATimeFractureCharacter::FireButtonReleased()
 {
+	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
 	if (CombatComponent) {
 		CombatComponent->FireButtonPressed(false); //전투 컴포넌트의 발사 버튼을 떼었다고 설정한다.
 	}
 }
 void ATimeFractureCharacter::ReloadButtonPressed()
 {
+	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
 	if (CombatComponent) {
 		CombatComponent->Reload(); //전투 컴포넌트의 재장전을 호출한다.
 	}
@@ -226,6 +236,7 @@ void ATimeFractureCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);//부모 클래스의 복제 속성을 가져온다.
 	DOREPLIFETIME_CONDITION(ATimeFractureCharacter, OverlappingWeapon, COND_OwnerOnly); //OVERLAPPINGWEAPON을 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
 	DOREPLIFETIME(ATimeFractureCharacter, Health); //Health를 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
+	DOREPLIFETIME(ATimeFractureCharacter, bDisableGameplay);//bDisableGameplay를 복제한다.
 }
 void ATimeFractureCharacter::PostInitializeComponents()
 {
@@ -259,9 +270,7 @@ void ATimeFractureCharacter::MulticastElim_Implementation()
 	//캐릭터 이동 비활성화
 	GetCharacterMovement()->DisableMovement(); //캐릭터의 이동을 비활성화한다.
 	GetCharacterMovement()->StopMovementImmediately(); //캐릭터의 이동을 즉시 중지한다.
-	if (TfPlayerController) {
-		DisableInput(TfPlayerController); //플레이어 컨트롤러의 입력을 비활성화한다.
-	}
+	bDisableGameplay = true; //게임플레이를 비활성화한다.
 	//콜리전 비활성화
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision); //캐릭터의 캡슐 콜리전을 비활성화한다.
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision); //캐릭터의 메쉬 콜리전을 비활성화한다.
