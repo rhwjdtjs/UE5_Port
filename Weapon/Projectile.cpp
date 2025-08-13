@@ -3,7 +3,6 @@
 
 #include "Projectile.h"
 #include "Components/BoxComponent.h"
-#include "GameFramework/ProjectileMovementComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -23,8 +22,7 @@ AProjectile::AProjectile()
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECC_SkelatalMesh, ECollisionResponse::ECR_Block);
-	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
-	ProjectileMovementComponent->bRotationFollowsVelocity = true; // 발사체가 이동 방향을 따라 회전하도록 설정
+	
 }
 
 void AProjectile::Destroyed()
@@ -52,6 +50,7 @@ void AProjectile::BeginPlay()
 	if (HasAuthority()) {
 		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnHit); // 서버에서만 Hit 이벤트를 바인딩
 	}
+	CollisionBox->IgnoreActorWhenMoving(GetInstigator(), true); // 발사체가 발사자를 무시하도록 설정
 }
 
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
