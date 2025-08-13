@@ -201,8 +201,9 @@ void ATFPlayerController::OnRep_MatchState() {
 }
 void ATFPlayerController::HandleMatchHasStarted() {
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
-	if (IsLocalController() && TfHud) {
-		TfHud->AddCharacterOverlay();
+	if (TfHud) {
+		if (TfHud->CharacterOverlay == nullptr)
+			TfHud->AddCharacterOverlay();
 		if (TfHud->Alert) {
 			TfHud->Alert->SetVisibility(ESlateVisibility::Hidden);
 		}
