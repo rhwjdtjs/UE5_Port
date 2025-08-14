@@ -21,4 +21,6 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* ImpactNiagara; // 발사체의 트레이서 효과를 위한 나이아가라 시스템 템플릿;
+	UPROPERTY(EditAnywhere)
+	class UParticleSystem* BeamParticle; // 발사체의 트레이서 효과를 위한 파티클 시스템;
 };
