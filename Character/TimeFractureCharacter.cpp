@@ -423,6 +423,9 @@ void ATimeFractureCharacter::PlayReloadMontage()
 		case EWeaponType::EWT_SMG:
 			SectionName = FName("Rifle");
 			break;
+		case EWeaponType::EWT_ShotGun:
+			SectionName = FName("Rifle");
+			break;
 		}
 		animInstance->Montage_JumpToSection(SectionName); //애니메이션 몽타주의 섹션으로 점프한다.
 	}

@@ -40,8 +40,16 @@ void UCBComponent::EquipWeapon(AWeapon* WeaponEquip)
 		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
 		FName("RightHandSocket")
 	);
-
 	EquippedWeapon->SetOwner(Character);
+	if (EquippedWeapon->GetWeaponType() == EWeaponType::EWT_ShotGun)
+	{
+		FVector Offset = FVector(0.f, 0.f, 23.f); // Z축을 위로 10만큼 올리기
+		EquippedWeapon->GetRootComponent()->SetRelativeLocation(Offset); //무기의 루트 컴포넌트 위치를 조정한다.
+	}
+	if (EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Pistol) {
+		FVector Offset = FVector(0.f, 0.f, -5.f); // Z축을 위로 10만큼 올리기
+		EquippedWeapon->GetRootComponent()->SetRelativeLocation(Offset); //무기의 루트 컴포넌트 위치를 조정한다.
+	}
 	EquippedWeapon->SetHUDAmmo(); //장착된 무기의 HUD 탄약을 설정한다.
 	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType())) {
 		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()]; //장착된 무기의 보유 탄약을 설정한다.
@@ -169,6 +177,7 @@ void UCBComponent::InitializeCarriedAmmo()
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_RocketLauncher, StartingRocketAmmo); //로켓 발사기의 기본 탄약을 설정한다.
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_Pistol, StartingPistolAmmo); //로켓 발사기의 기본 탄약을 설정한다.
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_SMG, StartingSMGAmmo); //로켓 발사기의 기본 탄약을 설정한다.
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_ShotGun, StartingShotgunAmmo); //로켓 발사기의 기본 탄약을 설정한다.
 }
 
 void UCBComponent::InterpFOV(float DeltaTime)

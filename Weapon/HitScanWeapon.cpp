@@ -9,6 +9,7 @@
 #include "NiagaraSystem.h"
 #include "Particles/ParticleSystem.h"
 #include "Particles/particleSystemComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 void AHitScanWeapon::Fire(const FVector& HitTarget)
 {
 	Super::Fire(HitTarget);
@@ -65,4 +66,14 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 			}
 		}
  	}
+}
+
+FVector AHitScanWeapon::TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget)
+{
+	FVector ToTargetNormalize = (HitTarget - TraceStart).GetSafeNormal();
+	FVector SphereCenter = TraceStart + ToTargetNormalize * DistanceToSphere; // 트레이스 시작 위치에서 타겟 방향으로 거리를 더한 위치
+	FVector RandVec = UKismetMathLibrary::RandomUnitVector() * FMath::FRandRange(0.f, SphereRadius); // 랜덤한 방향 벡터 생성
+	FVector EndLoc = SphereCenter + RandVec; // 랜덤 벡터를 더하여 트레이스 끝 위치 계산
+	FVector ToEndLoc = EndLoc - TraceStart; // 트레이스 시작 위치에서 끝 위치까지의 벡터
+	return FVector(TraceStart + ToEndLoc * 80000.f / ToEndLoc.Size()); // 트레이스 끝 위치를 반환
 }
