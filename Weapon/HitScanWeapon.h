@@ -17,14 +17,20 @@ public:
 	virtual void Fire(const FVector& HitTarget) override; //발사 함수, 자식 클래스에서 구현할 수 있다.
 protected:
 	FVector TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget);
-private:
-	UPROPERTY(EditAnywhere)
-	float Damage = 20.f; // 데미지
-
+	void WeaponTraceHit(const FVector& TraceStart, const FVector& HitTarget, FHitResult& OutHit);
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* ImpactNiagara; // 발사체의 트레이서 효과를 위한 나이아가라 시스템 템플릿;
 	UPROPERTY(EditAnywhere)
+	class USoundCue* HitSound; // 발사 소리
+	UPROPERTY(EditAnywhere)
+	float Damage = 20.f; // 데미지
+private:
+
+
+
+	UPROPERTY(EditAnywhere)
 	class UParticleSystem* BeamParticle; // 발사체의 트레이서 효과를 위한 파티클 시스템;
+
 
 	//트레이스 엔드 위치를 산란 효과를 적용하여 계산하는 함수
 

@@ -10,6 +10,7 @@
 #include "Particles/ParticleSystem.h"
 #include "Particles/particleSystemComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Sound/SoundCue.h"
 void AHitScanWeapon::Fire(const FVector& HitTarget)
 {
 	Super::Fire(HitTarget);
@@ -21,49 +22,32 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 	if (MuzzleFlashSocket) {
 		FTransform ScoketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
 		FVector Start = ScoketTransform.GetLocation();
-		FVector End = Start+ (HitTarget-Start) * 1.25f;
-
 		FHitResult FireHit;
-		UWorld* World = GetWorld();
-		if (World) {
-			World->LineTraceSingleByChannel(
-				FireHit,
-				Start,
-				End,
-				ECC_Visibility
+		WeaponTraceHit(Start, HitTarget, FireHit); // 트레이스 히트 결과를 얻음
+		ATimeFractureCharacter* TFCharacter = Cast<ATimeFractureCharacter>(FireHit.GetActor());
+		if (TFCharacter && InstigatorController && HasAuthority()) {
+			UGameplayStatics::ApplyDamage(
+				TFCharacter,
+				Damage,
+				InstigatorController,
+				this,
+				UDamageType::StaticClass()
 			);
-			FVector BeamEnd = End;
-			if (FireHit.bBlockingHit) {
-				BeamEnd = FireHit.ImpactPoint; // 충돌 지점으로 트레이서 끝 위치 설정
-				ATimeFractureCharacter* TFCharacter = Cast<ATimeFractureCharacter>(FireHit.GetActor());
-				if (TFCharacter && InstigatorController && HasAuthority()) {
-						UGameplayStatics::ApplyDamage(
-							TFCharacter,
-							Damage,
-							InstigatorController,
-							this,
-							UDamageType::StaticClass()
-						);
-				}
-				if (ImpactNiagara) {
-					UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-						World,
-						ImpactNiagara,
-						FireHit.ImpactPoint,
-						FireHit.ImpactNormal.Rotation() // 표면 방향에 맞춰서 회전
-					);
-				}
-			}
-			if (BeamParticle) {
-				UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
-					World,
-					BeamParticle,
-					ScoketTransform
-				);
-				if (Beam) {
-					Beam->SetVectorParameter(FName("Target"), BeamEnd); // 트레이서 끝 위치 설정
-				}
-			}
+		}
+		if (ImpactNiagara) {
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),
+				ImpactNiagara,
+				FireHit.ImpactPoint,
+				FireHit.ImpactNormal.Rotation() // 표면 방향에 맞춰서 회전
+			);
+		}
+		if (HitSound) {
+			UGameplayStatics::PlaySoundAtLocation(
+				GetWorld(),
+				HitSound,
+				FireHit.ImpactPoint
+			);
 		}
  	}
 }
@@ -76,4 +60,32 @@ FVector AHitScanWeapon::TraceEndWithScatter(const FVector& TraceStart, const FVe
 	FVector EndLoc = SphereCenter + RandVec; // 랜덤 벡터를 더하여 트레이스 끝 위치 계산
 	FVector ToEndLoc = EndLoc - TraceStart; // 트레이스 시작 위치에서 끝 위치까지의 벡터
 	return FVector(TraceStart + ToEndLoc * 80000.f / ToEndLoc.Size()); // 트레이스 끝 위치를 반환
+}
+
+void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& HitTarget, FHitResult& OutHit)
+{
+	UWorld* World = GetWorld();
+	if (World) {
+		FVector End = bUseScatter ? TraceEndWithScatter(TraceStart,HitTarget) : TraceStart + (HitTarget - TraceStart) * 1.25f; // 타겟 방향으로 트레이스 끝 위치 설정
+		World->LineTraceSingleByChannel(
+			OutHit,
+			TraceStart,
+			End,
+			ECC_Visibility
+		);
+		FVector BeamEnd = End;
+		if (OutHit.bBlockingHit) {
+			BeamEnd = OutHit.ImpactPoint; // 충돌 지점으로 트레이서 끝 위치 설정
+			if (BeamParticle) {
+				UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
+					World,
+					BeamParticle,
+					TraceStart, FRotator::ZeroRotator,true // 트레이스 시작 위치에서 파티클 생성
+				);
+				if (Beam) {
+					Beam->SetVectorParameter(FName("Target"), BeamEnd); // 트레이서 끝 위치 설정
+				}
+			}
+		}
+	}
 }
