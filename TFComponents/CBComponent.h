@@ -17,6 +17,7 @@ public:
 	UCBComponent();
 	friend class ATimeFractureCharacter;
 	void EquipWeapon(class AWeapon* WeaponEquip); //무기를 장착하는 함수
+	void EquippedWeaponPositionModify();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;	//복제하는 항목을 정의하는 함수
 	UFUNCTION(BlueprintCallable)
 	void FinishReload(); //재장전 완료 함수
@@ -87,6 +88,8 @@ private:
 	int32 StartingSMGAmmo = 100; //시작 보유 탄약 수
 	UPROPERTY(EditAnywhere)
 	int32 StartingShotgunAmmo = 14; //시작 보유 탄약 수
+	UPROPERTY(EditAnywhere)
+	int32 StartingSniperAmmo = 10; //시작 보유 탄약 수
 	void InitializeCarriedAmmo(); //보유 탄약을 초기화하는 함수
     // TMap은 언리얼 엔진의 템플릿 컨테이너로, 키-값 쌍을 저장하는 해시 맵입니다.
     // TMap<KeyType, ValueType> 형태로 사용되며, 키를 통해 값에 빠르게 접근할 수 있습니다.
