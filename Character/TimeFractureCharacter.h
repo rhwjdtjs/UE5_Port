@@ -22,7 +22,8 @@ public:
 	void MulticastElim();
 	UPROPERTY(Replicated)
 	bool bDisableGameplay = false; //게임플레이 비활성화 여부
-
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowSniperScopeWidget(bool bShowScope); //스나이퍼 스코프 위젯 표시 함수
 protected:
 	virtual void Destroyed() override; //캐릭터가 파괴될 때 호출되는 함수
 	virtual void BeginPlay() override;

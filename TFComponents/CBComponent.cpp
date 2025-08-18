@@ -252,10 +252,14 @@ void UCBComponent::BeginPlay()
 
 void UCBComponent::SetAiming(bool bAiming)
 {
+	if (Character == nullptr || EquippedWeapon == nullptr) return; //캐릭터나 장착된 무기가 없으면 함수를 종료한다.
 	bisAiming = bAiming; //조준 여부를 설정한다.
 	ServerSetAiming(bAiming); //서버에서 조준 여부를 설정한다.
 	if (Character) {
 		Character->GetCharacterMovement()->MaxWalkSpeed = bisAiming ? AimingWalkSpeed : baseWalkSpeed; //조준 여부에 따라 캐릭터의 최대 걷는 속도를 설정한다.
+	}
+	if (Character->IsLocallyControlled() && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle) {
+		Character->ShowSniperScopeWidget(bAiming); //로컬 플레이어가 조준 중일 때 스나이퍼 스코프 위젯을 표시한다.
 	}
 }
 

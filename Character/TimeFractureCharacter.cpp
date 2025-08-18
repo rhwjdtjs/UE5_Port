@@ -278,6 +278,10 @@ void ATimeFractureCharacter::MulticastElim_Implementation()
 	//콜리전 비활성화
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision); //캐릭터의 캡슐 콜리전을 비활성화한다.
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision); //캐릭터의 메쉬 콜리전을 비활성화한다.
+	bool bHideSniperScope = IsLocallyControlled() && CombatComponent && CombatComponent->bisAiming && CombatComponent->EquippedWeapon && CombatComponent->EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle;
+	if (bHideSniperScope) {
+		ShowSniperScopeWidget(false); //로컬에서 제어하는 경우 스나이퍼 스코프 위젯을 숨긴다.
+	}
 }
 void ATimeFractureCharacter::ElimTimerFinished()
 {
@@ -445,6 +449,7 @@ FVector ATimeFractureCharacter::GetHitTarget() const
 	return CombatComponent->HitTarget; //전투 컴포넌트의 히트 타겟을 반환한다.
 
 }
+
 
 void ATimeFractureCharacter::Destroyed()
 {
