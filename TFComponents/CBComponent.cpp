@@ -190,6 +190,7 @@ void UCBComponent::InitializeCarriedAmmo()
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_SMG, StartingSMGAmmo); //로켓 발사기의 기본 탄약을 설정한다.
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_ShotGun, StartingShotgunAmmo); //로켓 발사기의 기본 탄약을 설정한다.
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_SniperRifle, StartingSniperAmmo); //로켓 발사기의 기본 탄약을 설정한다.
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_GrenadeLauncher, StartingGrenadeAmmo); //로켓 발사기의 기본 탄약을 설정한다.
 }
 
 void UCBComponent::InterpFOV(float DeltaTime)

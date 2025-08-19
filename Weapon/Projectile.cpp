@@ -28,6 +28,36 @@ AProjectile::AProjectile()
 void AProjectile::Destroyed()
 {
 	Super::Destroyed();
+	if (ImpactNiagara)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			ImpactNiagara,
+			GetActorLocation(),GetActorRotation()
+		);
+	}
+	if (ImpactSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			ImpactSound,
+			GetActorLocation()
+		);
+	}
+}
+
+void AProjectile::DestroyTimerFinished()
+{
+	Destroy();
+}
+void AProjectile::StartDestroyTimer()
+{
+	GetWorldTimerManager().SetTimer(
+		DestroyTimer,
+		this,
+		&AProjectile::DestroyTimerFinished,
+		DestroyTime
+	);
 }
 
 // Called when the game starts or when spawned
@@ -35,23 +65,14 @@ void AProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	if (TracerNiagara) {
-		TracerNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
-			TracerNiagara,
-			CollisionBox,
-			FName(),
-			GetActorLocation(),
-			GetActorRotation(),
-			EAttachLocation::KeepWorldPosition,
-			true  // bAutoDestroy
-		);
-	}
+	SpawnTrailSystem(); // 발사체의 트레일 시스템을 생성
 	
 	if (HasAuthority()) {
 		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnHit); // 서버에서만 Hit 이벤트를 바인딩
 	}
 	CollisionBox->IgnoreActorWhenMoving(GetInstigator(), true); // 발사체가 발사자를 무시하도록 설정
 }
+
 
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
@@ -68,6 +89,33 @@ void AProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void AProjectile::SpawnTrailSystem()
+{
+	if (TracerNiagara) {
+		TracerNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			TracerNiagara,
+			CollisionBox,
+			FName(),
+			GetActorLocation(),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition,
+			true  // bAutoDestroy
+		);
+	}
+}
+
+void AProjectile::ExplodeDamage()
+{
+	APawn* FiringPawn = GetInstigator();
+	if (FiringPawn && HasAuthority()) {
+		AController* FiringController = FiringPawn->GetController();
+		if (FiringController) {
+			UGameplayStatics::ApplyRadialDamageWithFalloff(
+				this, Damage, 10.f, GetActorLocation(), 200.f, 500.f, 1.f, UDamageType::StaticClass(), TArray<AActor*>(), this, FiringController); // 적	에게 피해를 적용
+		}
+	}
 }
 
 void AProjectile::MulticastImpactEffect_Implementation(const FVector& Location, const FRotator& Rotation)

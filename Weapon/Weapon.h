@@ -67,9 +67,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Crosshairs")
 	class UTexture2D* CrosshairsTop;
 	//자동화기
-	UPROPERTY(EditAnywhere, Category = "Combat")
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float FireRate = 0.15f; //발사 속도
-	UPROPERTY(EditAnywhere, Category = "Combat")
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	bool bAutoMatickFire = true; //자동 발사 여부
 	//줌 FOV 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
@@ -97,9 +97,9 @@ private:
 	void SetWeaponStateMesh(EWeaponState State); //무기 상태에 따라 메쉬를 설정하는 함수
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ACasing> CasingClass; //케이싱 클래스
-	UPROPERTY(EditAnywhere, Category = "Weapon Ammo", ReplicatedUsing = OnRep_Ammo)
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties", ReplicatedUsing = OnRep_Ammo)
 	int32 Ammo;
-	UPROPERTY(EditAnywhere, Category = "Weapon Ammo")
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	int32 MagCapacity; //탄창 용량
 	UFUNCTION()
 	void OnRep_Ammo(); //탄약을 복제할 때 호출되는 함수

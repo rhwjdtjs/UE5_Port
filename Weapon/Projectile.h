@@ -16,29 +16,42 @@ public:
 	AProjectile();
 	virtual void Destroyed() override;
 protected:
+	UPROPERTY(EditAnywhere)
+	class UBoxComponent* CollisionBox;
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	void StartDestroyTimer(); // 발사체 파괴 타이머 시작 함수
+	void DestroyTimerFinished();
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 	UPROPERTY(EditAnywhere)
 	float Damage=20.f; // 발사체가 주는 피해량
 	UPROPERTY(VisibleAnywhere)
 	class UProjectileMovementComponent* ProjectileMovementComponent;
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-private:
+	FTimerHandle DestroyTimer;
 	UPROPERTY(EditAnywhere)
-	class UBoxComponent* CollisionBox;
-	
-	UPROPERTY(EditAnywhere)
-	class UNiagaraSystem* TracerNiagara; // 발사체의 트레이서 효과를 위한 나이아가라 시스템 템플릿;
-	class UNiagaraComponent* TracerNiagaraComponent; // 발사체의 트레이서 효과를 위한 나이아가라 컴포넌트;
+	float DestroyTime = 3.f;
+	UPROPERTY(VisibleAnywhere)
+	class USkeletalMeshComponent* ProjectileMesh; // 로켓 메쉬 컴포넌트
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* ImpactNiagara; // 발사체의 트레이서 효과를 위한 나이아가라 시스템 템플릿;
 	UPROPERTY(EditAnywhere)
 	class USoundCue* ImpactSound; // 발사체가 충돌할 때 재생할 사운드 큐
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastImpactEffect(const FVector& Location, const FRotator& Rotation);
+	void SpawnTrailSystem(); // 트레일 시스템을 생성하는 함수
+	void ExplodeDamage(); // 발사체가 폭발하는 함수
+public:	
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+private:
+	
+	
+	
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* TracerNiagara; // 발사체의 트레이서 효과를 위한 나이아가라 시스템 템플릿;
+	class UNiagaraComponent* TracerNiagaraComponent; // 발사체의 트레이서 효과를 위한 나이아가라 컴포넌트;
+	
+	
 	
 };

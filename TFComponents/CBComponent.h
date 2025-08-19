@@ -90,6 +90,8 @@ private:
 	int32 StartingShotgunAmmo = 14; //시작 보유 탄약 수
 	UPROPERTY(EditAnywhere)
 	int32 StartingSniperAmmo = 10; //시작 보유 탄약 수
+	UPROPERTY(EditAnywhere)
+	int32 StartingGrenadeAmmo = 10; //시작 보유 탄약 수
 	void InitializeCarriedAmmo(); //보유 탄약을 초기화하는 함수
     // TMap은 언리얼 엔진의 템플릿 컨테이너로, 키-값 쌍을 저장하는 해시 맵입니다.
     // TMap<KeyType, ValueType> 형태로 사용되며, 키를 통해 값에 빠르게 접근할 수 있습니다.

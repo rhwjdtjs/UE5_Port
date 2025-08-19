@@ -4,6 +4,7 @@
 #include "Casing.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
+#include "UnrealProject_7A/UnrealProject_7A.h"
 // Sets default values
 ACasing::ACasing()
 {
@@ -16,6 +17,8 @@ ACasing::ACasing()
 	CasingMesh->SetEnableGravity(true); // 중력 활성화
 	CasingMesh->SetNotifyRigidBodyCollision(true); // 강체 충돌 알림 활성화
 	ShellEjectionImpluse = 3.f; // 케이싱 임펄스 값 설정
+	CasingMesh->SetCollisionResponseToChannel(ECC_SkelatalMesh, ECR_Ignore); // 플레이어(Pawn) 무시
+	CasingMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore); // 플레이어(Pawn) 무시
 }
 
 // Called when the game starts or when spawned
