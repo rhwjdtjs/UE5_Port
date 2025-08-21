@@ -78,6 +78,7 @@ public:
 	float ZoomInterpSpeed = 20.f; //줌 시 FOV 보간 속도
 	void SetHUDAmmo();
 	bool IsEmpty(); //탄약이 없는지 확인하는 함수
+	bool IsFull(); //탄약이 가득 찼는지 확인하는 함수
 private:
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType; //무기 타입

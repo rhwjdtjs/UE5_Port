@@ -11,6 +11,7 @@
 #include "Casing.h"//케이싱 클래스 포함
 #include "Engine/SkeletalMeshSocket.h"
 #include "UnrealProject_7A/PlayerController/TFPlayerController.h"//플레이어 컨트롤러 클래스 포함
+#include "UnrealProject_7A/TFComponents/CBComponent.h"
 
 AWeapon::AWeapon()
 {
@@ -64,6 +65,10 @@ void AWeapon::SpendRound() {
 	SetHUDAmmo();
 }
 void AWeapon::OnRep_Ammo() {
+	TFOwnerCharacter = TFOwnerCharacter == nullptr ? Cast<ATimeFractureCharacter>(GetOwner()) : TFOwnerCharacter; //소유자가 캐릭터인지 확인
+	if(TFOwnerCharacter && TFOwnerCharacter->GetCombatComponent() && IsFull()) {
+		TFOwnerCharacter->GetCombatComponent()->JumpToShotgunEnd(); //샷건의 경우 애니메이션을 끝으로 이동
+	}
 	SetHUDAmmo();
 }
 void AWeapon::OnRep_Owner()
@@ -81,6 +86,10 @@ void AWeapon::OnRep_Owner()
 bool AWeapon::IsEmpty()
 {
 	return Ammo <= 0; //탄약이 0 이하인 경우 true 반환
+}
+bool AWeapon::IsFull()
+{
+	return Ammo == MagCapacity; //탄약이 탄창 용량과 같은 경우 true 반환
 }
 void AWeapon::Fire(const FVector& HitTarget)
 {

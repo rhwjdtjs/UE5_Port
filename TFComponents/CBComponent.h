@@ -24,6 +24,10 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerFinishReload();
 	void FireButtonPressed(bool bPressed); //발사 버튼이 눌렸을 때 호출되는 함수
+	UFUNCTION(BlueprintCallable)
+	void ShotgunShellReload(); //샷건 탄약 재장전 함수
+
+	void JumpToShotgunEnd();
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_CombatState)
 	ECombatState CombatState=ECombatState::ECS_Unoccupied; //전투 상태
@@ -78,6 +82,7 @@ private:
 	void HandleReload(); //재장전 처리 함수
 	int32 AmountToReload(); //재장전할 양
 	void UpdateAmmoValues(); //탄약 값을 업데이트하는 함수
+	void UpdateShotgunAmmoValues(); //샷건 탄약 값을 업데이트하는 함수
 	UPROPERTY(EditAnywhere)
 	int32 StartingCarriedAmmo = 30; //시작 보유 탄약 수
 	UPROPERTY(EditAnywhere)

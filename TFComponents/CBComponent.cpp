@@ -18,6 +18,7 @@
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
 #include "Sound/SoundCue.h"
+#include "UnrealProject_7A/Character/TFAnimInstance.h"
 UCBComponent::UCBComponent()
 {
 
@@ -143,10 +144,41 @@ void UCBComponent::UpdateAmmoValues()
 	}
 	EquippedWeapon->AddAmmo(-ReloadAmount); //장착된 무기에 리로드할 양을 추가한다.
 }
+void UCBComponent::UpdateShotgunAmmoValues()
+{
+	if (Character == nullptr || EquippedWeapon == nullptr) return; //캐릭터가 없으면 함수를 종료한다.
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType())) { // 장착된 무기의 타입이 보유 탄약 맵에 있는지 확인
+		CarriedAmmoMap[EquippedWeapon->GetWeaponType()] -= 1; // 보유 탄약에서 리로드할 양을 차감한다.
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()]; //현재 보유 탄약을 업데이트한다.
+	}
+	Controller = Controller == nullptr ? Cast<ATFPlayerController>(Character->Controller) : Controller; //컨트롤러를 가져온다.
+	if (Controller) {
+		Controller->SetHUDCarriedAmmo(CarriedAmmo); //컨트롤러가 있다면 HUD에 보유 탄약을 설정한다.
+	}
+	EquippedWeapon->AddAmmo(-1); //장착된 무기에 리로드할 양을 추가한다.
+	bCanFire = true; //발사 가능 여부를 true로 설정한다.
+	if (EquippedWeapon->IsFull() || CarriedAmmo == 0) {
+		JumpToShotgunEnd(); //장착된 무기가 가득 차면 샷건 끝으로 점프한다.
+	}
+}
+void UCBComponent::ShotgunShellReload()
+{
+	if (Character && Character->HasAuthority())
+	{
+		UpdateShotgunAmmoValues(); //샷건 탄약 값을 업데이트한다.
+	}
+}
+
+void UCBComponent::JumpToShotgunEnd()
+{
+	UAnimInstance* AnimInstance = Character->GetMesh()->GetAnimInstance(); //캐릭터의 애니메이션 인스턴스를 가져온다.
+	if (AnimInstance && Character->GetReloadMontage()) {
+		AnimInstance->Montage_JumpToSection(FName("ShotgunEnd"));
+	}
+}
+
 void UCBComponent::ServerReload_Implementation()
 {
-	
-	
 	CombatState = ECombatState::ECS_Reloading;//전투 상태를 리로드 상태로 설정한다
 	HandleReload();//리로드를 처리한다.
 }
@@ -175,8 +207,13 @@ void UCBComponent::ServerFinishReload_Implementation()
 	
 void UCBComponent::OnRep_CarriedAmmo()
 {
+	//Controller = Controller == nullptr ? Cast<ATFPlayerController>(Character->Controller) : Controller; //컨트롤러를 가져온다.
 	if (Controller) {
 		Controller->SetHUDCarriedAmmo(CarriedAmmo); //컨트롤러가 있다면 HUD에 보유 탄약을 설정한다.
+	}
+	bool bJumpToShotgunEnd = CombatState==ECombatState::ECS_Reloading && EquippedWeapon !=nullptr && EquippedWeapon->GetWeaponType()==EWeaponType::EWT_ShotGun && CarriedAmmo==0; //샷건 끝으로 점프 여부를 초기화한다.
+	if(bJumpToShotgunEnd) {
+		JumpToShotgunEnd(); //샷건 끝으로 점프한다.
 	}
 }
 
@@ -229,6 +266,7 @@ void UCBComponent::FireTimerFinished()
 bool UCBComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr) return false; //장착된 무기가 없으면 발사할 수 없다.
+	if (!EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_ShotGun) return true; //샷건의 경우 리로드 상태에서도 발사할 수 있다.
 	return !EquippedWeapon->IsEmpty() && bCanFire && CombatState==ECombatState::ECS_Unoccupied; //발사할 수 있는 상태인지 확인한다.
 }
 
@@ -288,6 +326,7 @@ void UCBComponent::FireButtonPressed(bool bPressed)
 	}
 }
 
+
 void UCBComponent::Fire()
 {
 	if (CanFire())
@@ -318,6 +357,12 @@ void UCBComponent::ServerSetAiming_Implementation(bool bAiming)
 void UCBComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTargert)
 {
 	if (EquippedWeapon == nullptr) return;
+	if (Character && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_ShotGun) {
+		Character->PlayFireMontage(bisAiming); //캐릭터의 발사 모션을 재생한다.
+		EquippedWeapon->Fire(TraceHitTargert); //무기를 발사한다.
+		CombatState = ECombatState::ECS_Unoccupied; //발사 후 전투 상태를 비어있음으로 설정한다.
+		return; //샷건의 경우 리로드 상태에서도 발사할 수 있다.
+	}
 	if (Character && CombatState==ECombatState::ECS_Unoccupied) {
 		Character->PlayFireMontage(bisAiming); //캐릭터의 발사 모션을 재생한다.
 		EquippedWeapon->Fire(TraceHitTargert); //무기를 발사한다.
