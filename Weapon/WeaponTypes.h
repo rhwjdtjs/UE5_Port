@@ -1,4 +1,8 @@
 #pragma once
+
+#define CUSTOM_DEPTH_A 250
+#define CUSTOM_DEPTH_B 251
+#define CUSTOM_DEPTH_C 252
 UENUM(BlueprintType)
 enum class EWeaponType : uint8 {
 	EWT_AssaultRifle UMETA(DisplayName = "Assault Rifle"),

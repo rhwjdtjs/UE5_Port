@@ -25,6 +25,9 @@ AWeapon::AWeapon()
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);//Pawn 채널에 대해 충돌 응답을 무시
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);//충돌 비활성화
 
+	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_A);//사용자 정의 깊도 스텐실 값 설정
+	WeaponMesh->MarkRenderStateDirty();//렌더 상태를 더럽혀서 업데이트 필요
+	EnableCustomDepth(true);//사용자 정의 깊도 활성화
 	AreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AreaSphere"));//스피어 컴포넌트 생성
 	AreaSphere->SetupAttachment(RootComponent);//루트 컴포넌트에 부착
 	AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);//모든 채널에 대해 충돌 응답을 무시
@@ -33,7 +36,12 @@ AWeapon::AWeapon()
 	PickupWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickupWidget"));//위젯 컴포넌트 생성
 	PickupWidget->SetupAttachment(RootComponent);//루트 컴포넌트에 부착
 }
-
+void AWeapon::EnableCustomDepth(bool bEnable)
+{
+	if (WeaponMesh) {
+		WeaponMesh->SetRenderCustomDepth(bEnable);//무기 메시의 사용자 정의 깊도를 설정
+	}
+}
 void AWeapon::ShowPickupWidget(bool bShowPickupWidget)
 {
 	if (PickupWidget) {
@@ -164,6 +172,8 @@ void AWeapon::OnShpereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	}
 }
 
+
+
 void AWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -181,6 +191,8 @@ void AWeapon::SetWeaponState(EWeaponState State)
 		WeaponMesh->SetSimulatePhysics(false);//무기 메시 물리 시뮬레이션 활성화
 		WeaponMesh->SetEnableGravity(false);//무기 메시 중력 활성화
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);//무기 메시 충돌 활성화
+		
+		EnableCustomDepth(false);//사용자 정의 깊도 비활성화
 		break;
 
 	case EWeaponState::EWS_Dropped:
@@ -190,6 +202,9 @@ void AWeapon::SetWeaponState(EWeaponState State)
 		WeaponMesh->SetSimulatePhysics(true);//무기 메시 물리 시뮬레이션 활성화
 		WeaponMesh->SetEnableGravity(true);//무기 메시 중력 활성화
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);//무기 메시 충돌 활성화
+		WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_A);//사용자 정의 깊도 스텐실 값 설정
+		WeaponMesh->MarkRenderStateDirty();//렌더 상태를 더럽혀서 업데이트 필요
+		EnableCustomDepth(true);//사용자 정의 깊도 활성화
 		break;
 	}
 	
@@ -205,11 +220,15 @@ void AWeapon::OnRep_WeaponState()
 		WeaponMesh->SetSimulatePhysics(false);//무기 메시 물리 시뮬레이션 활성화
 		WeaponMesh->SetEnableGravity(false);//무기 메시 중력 활성화
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);//무기 메시 충돌 활성화
+		EnableCustomDepth(false);//사용자 정의 깊도 비활성화
 		break;
 	case EWeaponState::EWS_Dropped:
 		WeaponMesh->SetSimulatePhysics(true);//무기 메시 물리 시뮬레이션 활성화
 		WeaponMesh->SetEnableGravity(true);//무기 메시 중력 활성화
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);//무기 메시 충돌 활성화
+		WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_A);//사용자 정의 깊도 스텐실 값 설정
+		WeaponMesh->MarkRenderStateDirty();//렌더 상태를 더럽혀서 업데이트 필요
+		EnableCustomDepth(true);//사용자 정의 깊도 활성화
 		break;
 	case EWeaponState::EWS_MAX:
 		break;

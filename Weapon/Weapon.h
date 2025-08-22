@@ -42,7 +42,8 @@ protected:
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
-
+	//사용자 깊이 수정
+	void EnableCustomDepth(bool bEnable);
 public:	
 	virtual void Tick(float DeltaTime) override;
 	void SetWeaponState(EWeaponState State); //무기 상태를 설정하는 함수
