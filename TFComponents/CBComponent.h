@@ -28,6 +28,8 @@ public:
 	void ShotgunShellReload(); //샷건 탄약 재장전 함수
 
 	void JumpToShotgunEnd();
+	UFUNCTION(BlueprintCallable)
+	void ThrowGrenadeFinished(); //수류탄 투척 완료 함수
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_CombatState)
 	ECombatState CombatState=ECombatState::ECS_Unoccupied; //전투 상태
@@ -158,6 +160,9 @@ protected:
 
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult); //조준선 아래의 물체를 추적하는 함수
 	void SetHUDCrossharis(float DeltaTime); //HUD의 크로스헤어를 설정하는 함수
+	void ThrowGrenade(); //수류탄 투척 함수
+	UFUNCTION(Server, Reliable)
+	void ServerThrowGrenade(); //서버에서 수류탄 투척 요청을 처리하는 함수
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void Reload();

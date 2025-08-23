@@ -52,6 +52,7 @@ void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ATimeFractureCharacter::FireButtonPressed); //우클릭키를 눌렀을 때 AimButton 함수를 호출한다.
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ATimeFractureCharacter::FireButtonReleased); //우클릭키를 떼었을 때 AimButtonRelease 함수를 호출한다.
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ATimeFractureCharacter::ReloadButtonPressed); //키보드의 C키를 눌렀을 때 CrouchButton 함수를 호출한다.
+	PlayerInputComponent->BindAction("ThrowGrenade", IE_Pressed, this, &ATimeFractureCharacter::GrenadeButtonPressed); //G키를 눌렀을 때 수류탄 투척 애니메이션 재생
 	//프로젝트 세팅에 저장된 키의 이름을 바인드한다. this ->이 함수의 있는 함수를 불러옴
 }
 
@@ -172,6 +173,12 @@ void ATimeFractureCharacter::ReloadButtonPressed()
 	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
 	if (CombatComponent) {
 		CombatComponent->Reload(); //전투 컴포넌트의 재장전을 호출한다.
+	}
+}
+void ATimeFractureCharacter::GrenadeButtonPressed()
+{
+	if (CombatComponent) {
+		CombatComponent->ThrowGrenade(); //전투 컴포넌트의 수류탄 투척을 호출한다.
 	}
 }
 void ATimeFractureCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCursor)
@@ -453,6 +460,14 @@ FVector ATimeFractureCharacter::GetHitTarget() const
 
 }
 
+
+void ATimeFractureCharacter::PlayThrowGrendadeMontage()
+{
+	UAnimInstance* animInstance = GetMesh()->GetAnimInstance(); //캐릭터의 애니메이션 인스턴스를 가져온다.
+	if(animInstance && ThrowGrenadeMontage) {
+		animInstance->Montage_Play(ThrowGrenadeMontage); //애니메이션 몽타주를 재생한다.
+	}
+}
 
 void ATimeFractureCharacter::Destroyed()
 {

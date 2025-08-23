@@ -30,6 +30,7 @@ UCBComponent::UCBComponent()
 void UCBComponent::EquipWeapon(AWeapon* WeaponEquip)
 {
 	if (Character == nullptr || WeaponEquip == nullptr) return;
+	if (CombatState != ECombatState::ECS_Unoccupied)return; //전투 상태가 비어있지 않으면 장착하지 않는다.
 	if (EquippedWeapon) {
 		EquippedWeapon->DropWeapon(); //이미 장착된 무기가 있으면 드롭한다.
 	}
@@ -104,6 +105,10 @@ void UCBComponent::OnRep_CombatState()
 			HandleReload(); //리로드를 처리한다.
 		
 		break;
+	case ECombatState::ECS_ThrowingGrenade:
+		if (Character && !Character->IsLocallyControlled()) {
+			Character->PlayThrowGrendadeMontage(); //캐릭터의 수류탄 던지기 몽타주를 재생한다.
+		}
 	case ECombatState::ECS_MAX:
 		break;
 	}
@@ -175,6 +180,11 @@ void UCBComponent::JumpToShotgunEnd()
 	if (AnimInstance && Character->GetReloadMontage()) {
 		AnimInstance->Montage_JumpToSection(FName("ShotgunEnd"));
 	}
+}
+
+void UCBComponent::ThrowGrenadeFinished()
+{
+	CombatState = ECombatState::ECS_Unoccupied; //전투 상태를 비어있는 상태로 설정한다.
 }
 
 void UCBComponent::ServerReload_Implementation()
@@ -464,6 +474,27 @@ void UCBComponent::SetHUDCrossharis(float DeltaTime)
 			HUDPackage.CrosshairSpread = 0.5f+ CrosshairVelocityFactor - CrosshairAimFactor+CrosshairShootingFactor; // 크로스헤어 스프레드를 설정한다.
 			TFHUD->SetHUDPackage(HUDPackage); // HUD 패키지를 설정한다.
 		}
+	}
+}
+
+void UCBComponent::ThrowGrenade()
+{
+	if (EquippedWeapon == nullptr || Character == nullptr) return; //장착된 무기나 캐릭터가 없으면 함수를 종료한다.
+	if (CombatState != ECombatState::ECS_Unoccupied) return; //전투 상태가 비어있지 않으면 수류탄을 던지지 않는다.
+	CombatState = ECombatState::ECS_ThrowingGrenade;//전투 상태를 수류탄 던지기로 설정한다.
+	if (Character) {
+		Character->PlayThrowGrendadeMontage(); //캐릭터의 수류탄 던지기 몽타주를 재생한다.
+	}
+	if (Character && !Character->HasAuthority()) {
+		ServerThrowGrenade(); //서버에 수류탄 던지기 요청을 보낸다.
+	}
+}
+
+void UCBComponent::ServerThrowGrenade_Implementation()
+{
+	CombatState = ECombatState::ECS_ThrowingGrenade;//전투 상태를 수류탄 던지기로 설정한다.
+	if (Character) {
+		Character->PlayThrowGrendadeMontage(); //캐릭터의 수류탄 던지기 몽타주를 재생한다.
 	}
 }
 
