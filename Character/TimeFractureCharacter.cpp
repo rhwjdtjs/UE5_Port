@@ -404,7 +404,7 @@ void ATimeFractureCharacter::PlayElimMontage()
 
 void ATimeFractureCharacter::PlayHitReactMontage()
 {
-	if (CombatComponent == nullptr || CombatComponent->EquippedWeapon == nullptr) return;
+	if (CombatComponent == nullptr || CombatComponent->EquippedWeapon == nullptr || CombatComponent->CombatState == ECombatState::ECS_Reloading) return;
 	UAnimInstance* animInstance = GetMesh()->GetAnimInstance(); //캐릭터의 애니메이션 인스턴스를 가져온다.
 	if (animInstance && HitReactMontage) {
 		animInstance->Montage_Play(HitReactMontage); //애니메이션 몽타주를 재생한다.
