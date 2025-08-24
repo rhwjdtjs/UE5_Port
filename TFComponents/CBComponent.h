@@ -152,6 +152,12 @@ protected:
 	UFUNCTION()
 	void OnRep_EquippedWeapon(); //장착된 무기가 바뀔 때 호출되는 함수
 	
+	void DropEquippedWeapon(); //장착된 무기를 떨어뜨리는 함수
+	void AttachActorToRightHand(AActor* ActorToAttach); //오른손에 액터를 부착하는 함수
+	void AttachActorToLeftHand(AActor* ActorToAttach); //왼손에 액터를 부착하는 함수
+	void UpdateCarriedAmmo(); //보유 탄약을 업데이트하는 함수
+	void PlayEquipSound(); //장착 사운드를 재생하는 함수
+	void ReloadEmptyWeapon(); //빈 무기 리로드 함수
 	void Fire();
 	UFUNCTION(Server, Reliable)
 	void ServerFire(const FVector_NetQuantize& TraceHitTargert); //서버에서 발사 버튼이 눌렸는지 여부를 설정하는 함수

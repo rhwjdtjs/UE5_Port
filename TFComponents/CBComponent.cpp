@@ -31,20 +31,56 @@ void UCBComponent::EquipWeapon(AWeapon* WeaponEquip)
 {
 	if (Character == nullptr || WeaponEquip == nullptr) return;
 	if (CombatState != ECombatState::ECS_Unoccupied)return; //전투 상태가 비어있지 않으면 장착하지 않는다.
+	DropEquippedWeapon(); //이미 장착된 무기가 있으면 드롭한다.
+	EquippedWeapon = WeaponEquip;
+	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
+	AttachActorToRightHand(EquippedWeapon);
+	EquippedWeapon->SetOwner(Character);
+	EquippedWeaponPositionModify();
+	EquippedWeapon->SetHUDAmmo(); //장착된 무기의 HUD 탄약을 설정한다.
+	UpdateCarriedAmmo(); //보유 탄약을 업데이트한다.
+	PlayEquipSound();
+	EquippedWeapon->ShowPickupWidget(false);
+	EquippedWeapon->GetAreaSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ReloadEmptyWeapon();
+}
+
+void UCBComponent::OnRep_EquippedWeapon()
+{
+	if (EquippedWeapon) {
+		EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
+
+		AttachActorToRightHand(EquippedWeapon);
+	}
+	PlayEquipSound();
+}
+void UCBComponent::DropEquippedWeapon()
+{
 	if (EquippedWeapon) {
 		EquippedWeapon->DropWeapon(); //이미 장착된 무기가 있으면 드롭한다.
 	}
-	EquippedWeapon = WeaponEquip;
-	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
-
-	EquippedWeapon->AttachToComponent(
+}
+void UCBComponent::AttachActorToRightHand(AActor* ActorToAttach)
+{
+	if (Character == nullptr|| Character->GetMesh()==nullptr || ActorToAttach == nullptr) return;
+	ActorToAttach->AttachToComponent(
 		Character->GetMesh(),
 		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
 		FName("RightHandSocket")
 	);
-	EquippedWeapon->SetOwner(Character);
-	EquippedWeaponPositionModify();
-	EquippedWeapon->SetHUDAmmo(); //장착된 무기의 HUD 탄약을 설정한다.
+}
+void UCBComponent::AttachActorToLeftHand(AActor* ActorToAttach)
+{
+	if (Character == nullptr || Character->GetMesh() == nullptr || ActorToAttach == nullptr) return;
+	ActorToAttach->AttachToComponent(
+		Character->GetMesh(),
+		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+		FName("LeftHandSocket")
+	);
+}
+void UCBComponent::UpdateCarriedAmmo()
+{
+	if (EquippedWeapon == nullptr)return;
 	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType())) {
 		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()]; //장착된 무기의 보유 탄약을 설정한다.
 	}
@@ -52,16 +88,19 @@ void UCBComponent::EquipWeapon(AWeapon* WeaponEquip)
 	if (Controller) {
 		Controller->SetHUDCarriedAmmo(CarriedAmmo); //컨트롤러가 있다면 HUD에 보유 탄약을 설정한다.
 	}
-	if (EquippedWeapon->EquipSound) {
+}
+void UCBComponent::PlayEquipSound()
+{
+	if (Character&& EquippedWeapon &&EquippedWeapon->EquipSound) {
 		UGameplayStatics::PlaySoundAtLocation(this, EquippedWeapon->EquipSound, Character->GetActorLocation()); //장착 사운드를 재생한다.
 	}
-	EquippedWeapon->ShowPickupWidget(false);
-	EquippedWeapon->GetAreaSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	if (EquippedWeapon->IsEmpty()) {
+}
+void UCBComponent::ReloadEmptyWeapon()
+{
+	if (EquippedWeapon&&EquippedWeapon->IsEmpty()) {
 		Reload(); //장착된 무기가 비어있으면 리로드를 시도한다.
 	}
 }
-
 void UCBComponent::EquippedWeaponPositionModify()
 {
 	if (EquippedWeapon->GetWeaponType() == EWeaponType::EWT_ShotGun)
@@ -108,6 +147,7 @@ void UCBComponent::OnRep_CombatState()
 	case ECombatState::ECS_ThrowingGrenade:
 		if (Character && !Character->IsLocallyControlled()) {
 			Character->PlayThrowGrendadeMontage(); //캐릭터의 수류탄 던지기 몽타주를 재생한다.
+			AttachActorToLeftHand(EquippedWeapon); //장착된 무기를 왼손에 부착한다.
 		}
 	case ECombatState::ECS_MAX:
 		break;
@@ -185,6 +225,8 @@ void UCBComponent::JumpToShotgunEnd()
 void UCBComponent::ThrowGrenadeFinished()
 {
 	CombatState = ECombatState::ECS_Unoccupied; //전투 상태를 비어있는 상태로 설정한다.
+	AttachActorToRightHand(EquippedWeapon); //장착된 무기를 오른손에 부착한다.
+	EquippedWeaponPositionModify(); //장착된 무기의 위치를 수정한다.
 }
 
 void UCBComponent::ServerReload_Implementation()
@@ -268,9 +310,7 @@ void UCBComponent::FireTimerFinished()
 	if (bFireButtonPressed && EquippedWeapon->bAutoMatickFire) {
 		Fire(); //발사 버튼이 눌렸으면 발사한다.
 	}
-	if (EquippedWeapon->IsEmpty()) {
-		Reload(); //장착된 무기가 비어있으면 리로드를 시도한다.
-	}
+	ReloadEmptyWeapon(); //장착된 무기가 비어있으면 리로드를 시도한다.
 }
 
 bool UCBComponent::CanFire()
@@ -312,21 +352,6 @@ void UCBComponent::SetAiming(bool bAiming)
 	}
 }
 
-void UCBComponent::OnRep_EquippedWeapon()
-{
-	if (EquippedWeapon) {
-		EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
-
-		EquippedWeapon->AttachToComponent(
-			Character->GetMesh(),
-			FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-			FName("RightHandSocket")
-		);
-	}
-	if (EquippedWeapon->EquipSound) {
-		UGameplayStatics::PlaySoundAtLocation(this, EquippedWeapon->EquipSound, Character->GetActorLocation()); //장착 사운드를 재생한다.
-	}
-}
 
 void UCBComponent::FireButtonPressed(bool bPressed)
 {
@@ -335,6 +360,7 @@ void UCBComponent::FireButtonPressed(bool bPressed)
 		Fire();
 	}
 }
+
 
 
 void UCBComponent::Fire()
@@ -484,6 +510,7 @@ void UCBComponent::ThrowGrenade()
 	CombatState = ECombatState::ECS_ThrowingGrenade;//전투 상태를 수류탄 던지기로 설정한다.
 	if (Character) {
 		Character->PlayThrowGrendadeMontage(); //캐릭터의 수류탄 던지기 몽타주를 재생한다.
+		AttachActorToLeftHand(EquippedWeapon); //무기를 왼손에 부착한다.
 	}
 	if (Character && !Character->HasAuthority()) {
 		ServerThrowGrenade(); //서버에 수류탄 던지기 요청을 보낸다.
@@ -495,6 +522,7 @@ void UCBComponent::ServerThrowGrenade_Implementation()
 	CombatState = ECombatState::ECS_ThrowingGrenade;//전투 상태를 수류탄 던지기로 설정한다.
 	if (Character) {
 		Character->PlayThrowGrendadeMontage(); //캐릭터의 수류탄 던지기 몽타주를 재생한다.
+		AttachActorToLeftHand(EquippedWeapon); //무기를 왼손에 부착한다.
 	}
 }
 
