@@ -154,7 +154,7 @@ void UCBComponent::OnRep_CombatState()
 	}
 }
 void UCBComponent::Reload() {
-	if (CarriedAmmo > 0 && CombatState !=ECombatState::ECS_Reloading && EquippedWeapon) {
+	if (CarriedAmmo > 0 && CombatState !=ECombatState::ECS_Reloading && EquippedWeapon && !EquippedWeapon->IsFull()) {
 		ServerReload(); //서버에 리로드 요청을 보낸다.
 	}
 }

@@ -77,7 +77,9 @@ private:
 	class UCBComponent* CombatComponent; //전투 컴포넌트
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButton(); //서버에서 장착 버튼을 누를 때 호출되는 함수
-
+	//수류탄
+	UPROPERTY(EditAnywhere)
+	USkeletalMeshComponent* AttachedGrenade; //장착된 수류탄 메쉬 컴포넌트
 	//
 	//애니메이션 몽타주
 	//

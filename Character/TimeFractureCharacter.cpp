@@ -35,6 +35,10 @@ ATimeFractureCharacter::ATimeFractureCharacter()
 	GetMesh()->SetCollisionObjectType(ECC_SkelatalMesh); //메쉬의 충돌 객체 유형을 스켈레탈 메쉬로 설정한다.
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore); //메쉬가 시야 채널에 반응하지 않도록 설정한다.
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block); //메쉬가 시야 채널에 반응하지 않도록 설정한다.
+
+	AttachedGrenade = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("AttachedGrenade"));
+	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket")); //수류탄 메쉬를 캐릭터의 메쉬에 부착한다.
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision); //수류탄 메쉬의 충돌을 비활성화한다.
 	// StandingCameraOffset = FVector(0.f, 30.f, 143.f);    //카메라의 상대 위치를 설정한다. 캐릭터의 머리 위에 카메라가 위치하도록 한다.
 	// CrouchingCameraOffset = FVector(0.f, 0.f, 90.f); // 더 낮은 위치
 }
