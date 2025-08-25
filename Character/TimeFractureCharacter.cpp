@@ -492,6 +492,9 @@ void ATimeFractureCharacter::BeginPlay()
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ATimeFractureCharacter::ReceiveDamage); //피해를 받았을 때 호출되는 함수를 바인딩한다.
 	}
+	if (AttachedGrenade) {
+		AttachedGrenade->SetVisibility(false); //수류탄 메쉬를 숨긴다.
+	}
 }
 void ATimeFractureCharacter::UpdateHUDHealth()
 {

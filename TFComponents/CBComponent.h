@@ -30,6 +30,8 @@ public:
 	void JumpToShotgunEnd();
 	UFUNCTION(BlueprintCallable)
 	void ThrowGrenadeFinished(); //수류탄 투척 완료 함수
+	UFUNCTION(BlueprintCallable)
+	void LaunchGrenade(); //수류탄 발사 함수
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_CombatState)
 	ECombatState CombatState=ECombatState::ECS_Unoccupied; //전투 상태
@@ -85,6 +87,7 @@ private:
 	int32 AmountToReload(); //재장전할 양
 	void UpdateAmmoValues(); //탄약 값을 업데이트하는 함수
 	void UpdateShotgunAmmoValues(); //샷건 탄약 값을 업데이트하는 함수
+	void ShowAttachedGrenade(bool bShowGrenade); //부착된 수류탄을 표시하는 함수
 	UPROPERTY(EditAnywhere)
 	int32 StartingCarriedAmmo = 30; //시작 보유 탄약 수
 	UPROPERTY(EditAnywhere)
@@ -99,6 +102,7 @@ private:
 	int32 StartingSniperAmmo = 10; //시작 보유 탄약 수
 	UPROPERTY(EditAnywhere)
 	int32 StartingGrenadeAmmo = 10; //시작 보유 탄약 수
+
 	void InitializeCarriedAmmo(); //보유 탄약을 초기화하는 함수
     // TMap은 언리얼 엔진의 템플릿 컨테이너로, 키-값 쌍을 저장하는 해시 맵입니다.
     // TMap<KeyType, ValueType> 형태로 사용되며, 키를 통해 값에 빠르게 접근할 수 있습니다.

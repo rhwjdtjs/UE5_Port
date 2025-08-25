@@ -148,6 +148,7 @@ void UCBComponent::OnRep_CombatState()
 		if (Character && !Character->IsLocallyControlled()) {
 			Character->PlayThrowGrendadeMontage(); //캐릭터의 수류탄 던지기 몽타주를 재생한다.
 			AttachActorToLeftHand(EquippedWeapon); //장착된 무기를 왼손에 부착한다.
+			ShowAttachedGrenade(true); //캐릭터의 부착된 수류탄을 보이게 한다.
 		}
 	case ECombatState::ECS_MAX:
 		break;
@@ -206,6 +207,12 @@ void UCBComponent::UpdateShotgunAmmoValues()
 		JumpToShotgunEnd(); //장착된 무기가 가득 차면 샷건 끝으로 점프한다.
 	}
 }
+void UCBComponent::ShowAttachedGrenade(bool bShowGrenade)
+{
+	if (Character && Character->GetAttachedGrenade()) {
+		Character->GetAttachedGrenade()->SetVisibility(bShowGrenade); //캐릭터의 부착된 수류탄의 가시성을 설정한다.
+	}
+}
 void UCBComponent::ShotgunShellReload()
 {
 	if (Character && Character->HasAuthority())
@@ -227,6 +234,11 @@ void UCBComponent::ThrowGrenadeFinished()
 	CombatState = ECombatState::ECS_Unoccupied; //전투 상태를 비어있는 상태로 설정한다.
 	AttachActorToRightHand(EquippedWeapon); //장착된 무기를 오른손에 부착한다.
 	EquippedWeaponPositionModify(); //장착된 무기의 위치를 수정한다.
+}
+
+void UCBComponent::LaunchGrenade()
+{
+	ShowAttachedGrenade(false); //캐릭터의 부착된 수류탄을 숨긴다.
 }
 
 void UCBComponent::ServerReload_Implementation()
@@ -511,6 +523,7 @@ void UCBComponent::ThrowGrenade()
 	if (Character) {
 		Character->PlayThrowGrendadeMontage(); //캐릭터의 수류탄 던지기 몽타주를 재생한다.
 		AttachActorToLeftHand(EquippedWeapon); //무기를 왼손에 부착한다.
+		ShowAttachedGrenade(true); //캐릭터의 부착된 수류탄을 보이게 한다.
 	}
 	if (Character && !Character->HasAuthority()) {
 		ServerThrowGrenade(); //서버에 수류탄 던지기 요청을 보낸다.
@@ -523,6 +536,7 @@ void UCBComponent::ServerThrowGrenade_Implementation()
 	if (Character) {
 		Character->PlayThrowGrendadeMontage(); //캐릭터의 수류탄 던지기 몽타주를 재생한다.
 		AttachActorToLeftHand(EquippedWeapon); //무기를 왼손에 부착한다.
+		ShowAttachedGrenade(true); //캐릭터의 부착된 수류탄을 보이게 한다.
 	}
 }
 

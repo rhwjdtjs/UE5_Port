@@ -125,6 +125,7 @@ public:
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; } //현재 체력을 반환하는 함수
 	FORCEINLINE UCBComponent* GetCombatComponent() const { return CombatComponent; } //전투 컴포넌트를 반환하는 함수
 	FORCEINLINE UAnimMontage* GetReloadMontage() const { return ReloadMontage; } //재장전 애니메이션 몽타주를 반환하는 함수
+	FORCEINLINE USkeletalMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; } //장착된 수류탄 메쉬 컴포넌트를 반환하는 함수
 	ECombatState GetCombatState() const; //전투 상태를 반환하는 함수 
 	AWeapon* GetEquippedWeapon();
 	void PlayFireMontage(bool bAiming); //무기 발사 모션 재생 함수
