@@ -128,6 +128,7 @@ void UCBComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(UCBComponent, EquippedWeapon); //장착된 무기를 복제한다.
 	DOREPLIFETIME(UCBComponent, bisAiming);// 조준 여부를 복제한다.
 	DOREPLIFETIME(UCBComponent, CombatState); //전투 상태를 복제한다.
+	DOREPLIFETIME(UCBComponent, Grenades); //수류탄 개수를 복제한다.
 	DOREPLIFETIME_CONDITION(UCBComponent, CarriedAmmo, COND_OwnerOnly); // 소유자만 탄약을 복제한다.
 	//DOREPLIFETIME_CONDITION(UCBComponent, EquippedWeapon, COND_OwnerOnly); //장착된 무기를 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
 }
@@ -305,7 +306,6 @@ void UCBComponent::OnRep_CarriedAmmo()
 		JumpToShotgunEnd(); //샷건 끝으로 점프한다.
 	}
 }
-
 
 
 void UCBComponent::InitializeCarriedAmmo()
@@ -542,6 +542,7 @@ void UCBComponent::SetHUDCrossharis(float DeltaTime)
 
 void UCBComponent::ThrowGrenade()
 {
+	if (Grenades == 0) return; //수류탄이 없으면 함수를 종료한다.
 	if (EquippedWeapon == nullptr || Character == nullptr) return; //장착된 무기나 캐릭터가 없으면 함수를 종료한다.
 	if (CombatState != ECombatState::ECS_Unoccupied) return; //전투 상태가 비어있지 않으면 수류탄을 던지지 않는다.
 	CombatState = ECombatState::ECS_ThrowingGrenade;//전투 상태를 수류탄 던지기로 설정한다.
@@ -553,18 +554,35 @@ void UCBComponent::ThrowGrenade()
 	if (Character && !Character->HasAuthority()) {
 		ServerThrowGrenade(); //서버에 수류탄 던지기 요청을 보낸다.
 	}
+	if(Character && Character->HasAuthority()) {
+		Grenades = FMath::Clamp(Grenades - 1, 0, MaxGrenades); //수류탄 개수를 감소시킨다.
+		UpdateHUDGrenades(); //HUD의 수류탄 개수를 업데이트한다.
+	}
 }
 
 void UCBComponent::ServerThrowGrenade_Implementation()
 {
+	if (Grenades == 0) return; //수류탄이 없으면 함수를 종료한다.
 	CombatState = ECombatState::ECS_ThrowingGrenade;//전투 상태를 수류탄 던지기로 설정한다.
 	if (Character) {
 		Character->PlayThrowGrendadeMontage(); //캐릭터의 수류탄 던지기 몽타주를 재생한다.
 		AttachActorToLeftHand(EquippedWeapon); //무기를 왼손에 부착한다.
 		ShowAttachedGrenade(true); //캐릭터의 부착된 수류탄을 보이게 한다.
 	}
+	Grenades = FMath::Clamp(Grenades - 1, 0, MaxGrenades); //수류탄 개수를 감소시킨다.
+	UpdateHUDGrenades(); //HUD의 수류탄 개수를 업데이트한다.
 }
-
+void UCBComponent::UpdateHUDGrenades()
+{
+	Controller = Controller == nullptr ? Cast<ATFPlayerController>(Character->Controller) : Controller; //컨트롤러를 가져온다.
+	if (Controller) {
+		Controller->SetHUDGrenadeCount(Grenades); //컨트롤러가 있다면 HUD에 수류탄 개수를 설정한다.
+	}
+}
+void UCBComponent::OnRep_Grenades()
+{
+	UpdateHUDGrenades(); //HUD의 수류탄 개수를 업데이트한다.
+}
 void UCBComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);

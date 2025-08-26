@@ -187,6 +187,7 @@ void ATimeFractureCharacter::GrenadeButtonPressed()
 }
 void ATimeFractureCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCursor)
 {
+	if (bisElimmed) return;
 	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth); //체력을 감소시키고, 최소값은 0, 최대값은 최대 체력으로 제한한다.
 	UpdateHUDHealth(); //HUD의 체력을 업데이트한다.
 	PlayHitReactMontage(); //피격 애니메이션을 재생한다.
@@ -408,7 +409,8 @@ void ATimeFractureCharacter::PlayElimMontage()
 
 void ATimeFractureCharacter::PlayHitReactMontage()
 {
-	if (CombatComponent == nullptr || CombatComponent->EquippedWeapon == nullptr || CombatComponent->CombatState == ECombatState::ECS_Reloading) return;
+	if (CombatComponent == nullptr || CombatComponent->EquippedWeapon == nullptr || CombatComponent->CombatState == ECombatState::ECS_Reloading || 
+		CombatComponent->CombatState==ECombatState::ECS_ThrowingGrenade) return;
 	UAnimInstance* animInstance = GetMesh()->GetAnimInstance(); //캐릭터의 애니메이션 인스턴스를 가져온다.
 	if (animInstance && HitReactMontage) {
 		animInstance->Montage_Play(HitReactMontage); //애니메이션 몽타주를 재생한다.

@@ -22,6 +22,7 @@ public:
 	void SetHUDCarriedAmmo(int32 Ammos); // 허드의 보유 탄약을 설정하는 함수
 	void SetHUDMatchCountdown(float CountdownTime); // 허드의 매치 카운트다운을 설정하는 함수 
 	void SetHUDAlertCountDown(float CountdownTime); // 허드의 카운트다운을 설정하는 함수
+	void SetHUDGrenadeCount(int32 Grenades); // 허드의 수류탄 개수를 설정하는 함수
 	virtual void OnPossess(APawn* InPawn) override; // 플레이어가 Pawn을 소유할 때 호출되는 함수
 	virtual void Tick(float DeltaTime) override; // 매 프레임마다 호출되는 함수
 	virtual void ReceivedPlayer() override; // 플레이어가 컨트롤러를 받았을 때 호출되는 함수
@@ -50,6 +51,7 @@ private:
 	float HUDMaxHealth;
 	float HUDScore;
 	float HUDDefeats;
+	int32 HUDGrenades;
 protected:
 	virtual void BeginPlay() override; // 플레이어 컨트롤러가 시작될 때 호출되는 함수
 	void SetHUDTime(); // HUD의 시간을 설정하는 함수

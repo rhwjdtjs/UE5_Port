@@ -105,6 +105,18 @@ void ATFPlayerController::SetHUDAlertCountDown(float CountdownTime)
 		TfHud->Alert->WarmupTime->SetText(FText::FromString(CountDownText));
 	}
 }
+void ATFPlayerController::SetHUDGrenadeCount(int32 Grenades)
+{
+	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
+	bool bHUDVaild = TfHud && TfHud->CharacterOverlay && TfHud->CharacterOverlay->GrenadeAmount;
+	if (bHUDVaild) {
+		FString GrenadeText = FString::Printf(TEXT("%d"), Grenades); // 현재 탄약과 최대 탄약을 포맷팅한다.
+		TfHud->CharacterOverlay->GrenadeAmount->SetText(FText::FromString(GrenadeText));
+	}
+	else {
+		HUDGrenades = Grenades; // HUDGrenades를 초기화한다.
+	}
+}
 void ATFPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn); // 부모 클래스의 OnPossess 호출
@@ -285,6 +297,11 @@ void ATFPlayerController::PollInit() {
 				SetHUDHealth(HUDHealth, HUDMaxHealth); // HUDHealth와 HUDMaxHealth를 설정한다.
 				SetHUDScore(HUDScore); // HUDScore를 설정한다.
 				SetHUDDefeats(HUDDefeats); // HUDDefeats를 설정한다.
+				ATimeFractureCharacter* TFCharacter = Cast<ATimeFractureCharacter>(GetPawn());
+				if (TFCharacter && TFCharacter->GetCombatComponent()) {
+					SetHUDGrenadeCount(TFCharacter->GetCombatComponent()->GetGrenades()); // TFCharacter의 수류탄 개수를 설정한다.
+				}
+
 			}
 		}
 	}

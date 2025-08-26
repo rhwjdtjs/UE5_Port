@@ -104,7 +104,14 @@ private:
 	int32 StartingSniperAmmo = 10; //시작 보유 탄약 수
 	UPROPERTY(EditAnywhere)
 	int32 StartingGrenadeAmmo = 10; //시작 보유 탄약 수
+	UPROPERTY(ReplicatedUsing=OnRep_Grenades)
+	int32 Grenades = 3; //수류탄 개수
+	UPROPERTY(EditAnywhere)
+	int32 MaxGrenades = 9; //최대 수류탄 개수
 
+	void UpdateHUDGrenades(); //HUD의 수류탄 개수를 업데이트하는 함수
+	UFUNCTION()
+	void OnRep_Grenades(); //수류탄 개수가 변경되었을 때 호출되는 함수
 	void InitializeCarriedAmmo(); //보유 탄약을 초기화하는 함수
     // TMap은 언리얼 엔진의 템플릿 컨테이너로, 키-값 쌍을 저장하는 해시 맵입니다.
     // TMap<KeyType, ValueType> 형태로 사용되며, 키를 통해 값에 빠르게 접근할 수 있습니다.
@@ -180,5 +187,5 @@ protected:
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void Reload();
-		
+	FORCEINLINE int32	GetGrenades() const { return Grenades; } //수류탄 개수를 반환하는 함수
 };
