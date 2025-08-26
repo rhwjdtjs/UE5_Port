@@ -32,6 +32,8 @@ public:
 	void ThrowGrenadeFinished(); //수류탄 투척 완료 함수
 	UFUNCTION(BlueprintCallable)
 	void LaunchGrenade(); //수류탄 발사 함수
+	UFUNCTION(Server, Reliable)
+	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_CombatState)
 	ECombatState CombatState=ECombatState::ECS_Unoccupied; //전투 상태
@@ -173,6 +175,8 @@ protected:
 	void ThrowGrenade(); //수류탄 투척 함수
 	UFUNCTION(Server, Reliable)
 	void ServerThrowGrenade(); //서버에서 수류탄 투척 요청을 처리하는 함수
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AProjectile> GrenadeClass; //수류탄 클래스
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void Reload();

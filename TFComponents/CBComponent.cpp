@@ -19,6 +19,8 @@
 #include "Components/CapsuleComponent.h"
 #include "Sound/SoundCue.h"
 #include "UnrealProject_7A/Character/TFAnimInstance.h"
+#include "UnrealProject_7A/Weapon/Projectile.h"
+#include "Components/BoxComponent.h"
 UCBComponent::UCBComponent()
 {
 
@@ -239,6 +241,29 @@ void UCBComponent::ThrowGrenadeFinished()
 void UCBComponent::LaunchGrenade()
 {
 	ShowAttachedGrenade(false); //캐릭터의 부착된 수류탄을 숨긴다.
+	if(Character && Character->IsLocallyControlled()) {
+		ServerLaunchGrenade(HitTarget); //서버에 수류탄 발사 요청을 보낸다.
+	}
+}
+
+void UCBComponent::ServerLaunchGrenade_Implementation(const FVector_NetQuantize& Target)
+{
+	if (Character && GrenadeClass && Character->GetAttachedGrenade()) {
+		const FVector StartingLocation = Character->GetAttachedGrenade()->GetComponentLocation();
+		FVector ToTarget = Target - StartingLocation;
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = Character;
+		SpawnParams.Instigator = Character;
+		UWorld* World = GetWorld();
+		if (World) {
+			AProjectile* Grenade = World->SpawnActor<AProjectile>(GrenadeClass, StartingLocation, ToTarget.Rotation(), SpawnParams);
+			if (Grenade) {
+				FCollisionQueryParams QueryParams;
+				QueryParams.AddIgnoredActor(SpawnParams.Owner);
+				Grenade->CollisionBox->IgnoreActorWhenMoving(SpawnParams.Owner, true);
+			}
+		}
+	}
 }
 
 void UCBComponent::ServerReload_Implementation()
