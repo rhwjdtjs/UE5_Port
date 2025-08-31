@@ -125,7 +125,8 @@ private:
 
     // 현재 코드에서의 사용 예시:
 	TMap<EWeaponType, int32> CarriedAmmoMap;  // 무기 타입별 보유 탄약을 저장하는 맵
-
+	UPROPERTY(EditAnywhere)
+	int32 MaxCarriedAmmo = 999;
     /*
     무기 타입별 보유 탄약을 저장하는 맵
     - 키(Key): EWeaponType - 무기의 종류 (예: 권총, 소총, 샷건 등)
@@ -188,4 +189,5 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void Reload();
 	FORCEINLINE int32	GetGrenades() const { return Grenades; } //수류탄 개수를 반환하는 함수
+	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount); //탄약을 줍는 함수
 };

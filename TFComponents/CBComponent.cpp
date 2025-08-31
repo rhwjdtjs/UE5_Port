@@ -162,6 +162,7 @@ void UCBComponent::Reload() {
 		ServerReload(); //서버에 리로드 요청을 보낸다.
 	}
 }
+
 void UCBComponent::HandleReload()
 {
 	if (Character) {
@@ -596,5 +597,15 @@ void UCBComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 		InterpFOV(DeltaTime); // FOV를 보간한다.
 	}
 
+}
+void UCBComponent::PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount)
+{
+	if (CarriedAmmoMap.Contains(WeaponType)) {
+		CarriedAmmoMap[WeaponType] = FMath::Clamp(CarriedAmmoMap[WeaponType] + AmmoAmount, 0, MaxCarriedAmmo); //해당 무기 타입의 보유 탄약을 증가시킨다.
+		UpdateCarriedAmmo(); //보유 탄약을 업데이트한다.
+	}
+	if (EquippedWeapon && EquippedWeapon->IsEmpty() && EquippedWeapon->GetWeaponType() == WeaponType) {
+		Reload(); //장착된 무기가 비어있고, 해당 무기 타입과 같으면 리로드를 시도한다.
+	}
 }
 
