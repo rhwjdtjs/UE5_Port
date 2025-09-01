@@ -50,6 +50,8 @@ protected:
 	void PollInit(); //허드와 같은 함수 초기화
 	virtual void OnRep_PlayerState() override; //플레이어 상태가 변경되었을 때 호출되는 함수
 private:
+	UFUNCTION(Server, Reliable)
+	void ServerSetActorRotation(const FRotator& NewRotation);
 	float AO_YAW; //조준 회전 Yaw 값, 서버에서 클라이언트로 복제되는 변수
 	float AO_PITCH; //조준 회전 Yaw, Pitch 값
 	FRotator BaseAimRotation; //기본 조준 회전
@@ -75,6 +77,8 @@ private:
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon); //겹치는 무기가 바뀔 때 호출되는 함수
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta=(AllowPrivateAccess="true"))
 	class UCBComponent* CombatComponent; //전투 컴포넌트
+	UPROPERTY(VisibleAnyWhere)
+	class UBuffComponent* BuffComponent; //버프 컴포넌트
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButton(); //서버에서 장착 버튼을 누를 때 호출되는 함수
 	//수류탄
@@ -103,6 +107,8 @@ private:
 	float MaxHealth = 100.f; //최대 체력
 	UPROPERTY(ReplicatedUsing=OnRep_Health, VisibleAnywhere, Category = "Player State")
 	float Health=100.f; //현재 체력
+	UPROPERTY(Replicated)
+	FRotator MoveRotation; //캐릭터의 이동 회전
 	bool bisElimmed = false; //플레이어가 제거되었는지 여부
 	FTimerHandle ElimTimer; //플레이어 제거 타이머 핸들
 	UPROPERTY(EditDefaultsOnly)

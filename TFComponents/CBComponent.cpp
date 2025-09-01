@@ -33,6 +33,7 @@ void UCBComponent::EquipWeapon(AWeapon* WeaponEquip)
 {
 	if (Character == nullptr || WeaponEquip == nullptr) return;
 	if (CombatState != ECombatState::ECS_Unoccupied)return; //전투 상태가 비어있지 않으면 장착하지 않는다.
+	Character->bUseControllerRotationYaw = true; //캐릭터가 컨트롤러의 Yaw 회전을 사용하도록 설정한다.
 	DropEquippedWeapon(); //이미 장착된 무기가 있으면 드롭한다.
 	EquippedWeapon = WeaponEquip;
 	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);

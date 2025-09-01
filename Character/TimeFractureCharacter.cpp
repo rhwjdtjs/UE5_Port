@@ -19,18 +19,24 @@
 #include "UnrealProject_7A/PlayerState/TFPlayerState.h"
 #include "UnrealProject_7A/Weapon/WeaponTypes.h"
 #include "Kismet/GameplayStatics.h"
+#include "UnrealProject_7A/TFComponents/BuffComponent.h"
 ATimeFractureCharacter::ATimeFractureCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
+    // Replace the line causing the error with the following:
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom")); //카메라 붐 컴포넌트 생성
 	CameraBoom->SetupAttachment(GetMesh());
-	CameraBoom->bUsePawnControlRotation = true; //카메라 붐이 캐릭터의 회전을 따라가도록 설정
+	CameraBoom->bUsePawnControlRotation = false; //카메라 붐이 캐릭터의 회전을 따라가도록 설정
+	bUseControllerRotationYaw = false; // 카메라 방향을 유지
+	GetCharacterMovement()->bOrientRotationToMovement =false; // 이동 방향으로 회전하지 않음
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); //루트컴포넌트에 부착
 	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
 	OverheadWidget->SetupAttachment(RootComponent); //루트컴포넌트에 부착
 	CombatComponent = CreateDefaultSubobject<UCBComponent>(TEXT("CombatComponent")); //전투 컴포넌트 생성
 	CombatComponent->SetIsReplicated(true); //복제 가능하게 설정
+	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent")); //버프 컴포넌트 생성
+	BuffComponent->SetIsReplicated(true); //복제 가능하게 설정
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true; //캐릭터가 크라우치할 수 있도록 설정한다.
 	GetMesh()->SetCollisionObjectType(ECC_SkelatalMesh); //메쉬의 충돌 객체 유형을 스켈레탈 메쉬로 설정한다.
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore); //메쉬가 시야 채널에 반응하지 않도록 설정한다.
@@ -61,10 +67,10 @@ void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 }
 
 
-void ATimeFractureCharacter::MoveForward(float Value)//"컨트롤러가 바라보는 방향을 기준으로 캐릭터의 전방 벡터를 구하는 것"
+void ATimeFractureCharacter::MoveForward(float Value)
 {
-	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
-	if (Controller != nullptr && Value != 0.f) //플레이어가 컨트롤러를 갖고 있나 && 움직이고있나
+	if (bDisableGameplay) return;
+	if (Controller != nullptr && Value != 0.f && CombatComponent && CombatComponent->EquippedWeapon) //플레이어가 컨트롤러를 갖고 있나 && 움직이고있나
 	{
 		//컨트롤러의 전방으로 보낸다.
 		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f); //컨트롤러의 회전을 담당한다.
@@ -79,17 +85,67 @@ void ATimeFractureCharacter::MoveForward(float Value)//"컨트롤러가 바라보는 방향
 		//지면과 평행한 방향을 나타냄
 		AddMovementInput(Direction, Value); //방향과 값을 취하여 캐릭터가 해당방향으로 이동하게 한다. , 속도와 가속도가 필요하다.
 	}
-	
+	else if(Controller != nullptr && FMath::Abs(Value) > KINDA_SMALL_NUMBER)
+	{
+		float TargetYaw = Controller->GetControlRotation().Yaw;
+		if (Value < 0.f)
+			TargetYaw += 180.f;
+
+		FRotator TargetRotation(0.f, TargetYaw, 0.f);
+
+		// 현재 회전에서 목표 회전으로 부드럽게 보간
+		float InterpSpeed = 10.f; // 값이 클수록 더 빠르게 회전
+		MoveRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, GetWorld()->GetDeltaSeconds(), InterpSpeed);
+		if (HasAuthority())
+		{
+			SetActorRotation(MoveRotation);
+		}
+		else
+		{
+			SetActorRotation(MoveRotation); // 클라에서도 즉시 회전 적용
+			ServerSetActorRotation(MoveRotation);
+		}
+
+		const FVector Direction = GetActorForwardVector();
+		AddMovementInput(Direction, 1.f);
+	}
 }
+
 void ATimeFractureCharacter::MoveRight(float Value)
 {
-	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
-	//컨트롤러의 전방으로 보낸다.
-	const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f); //컨트롤러의 회전을 담당한다.
-	const FVector Direction(FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y)); //전방벡터를 가져와서 초기화 , 
-	//로테이터로 회전 매트릭스를 만들 수 있고 회전 매트릭스에 정보가 담겨있음, frotator에서 frotationmatrix를 만들고 이를 단위축이라 부르고 fvector를 반환한다.
-	//지면과 평행한 방향을 나타냄
-	AddMovementInput(Direction, Value); //방향과 값을 취하여 캐릭터가 해당방향으로 이동하게 한다. , 속도와 가속도가 필요하다.
+	if (bDisableGameplay) return;
+	if (CombatComponent && CombatComponent->EquippedWeapon) {
+		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f); //컨트롤러의 회전을 담당한다.
+		const FVector Direction(FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y)); //전방벡터를 가져와서 초기화 , 
+		//로테이터로 회전 매트릭스를 만들 수 있고 회전 매트릭스에 정보가 담겨있음, frotator에서 frotationmatrix를 만들고 이를 단위축이라 부르고 fvector를 반환한다.
+		//지면과 평행한 방향을 나타냄
+		AddMovementInput(Direction, Value); //방향과 값을 취하여 캐릭터가 해당방향으로 이동하게 한다. , 속도와 가속도가 필요하다.
+	}
+	else if (Controller != nullptr && FMath::Abs(Value) > KINDA_SMALL_NUMBER)
+	{
+		float TargetYaw = Controller->GetControlRotation().Yaw;
+		if (Value > 0.f)
+			TargetYaw += 90.f;
+		else if (Value < 0.f)
+			TargetYaw -= 90.f;
+
+		FRotator TargetRotation(0.f, TargetYaw, 0.f);
+
+		float InterpSpeed = 10.f;
+		MoveRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, GetWorld()->GetDeltaSeconds(), InterpSpeed);
+		if (HasAuthority())
+		{
+			SetActorRotation(MoveRotation);
+		}
+		else
+		{
+			SetActorRotation(MoveRotation); // 클라에서도 즉시 회전 적용
+			ServerSetActorRotation(MoveRotation);
+		}
+
+		const FVector Direction = GetActorForwardVector();
+		AddMovementInput(Direction, 1.f);
+	}
 }
 void ATimeFractureCharacter::Turn(float Value)
 {
@@ -141,12 +197,12 @@ void ATimeFractureCharacter::AimOffset(float DeltaTime)
 		FVector Velocity = GetVelocity();
 	Velocity.Z = 0.f;
 	float Speed = Velocity.Size();
-
+	bUseControllerRotationYaw = true;
 	if (Speed > 0.f) // 움직일때만 좌우 yaw적용
 	{
 		BaseAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
 		AO_YAW = 0.f;
-		bUseControllerRotationYaw = true;
+		//bUseControllerRotationYaw = true;
 	}
 
 	AO_PITCH = GetBaseAimRotation().Pitch;
@@ -244,12 +300,17 @@ void ATimeFractureCharacter::OnRep_PlayerState()
 	Super::OnRep_PlayerState(); //부모 클래스의 OnRep_PlayerState 함수를 호출한다.
 	PollInit(); //플레이어 상태를 초기화한다.
 }
+void ATimeFractureCharacter::ServerSetActorRotation_Implementation(const FRotator& NewRotation)
+{
+	SetActorRotation(NewRotation);
+}
 void ATimeFractureCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);//부모 클래스의 복제 속성을 가져온다.
 	DOREPLIFETIME_CONDITION(ATimeFractureCharacter, OverlappingWeapon, COND_OwnerOnly); //OVERLAPPINGWEAPON을 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
 	DOREPLIFETIME(ATimeFractureCharacter, Health); //Health를 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
 	DOREPLIFETIME(ATimeFractureCharacter, bDisableGameplay);//bDisableGameplay를 복제한다.
+	DOREPLIFETIME(ATimeFractureCharacter, MoveRotation);//bisElimmed를 복제한다.
 }
 void ATimeFractureCharacter::PostInitializeComponents()
 {
@@ -263,6 +324,9 @@ void ATimeFractureCharacter::PostInitializeComponents()
 	//따라서 이 함수에서 캐릭터의 속성을 초기화하면, 모든 컴포넌트가 준비된 상태에서 속성이 초기화된다.
 	if (CombatComponent) {
 		CombatComponent->Character = this; //캐릭터를 설정한다.
+	}
+	if (BuffComponent) {
+		BuffComponent->Character = this; //캐릭터를 설정한다.	
 	}
 }
 void ATimeFractureCharacter::Elim()
@@ -492,6 +556,8 @@ void ATimeFractureCharacter::BeginPlay()
 	UpdateHUDHealth();
 	if (HasAuthority()) //서버에서 실행되는 경우
 	{
+		bReplicates = true;
+		SetReplicateMovement(true); //캐릭터의 이동이 네트워크를 통해 복제되도록 설정
 		OnTakeAnyDamage.AddDynamic(this, &ATimeFractureCharacter::ReceiveDamage); //피해를 받았을 때 호출되는 함수를 바인딩한다.
 	}
 	if (AttachedGrenade) {
