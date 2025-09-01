@@ -21,7 +21,7 @@ APickup::APickup()
 	OverlapSphere->SetSphereRadius(150.f);//스피어 반지름 설정
 	OverlapSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);//충돌 쿼리만 활성화
 	OverlapSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);//모든 채널에 대해 충돌 응답을 무시
-	OverlapSphere->SetCollisionResponseToChannel(ECC_SkelatalMesh, ECollisionResponse::ECR_Overlap);//Pawn 채널에 대해 충돌 응답을 겹침으로 설정
+	OverlapSphere->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Overlap);//Pawn 채널에 대해 충돌 응답을 겹침으로 설정
 
 	PickupMesh=CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PickupMesh"));//스태틱 메시 컴포넌트 생성
 	PickupMesh->SetupAttachment(OverlapSphere);//루트 컴포넌트에 부착
@@ -40,7 +40,9 @@ void APickup::BeginPlay()
 void APickup::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	if (PickupMesh) {
+		PickupMesh->AddWorldRotation(FRotator(0.f, BaseTurnRate * DeltaTime, 0.f));
+	}
 }
 
 void APickup::Destroyed()
