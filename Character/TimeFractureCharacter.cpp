@@ -63,6 +63,7 @@ void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ATimeFractureCharacter::FireButtonReleased); //우클릭키를 떼었을 때 AimButtonRelease 함수를 호출한다.
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ATimeFractureCharacter::ReloadButtonPressed); //키보드의 C키를 눌렀을 때 CrouchButton 함수를 호출한다.
 	PlayerInputComponent->BindAction("ThrowGrenade", IE_Pressed, this, &ATimeFractureCharacter::GrenadeButtonPressed); //G키를 눌렀을 때 수류탄 투척 애니메이션 재생
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump); //스페이스바를 눌렀을 때 점프
 	//프로젝트 세팅에 저장된 키의 이름을 바인드한다. this ->이 함수의 있는 함수를 불러옴
 }
 
