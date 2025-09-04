@@ -31,7 +31,10 @@ void AHealthPickup::OnSphereOverlap(
 	UE_LOG(LogTemp, Warning, TEXT("AmmoPickup::OnSphereOverlap")); //로그 메시지를 출력한다.
 	ATimeFractureCharacter* TFCharacter = Cast<ATimeFractureCharacter>(OtherActor); //OtherActor를 ATimeFractureCharacter 타입으로 캐스팅한다.
 	if (TFCharacter) {
-		
+		UBuffComponent* Buff = TFCharacter->GetBuffComponent(); //캐릭터의 BuffComponent를 가져온다.
+		if (Buff) {
+			Buff->Heal(HealAmount, HealingTime); //BuffComponent의 Heal 함수를 호출한다.
+		}
 	}
 	Destroy();//탄약 픽업 액터를 파괴한다.
 }

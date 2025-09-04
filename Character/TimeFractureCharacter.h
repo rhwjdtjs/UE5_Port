@@ -18,6 +18,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;	//복제하는 항목을 정의하는 함수
 	virtual void PostInitializeComponents() override; //속성 초기화 함수
 	void Elim(); //플레이어 제거 함수
+	void UpdateHUDHealth();
 	UFUNCTION(NetMulticast,Reliable)
 	void MulticastElim();
 	UPROPERTY(Replicated)
@@ -28,7 +29,7 @@ public:
 protected:
 	virtual void Destroyed() override; //캐릭터가 파괴될 때 호출되는 함수
 	virtual void BeginPlay() override;
-	void UpdateHUDHealth();
+
 	//
 	void MoveForward(float Value);
 	void MoveRight(float Value);
@@ -115,7 +116,7 @@ private:
 	float ElimDelay = 3.f; //플레이어 제거 지연 시간
 	void ElimTimerFinished(); //플레이어 제거 타이머가 끝났을 때 호출되는 함수
 	UFUNCTION()
-	void OnRep_Health(); //체력이 바뀔 때 호출되는 함수
+	void OnRep_Health(float LastHealth); //체력이 바뀔 때 호출되는 함수
 	class ATFPlayerController* TfPlayerController; //플레이어 컨트롤러
 	UPROPERTY()
 	class ATFPlayerState* TfPlayerState; //플레이어 상태
@@ -132,6 +133,8 @@ public:
 	FORCEINLINE UCBComponent* GetCombatComponent() const { return CombatComponent; } //전투 컴포넌트를 반환하는 함수
 	FORCEINLINE UAnimMontage* GetReloadMontage() const { return ReloadMontage; } //재장전 애니메이션 몽타주를 반환하는 함수
 	FORCEINLINE USkeletalMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; } //장착된 수류탄 메쉬 컴포넌트를 반환하는 함수
+	FORCEINLINE UBuffComponent* GetBuffComponent() const { return BuffComponent; } //버프 컴포넌트를 반환하는 함수
+	FORCEINLINE void SetHealth(float Amount) { Health = Amount; } //체력을 설정하는 함수
 	ECombatState GetCombatState() const; //전투 상태를 반환하는 함수 
 	AWeapon* GetEquippedWeapon();
 	void PlayFireMontage(bool bAiming); //무기 발사 모션 재생 함수

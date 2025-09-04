@@ -405,10 +405,12 @@ void ATimeFractureCharacter::HideCameraIfCharacterClose()
 
 
 
-void ATimeFractureCharacter::OnRep_Health()
+void ATimeFractureCharacter::OnRep_Health(float LastHealth)
 {
 	UpdateHUDHealth(); //HUD의 체력을 업데이트한다.
-	PlayHitReactMontage(); //피격 애니메이션을 재생한다.
+	if (Health < LastHealth) {
+		PlayHitReactMontage(); //피격 애니메이션을 재생한다.
+	}
 }
 
 void ATimeFractureCharacter::SetOverlappingWeapon(AWeapon* Weapon)
