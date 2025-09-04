@@ -7,6 +7,8 @@
 #include "Sound/SoundCue.h"
 #include "Net/UnrealNetwork.h"
 #include "UnrealProject_7A/UnrealProject_7A.h"
+#include "NiagaraComponent.h"
+#include "NiagarafunctionLibrary.h"
 // Sets default values
 APickup::APickup()
 {
@@ -26,6 +28,8 @@ APickup::APickup()
 	PickupMesh=CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PickupMesh"));//스태틱 메시 컴포넌트 생성
 	PickupMesh->SetupAttachment(OverlapSphere);//루트 컴포넌트에 부착
 	PickupMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);//충돌 비활성화
+	PickupEffectComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("PickupEffectComponent"));
+	PickupEffectComponent->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned
@@ -50,6 +54,14 @@ void APickup::Destroyed()
 	Super::Destroyed();
 	if (PickupSound) {
 		UGameplayStatics::PlaySoundAtLocation(this, PickupSound, GetActorLocation());
+	}
+	if (PickupEffect) {
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			this,
+			PickupEffect,
+			GetActorLocation(),
+			GetActorRotation()
+		);
 	}
 }
 

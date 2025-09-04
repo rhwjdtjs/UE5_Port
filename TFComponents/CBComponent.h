@@ -189,5 +189,8 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void Reload();
 	FORCEINLINE int32	GetGrenades() const { return Grenades; } //수류탄 개수를 반환하는 함수
+	FORCEINLINE bool IsAiming() const { return bisAiming; } //조준 여부를 반환하는 함수
+	FORCEINLINE float SetBaseWalkSpeed(float Speed) { return baseWalkSpeed = Speed; } //기본 걷는 속도를 설정하는 함수
+	FORCEINLINE float SetAimWalkSpeed(float Speed) { return AimingWalkSpeed = Speed; } //조준 상태의 걷는 속도를 설정하는 함수
 	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount); //탄약을 줍는 함수
 };

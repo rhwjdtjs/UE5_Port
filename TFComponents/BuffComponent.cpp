@@ -3,6 +3,8 @@
 
 #include "BuffComponent.h"
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h" // 추가된 헤더 파일
+#include "UnrealProject_7A/tfcomponents/CBComponent.h"
 // Sets default values for this component's properties
 UBuffComponent::UBuffComponent()
 {
@@ -13,6 +15,54 @@ UBuffComponent::UBuffComponent()
 	// ...
 }
 
+void UBuffComponent::BuffSpeed(float BaseSpeedBuff, float CrouchSpeedBuff, float SpeedBuffTime)
+{
+	if (Character == nullptr) return;
+	Character->GetWorldTimerManager().SetTimer(SpeedBuffTimer, this, &UBuffComponent::ResetSpeed, SpeedBuffTime); //타이머를 설정한다.
+	if(Character->GetCharacterMovement())
+	{
+		Character->GetCharacterMovement()->MaxWalkSpeed = BaseSpeedBuff; //캐릭터의 걷는 속도를 설정한다.
+		Character->GetCharacterMovement()->MaxWalkSpeedCrouched = CrouchSpeedBuff; //캐릭터의 웅크린 속도를 설정한다.
+		UCBComponent* CB = Cast<UCBComponent>(Character->GetCombatComponent());
+		if (CB) //캐릭터가 조준 상태이면
+		{
+			UE_LOG(LogTemp, Warning, TEXT("UBuffComponent::BuffSpeed Aim true"));
+			CB->SetAimWalkSpeed(BaseSpeedBuff-200.f);
+			CB->SetBaseWalkSpeed(BaseSpeedBuff);
+		}
+	}
+	MulticastSpeedBuff(BaseSpeedBuff, CrouchSpeedBuff); //멀티캐스트로 스피드 버프를 적용한다.
+}
+
+void UBuffComponent::SetInitialSpeeds(float BaseSpeed, float CrouchBaseSpeed)
+{
+	InitialBaseSpeed = BaseSpeed;
+	InitialCrouchSpeed = CrouchBaseSpeed;
+}
+void UBuffComponent::ResetSpeed()
+{
+	if (Character == nullptr || Character->GetCharacterMovement() == nullptr) return;
+	Character->GetCharacterMovement()->MaxWalkSpeed = InitialBaseSpeed; //캐릭터의 걷는 속도를 설정한다.
+	Character->GetCharacterMovement()->MaxWalkSpeedCrouched = InitialCrouchSpeed; //캐릭터의 웅크린 속도를 설정한다.
+	UCBComponent* CB = Cast<UCBComponent>(Character->GetCombatComponent());
+	if (CB) //캐릭터가 조준 상태이면
+	{
+		CB->SetAimWalkSpeed(140.f);
+		CB->SetBaseWalkSpeed(InitialBaseSpeed);
+	}
+	MulticastSpeedBuff(InitialBaseSpeed, InitialCrouchSpeed); //멀티캐스트로 스피드 버프를 적용한다.
+}
+void UBuffComponent::MulticastSpeedBuff_Implementation(float BaseSpeed, float CrouchSpeed)
+{
+	Character->GetCharacterMovement()->MaxWalkSpeed = BaseSpeed; //캐릭터의 걷는 속도를 설정한다.
+	Character->GetCharacterMovement()->MaxWalkSpeedCrouched = CrouchSpeed; //캐릭터의 웅크린 속도를 설정한다.
+	UCBComponent* CB = Cast<UCBComponent>(Character->GetCombatComponent());
+	if (CB) //캐릭터가 조준 상태이면
+	{
+		CB->SetAimWalkSpeed(BaseSpeed-200.f);
+		CB->SetBaseWalkSpeed(BaseSpeed);
+	}
+}
 void UBuffComponent::Heal(float HealAmount, float HealingTime)
 {
 	bHealing = true;
@@ -53,4 +103,6 @@ void UBuffComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 	HealRampUp(DeltaTime);
 	// ...
 }
+
+
 

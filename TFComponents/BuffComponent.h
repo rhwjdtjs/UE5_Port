@@ -17,6 +17,8 @@ public:
 	UBuffComponent();
 	friend class ATimeFractureCharacter;
 	void Heal(float HealAmount, float HealingTime); //힐 함수
+	void BuffSpeed(float BaseSpeedBuff, float CrouchSpeedBuff, float SpeedBuffTime); //스피드 버프 함수
+	void SetInitialSpeeds(float BaseSpeed, float CrouchBaseSpeed); //초기 스피드 설정 함수
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -28,7 +30,16 @@ public:
 private:
 	UPROPERTY()
 	class ATimeFractureCharacter* Character; //캐릭터 클래스
+	//Buff
+	//Heal
 	bool bHealing = false;
 	float HealingRate = 0;//힐링 속도
 	float AmountToHeal = 0; //힐량
+	//Speed Buff
+	FTimerHandle SpeedBuffTimer; //타이머 핸들
+	void ResetSpeed(); //스피드 초기화 함수
+	float InitialBaseSpeed; //기본 이동 속도
+	float InitialCrouchSpeed; //기본 웅크린 속도
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastSpeedBuff(float BaseSpeed, float CrouchSpeed); //멀티캐스트 스피드 버프 함수
 };

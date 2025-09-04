@@ -37,6 +37,10 @@ private:
 	class USoundCue* PickupSound;
 	UPROPERTY(EditAnyWhere)
 	class UStaticMeshComponent* PickupMesh;
+	UPROPERTY(VisibleAnywhere)
+	class UNiagaraComponent* PickupEffectComponent;
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* PickupEffect;
 	public:
 		
 
