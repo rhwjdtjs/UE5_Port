@@ -19,6 +19,8 @@ public:
 	void Heal(float HealAmount, float HealingTime); //힐 함수
 	void BuffSpeed(float BaseSpeedBuff, float CrouchSpeedBuff, float SpeedBuffTime); //스피드 버프 함수
 	void SetInitialSpeeds(float BaseSpeed, float CrouchBaseSpeed); //초기 스피드 설정 함수
+	void SetInitialJump(float JumpZVelocity); //초기 점프 설정 함수'
+	void BuffJump(float BuffJump, float JumpBuffTime); //점프 버프 함수
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -42,4 +44,10 @@ private:
 	float InitialCrouchSpeed; //기본 웅크린 속도
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastSpeedBuff(float BaseSpeed, float CrouchSpeed); //멀티캐스트 스피드 버프 함수
+	//Jump Buff
+	FTimerHandle JumpBuffTimer; //점프 타이머 핸들
+	void ResetJump(); //점프 초기화 함수
+	float InitialJumpZVelocity; //기본 점프 속도
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastJumpBuff(float JumpZVelocity); //멀티캐스트 스피드 버프 함수
 };

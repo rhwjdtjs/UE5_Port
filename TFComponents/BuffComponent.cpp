@@ -14,7 +14,33 @@ UBuffComponent::UBuffComponent()
 
 	// ...
 }
-
+void UBuffComponent::SetInitialJump(float JumpZVelocity)
+{
+	InitialJumpZVelocity = JumpZVelocity;
+}
+void UBuffComponent::ResetJump()
+{
+	if(Character->GetCharacterMovement())
+	{
+		Character->GetCharacterMovement()->JumpZVelocity = InitialJumpZVelocity; //캐릭터의 점프 속도를 초기화한다.
+	}
+	MulticastJumpBuff(InitialJumpZVelocity); //멀티캐스트로 점프 버프를 초기화한다.
+}
+void UBuffComponent::BuffJump(float BuffJump, float JumpBuffTime)
+{
+	if (Character == nullptr) return;
+	Character->GetWorldTimerManager().SetTimer(JumpBuffTimer, this, &UBuffComponent::ResetJump, JumpBuffTime); //타이머를 설정한다.
+	if(Character->GetCharacterMovement())
+	{
+		Character->GetCharacterMovement()->JumpZVelocity = BuffJump; //캐릭터의 점프 속도를 설정한다.
+	}
+	MulticastJumpBuff(BuffJump); //멀티캐스트로 점프 버프를 적용한다.
+}
+void UBuffComponent::MulticastJumpBuff_Implementation(float JumpZVelocity)
+{
+	if (Character->GetCharacterMovement())
+		Character->GetCharacterMovement()->JumpZVelocity = JumpZVelocity;//캐릭터의 점프 속도를 설정한다.
+}
 void UBuffComponent::BuffSpeed(float BaseSpeedBuff, float CrouchSpeedBuff, float SpeedBuffTime)
 {
 	if (Character == nullptr) return;
@@ -39,6 +65,7 @@ void UBuffComponent::SetInitialSpeeds(float BaseSpeed, float CrouchBaseSpeed)
 	InitialBaseSpeed = BaseSpeed;
 	InitialCrouchSpeed = CrouchBaseSpeed;
 }
+
 void UBuffComponent::ResetSpeed()
 {
 	if (Character == nullptr || Character->GetCharacterMovement() == nullptr) return;
@@ -52,6 +79,7 @@ void UBuffComponent::ResetSpeed()
 	}
 	MulticastSpeedBuff(InitialBaseSpeed, InitialCrouchSpeed); //멀티캐스트로 스피드 버프를 적용한다.
 }
+
 void UBuffComponent::MulticastSpeedBuff_Implementation(float BaseSpeed, float CrouchSpeed)
 {
 	Character->GetCharacterMovement()->MaxWalkSpeed = BaseSpeed; //캐릭터의 걷는 속도를 설정한다.

@@ -329,6 +329,7 @@ void ATimeFractureCharacter::PostInitializeComponents()
 	if (BuffComponent) {
 		BuffComponent->Character = this; //캐릭터를 설정한다.	
 		BuffComponent->SetInitialSpeeds(CombatComponent->baseWalkSpeed, GetCharacterMovement()->MaxWalkSpeedCrouched); //캐릭터의 초기 속도를 설정한다.
+		BuffComponent->SetInitialJump(GetCharacterMovement()->JumpZVelocity); //캐릭터의 초기 점프 속도를 설정한다.
 	}
 }
 void ATimeFractureCharacter::Elim()
