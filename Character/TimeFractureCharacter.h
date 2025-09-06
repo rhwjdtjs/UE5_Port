@@ -19,6 +19,7 @@ public:
 	virtual void PostInitializeComponents() override; //속성 초기화 함수
 	void Elim(); //플레이어 제거 함수
 	void UpdateHUDHealth();
+	void UpdateHUDShield();
 	UFUNCTION(NetMulticast,Reliable)
 	void MulticastElim();
 	UPROPERTY(Replicated)
@@ -108,6 +109,12 @@ private:
 	float MaxHealth = 100.f; //최대 체력
 	UPROPERTY(ReplicatedUsing=OnRep_Health, VisibleAnywhere, Category = "Player State")
 	float Health=100.f; //현재 체력
+	UPROPERTY(EditAnywhere, Category = "Player State")
+	float MaxShield = 100.f; //최대 체력
+	UPROPERTY(ReplicatedUsing = OnRep_Shield, VisibleAnywhere, Category = "Player State")
+	float Shield = 50.f; //현재 체력
+	UFUNCTION()
+	void OnRep_Shield(float LastShield); //실드가 바뀔 때 호출되는 함수
 	UPROPERTY(Replicated)
 	FRotator MoveRotation; //캐릭터의 이동 회전
 	bool bisElimmed = false; //플레이어가 제거되었는지 여부
@@ -135,6 +142,9 @@ public:
 	FORCEINLINE USkeletalMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; } //장착된 수류탄 메쉬 컴포넌트를 반환하는 함수
 	FORCEINLINE UBuffComponent* GetBuffComponent() const { return BuffComponent; } //버프 컴포넌트를 반환하는 함수
 	FORCEINLINE void SetHealth(float Amount) { Health = Amount; } //체력을 설정하는 함수
+	FORCEINLINE void SetShield(float Amount) { Shield = Amount; } //실드를 설정하는 함수
+	FORCEINLINE float GetShield() const { return Shield; } //실드를 설정하는 함수
+	FORCEINLINE float GetMaxShield() const { return MaxShield; } //최대 실드를 반환하는 함수
 	ECombatState GetCombatState() const; //전투 상태를 반환하는 함수 
 	AWeapon* GetEquippedWeapon();
 	void PlayFireMontage(bool bAiming); //무기 발사 모션 재생 함수

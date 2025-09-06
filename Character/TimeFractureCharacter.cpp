@@ -245,8 +245,20 @@ void ATimeFractureCharacter::GrenadeButtonPressed()
 void ATimeFractureCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCursor)
 {
 	if (bisElimmed) return;
-	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth); //체력을 감소시키고, 최소값은 0, 최대값은 최대 체력으로 제한한다.
+	float DamageToHealth = Damage;
+	if (Shield > 0.f) {
+		if (Shield >= Damage) {
+			Shield = FMath::Clamp(Shield - Damage, 0.f, MaxShield); //실드를 감소시키고, 최소값은 0, 최대값은 최대 실드로 제한한다.
+			DamageToHealth = 0.f; //실드가 남아있으면 체력에 데미지를 주지 않는다.
+		}
+		else {
+			DamageToHealth = FMath::Clamp(DamageToHealth - Shield, 0.f, Damage);//실드가 부족하면 남은 데미지를 체력에 준다.
+			Shield = 0.f; //실드를 0으로 만든다.
+		}
+	}
+	Health = FMath::Clamp(Health - DamageToHealth, 0.f, MaxHealth); //체력을 감소시키고, 최소값은 0, 최대값은 최대 체력으로 제한한다.
 	UpdateHUDHealth(); //HUD의 체력을 업데이트한다.
+	UpdateHUDShield(); //HUD의 실드를 업데이트한다.
 	PlayHitReactMontage(); //피격 애니메이션을 재생한다.
 	if (Health == 0.f)	//체력이 0이 되면{
 	{
@@ -310,6 +322,7 @@ void ATimeFractureCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);//부모 클래스의 복제 속성을 가져온다.
 	DOREPLIFETIME_CONDITION(ATimeFractureCharacter, OverlappingWeapon, COND_OwnerOnly); //OVERLAPPINGWEAPON을 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
 	DOREPLIFETIME(ATimeFractureCharacter, Health); //Health를 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
+	DOREPLIFETIME(ATimeFractureCharacter, Shield); //Shield를 복제한다.
 	DOREPLIFETIME(ATimeFractureCharacter, bDisableGameplay);//bDisableGameplay를 복제한다.
 	DOREPLIFETIME(ATimeFractureCharacter, MoveRotation);//bisElimmed를 복제한다.
 }
@@ -362,6 +375,7 @@ void ATimeFractureCharacter::MulticastElim_Implementation()
 		ShowSniperScopeWidget(false); //로컬에서 제어하는 경우 스나이퍼 스코프 위젯을 숨긴다.
 	}
 }
+
 void ATimeFractureCharacter::ElimTimerFinished()
 {
 	ATFGameMode* TFGameMode = GetWorld()->GetAuthGameMode<ATFGameMode>(); //현재 게임 모드를 ATFGameMode로 캐스팅한다.
@@ -404,9 +418,13 @@ void ATimeFractureCharacter::HideCameraIfCharacterClose()
 		}
 	}
 }
-
-
-
+void ATimeFractureCharacter::OnRep_Shield(float LastShield)
+{
+	UpdateHUDShield(); //HUD의 체력을 업데이트한다.
+	if (Shield < LastShield) {
+		PlayHitReactMontage(); //피격 애니메이션을 재생한다.
+	}
+}
 void ATimeFractureCharacter::OnRep_Health(float LastHealth)
 {
 	UpdateHUDHealth(); //HUD의 체력을 업데이트한다.
@@ -414,7 +432,6 @@ void ATimeFractureCharacter::OnRep_Health(float LastHealth)
 		PlayHitReactMontage(); //피격 애니메이션을 재생한다.
 	}
 }
-
 void ATimeFractureCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
 	if (OverlappingWeapon) {
@@ -559,6 +576,7 @@ void ATimeFractureCharacter::BeginPlay()
 	Super::BeginPlay();
 	NormalOffset = CameraBoom->SocketOffset;
 	UpdateHUDHealth();
+	UpdateHUDShield();
 	if (HasAuthority()) //서버에서 실행되는 경우
 	{
 		bReplicates = true;
@@ -574,6 +592,13 @@ void ATimeFractureCharacter::UpdateHUDHealth()
 	TfPlayerController = TfPlayerController == nullptr ? Cast<ATFPlayerController>(Controller) : TfPlayerController;//플레이어 컨트롤러를 캐스팅하여 설정한다.
 	if (TfPlayerController) {
 		TfPlayerController->SetHUDHealth(Health, MaxHealth); //플레이어 컨트롤러의 HUD에 체력을 설정한다.
+	}
+}
+void ATimeFractureCharacter::UpdateHUDShield()
+{
+	TfPlayerController = TfPlayerController == nullptr ? Cast<ATFPlayerController>(Controller) : TfPlayerController;//플레이어 컨트롤러를 캐스팅하여 설정한다.
+	if (TfPlayerController) {
+		TfPlayerController->SetHUDShield(Shield, MaxShield); //플레이어 컨트롤러의 HUD에 체력을 설정한다.
 	}
 }
 void ATimeFractureCharacter::Tick(float DeltaTime)

@@ -26,9 +26,25 @@ void ATFPlayerController::SetHUDHealth(float Health, float MaxHealth)
 		TfHud->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText)); // 체력 텍스트를 설정한다.
 	}
 	else {
-		bInitializeCharacterOverlay = true;
+		bInitializeHealth = true;
 		HUDHealth = Health;
 		HUDMaxHealth = MaxHealth; // HUDHealth와 HUDMaxHealth를 초기화한다.
+	}
+}
+void ATFPlayerController::SetHUDShield(float Shield, float MaxShield)
+{
+	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
+	bool bHUDVaild = TfHud && TfHud->CharacterOverlay && TfHud->CharacterOverlay->ShieldBar && TfHud->CharacterOverlay->ShieldText;
+	if (bHUDVaild) {
+		const float ShieldPercent = Shield / MaxShield; // 체력 비율을 계산한다.
+		TfHud->CharacterOverlay->ShieldBar->SetPercent(ShieldPercent); // 체력바의 비율을 설정한다.
+		FString ShieldText = FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Shield), FMath::CeilToInt(MaxShield)); // 체력 텍스트를 포맷팅한다.
+		TfHud->CharacterOverlay->ShieldText->SetText(FText::FromString(ShieldText)); // 체력 텍스트를 설정한다.
+	}
+	else {
+		bInitializeShield = true;
+		HUDShield = Shield;
+		HUDMaxShield = MaxShield; // HUDHealth와 HUDMaxHealth를 초기화한다.
 	}
 }
 void ATFPlayerController::SetHUDScore(float Score)
@@ -40,7 +56,7 @@ void ATFPlayerController::SetHUDScore(float Score)
 		TfHud->CharacterOverlay->ScoreAmount->SetText(FText::FromString(ScoreText));
 	}
 	else {
-		bInitializeCharacterOverlay = true;
+		bInitializeScore = true;
 		HUDScore = Score; // HUDScore를 초기화한다.
 	}
 }
@@ -53,7 +69,7 @@ void ATFPlayerController::SetHUDDefeats(int32 Defeats)
 		TfHud->CharacterOverlay->DefeatsAmount->SetText(FText::FromString(DefeatText));
 	}
 	else {
-		bInitializeCharacterOverlay = true;
+		bInitializeDefeats = true;
 		HUDDefeats = Defeats; // HUDDefeats를 초기화한다.
 	}
 }
@@ -114,6 +130,7 @@ void ATFPlayerController::SetHUDGrenadeCount(int32 Grenades)
 		TfHud->CharacterOverlay->GrenadeAmount->SetText(FText::FromString(GrenadeText));
 	}
 	else {
+		bInitializeGrenades = true;
 		HUDGrenades = Grenades; // HUDGrenades를 초기화한다.
 	}
 }
@@ -123,6 +140,7 @@ void ATFPlayerController::OnPossess(APawn* InPawn)
 	ATimeFractureCharacter* TfCharacter = Cast<ATimeFractureCharacter>(InPawn); // InPawn을 TimeFractureCharacter로 캐스팅한다.
 	if(TfCharacter) {
 		SetHUDHealth(TfCharacter->GetHealth(), TfCharacter->GetMaxHealth()); // TfCharacter의 체력과 최대 체력을 HUD에 설정한다.
+		SetHUDShield(TfCharacter->GetShield(), TfCharacter->GetMaxShield()); // TfCharacter의 쉴드와 최대 쉴드를 HUD에 설정한다.
 	}
 }
 
@@ -294,12 +312,13 @@ void ATFPlayerController::PollInit() {
 		if (TfHud && TfHud->CharacterOverlay) {
 			CharacterOverlay = TfHud->CharacterOverlay; // TfHud의 CharacterOverlay를 가져온다.
 			if (CharacterOverlay) {
-				SetHUDHealth(HUDHealth, HUDMaxHealth); // HUDHealth와 HUDMaxHealth를 설정한다.
-				SetHUDScore(HUDScore); // HUDScore를 설정한다.
-				SetHUDDefeats(HUDDefeats); // HUDDefeats를 설정한다.
+				if (bInitializeHealth) SetHUDHealth(HUDHealth, HUDMaxHealth); // HUDHealth와 HUDMaxHealth를 설정한다.
+				if (bInitializeShield) SetHUDShield(HUDShield, HUDMaxShield); // HUDShield와 HUDMaxShield를 설정한다.
+				if (bInitializeScore) SetHUDScore(HUDScore); // HUDScore를 설정한다.
+				if (bInitializeDefeats) SetHUDDefeats(HUDDefeats); // HUDDefeats를 설정한다.
 				ATimeFractureCharacter* TFCharacter = Cast<ATimeFractureCharacter>(GetPawn());
 				if (TFCharacter && TFCharacter->GetCombatComponent()) {
-					SetHUDGrenadeCount(TFCharacter->GetCombatComponent()->GetGrenades()); // TFCharacter의 수류탄 개수를 설정한다.
+					if (bInitializeGrenades) SetHUDGrenadeCount(TFCharacter->GetCombatComponent()->GetGrenades()); // TFCharacter의 수류탄 개수를 설정한다.
 				}
 
 			}

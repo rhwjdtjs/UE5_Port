@@ -16,6 +16,7 @@ class UNREALPROJECT_7A_API ATFPlayerController : public APlayerController
 	
 public:
 	void SetHUDHealth(float Health, float MaxHealth); // 허드의 체력을 설정하는 함수
+	void SetHUDShield(float Shield, float MaxShield); // 허드의 체력을 설정하는 함수
 	void SetHUDScore(float Score); // 허드의 점수를 설정하는 함수
 	void SetHUDDefeats(int32 Defeats); // 허드의 처치 수를 설정하는 함수
 	void SetHUDWeaponAmmo(int32 Ammos); // 허드의 처치 수를 설정하는 함수
@@ -46,9 +47,15 @@ private:
 	void OnRep_MatchState(); // 매치 상태가 변경되었을 때 호출되는 함수
 	UPROPERTY()
 	class UCharacterOverlay* CharacterOverlay; // 캐릭터 오버레이 위젯
-	bool bInitializeCharacterOverlay = false; // 캐릭터 오버레이 초기화 여부
+	bool bInitializeHealth = false; // 허드의 체력이 초기화되었는지 여부
+	bool bInitializeShield = false; // 허드의 쉴드가 초기화되었는지 여부
+	bool bInitializeScore = false; // 허드의 점수가 초기화되었는지 여부
+	bool bInitializeDefeats = false; // 허드의 처치 수가 초기화되었는지 여부
+	bool bInitializeGrenades = false; // 허드의 수류탄 개수가 초기화되었는지 여부
 	float HUDHealth;
 	float HUDMaxHealth;
+	float HUDShield;
+	float HUDMaxShield;
 	float HUDScore;
 	float HUDDefeats;
 	int32 HUDGrenades;
