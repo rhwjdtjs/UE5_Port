@@ -112,7 +112,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Player State")
 	float MaxShield = 100.f; //최대 체력
 	UPROPERTY(ReplicatedUsing = OnRep_Shield, VisibleAnywhere, Category = "Player State")
-	float Shield = 50.f; //현재 체력
+	float Shield = 0.f; //현재 체력
 	UFUNCTION()
 	void OnRep_Shield(float LastShield); //실드가 바뀔 때 호출되는 함수
 	UPROPERTY(Replicated)

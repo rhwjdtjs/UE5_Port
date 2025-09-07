@@ -98,6 +98,13 @@ void UBuffComponent::Heal(float HealAmount, float HealingTime)
 	AmountToHeal += HealAmount; //남은 힐량
 }
 
+void UBuffComponent::Shield(float ShieldAmount, float ShieldTime)
+{
+	bShielding = true;
+	ShieldingRate = ShieldAmount / ShieldTime; //초당 힐량
+	AmountToShield += ShieldAmount; //남은 힐량
+}
+
 void UBuffComponent::HealRampUp(float DeltaTime)
 {
 	if (!bHealing || Character==nullptr || Character->IsElimmed()) return;
@@ -110,6 +117,21 @@ void UBuffComponent::HealRampUp(float DeltaTime)
 	{
 		bHealing = false;
 		AmountToHeal = 0.f;
+	}
+}
+
+void UBuffComponent::ShieldRampUp(float DeltaTime)
+{
+	if (!bShielding || Character == nullptr || Character->IsElimmed()) return;
+	const float ShieldThisFrame = ShieldingRate * DeltaTime; //이번 프레임에 힐량
+	Character->SetShield(FMath::Clamp(Character->GetShield() + ShieldThisFrame, 0.f, Character->GetMaxShield())); //캐릭터의 체력을 증가시키고 최대 체력을 넘지 않도록 클램프한다.
+	Character->UpdateHUDShield(); //HUD의 체력 표시를 업데이트한다.
+	AmountToShield -= ShieldThisFrame; //남은 힐량 감소
+
+	if (AmountToShield <= 0.f || Character->GetShield() >= Character->GetMaxShield())
+	{
+		bShielding = false;
+		AmountToShield = 0.f;
 	}
 }
 
@@ -129,6 +151,7 @@ void UBuffComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	HealRampUp(DeltaTime);
+	ShieldRampUp(DeltaTime);
 	// ...
 }
 
