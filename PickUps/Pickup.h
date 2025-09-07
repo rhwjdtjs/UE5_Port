@@ -41,6 +41,10 @@ private:
 	class UNiagaraComponent* PickupEffectComponent;
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* PickupEffect;
+
+	FTimerHandle BindOverlapTimer; //타이머 핸들
+	float BindoverlapTime = 0.2f; //타이머 시간
+	void BindOverlapTimerFinished(); //타이머 종료시 호출되는 함수
 	public:
 		
 
