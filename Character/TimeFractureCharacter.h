@@ -26,11 +26,14 @@ public:
 	bool bDisableGameplay = false; //게임플레이 비활성화 여부
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget(bool bShowScope); //스나이퍼 스코프 위젯 표시 함수
+	bool bisElimmed = false; //플레이어가 제거되었는지 여부
 	void PlayThrowGrendadeMontage(); //수류탄 투척 애니메이션 몽타주 재생 함수
 protected:
 	virtual void Destroyed() override; //캐릭터가 파괴될 때 호출되는 함수
 	virtual void BeginPlay() override;
-
+	void SwapButtonPressed(); //무기 교체 버튼 함수
+	UFUNCTION(Server, Reliable)
+	void ServerSwapButtonPressed(); //서버에서 무기 교체 버튼 함수
 	//
 	void MoveForward(float Value);
 	void MoveRight(float Value);
@@ -117,7 +120,7 @@ private:
 	void OnRep_Shield(float LastShield); //실드가 바뀔 때 호출되는 함수
 	UPROPERTY(Replicated)
 	FRotator MoveRotation; //캐릭터의 이동 회전
-	bool bisElimmed = false; //플레이어가 제거되었는지 여부
+
 	FTimerHandle ElimTimer; //플레이어 제거 타이머 핸들
 	UPROPERTY(EditDefaultsOnly)
 	float ElimDelay = 3.f; //플레이어 제거 지연 시간

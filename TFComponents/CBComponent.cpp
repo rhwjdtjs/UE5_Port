@@ -33,29 +33,78 @@ void UCBComponent::EquipWeapon(AWeapon* WeaponEquip)
 {
 	if (Character == nullptr || WeaponEquip == nullptr) return;
 	if (CombatState != ECombatState::ECS_Unoccupied)return; //전투 상태가 비어있지 않으면 장착하지 않는다.
+	if(EquippedWeapon !=nullptr && SecondaryWeapon==nullptr) //장착된 무기가 있고 보조 무기가 없으면
+	{
+		EquipSecondaryWeapon(WeaponEquip); //보조 무기를 장착한다.
+	}
+	else
+	{
+		EquipPrimaryWeapon(WeaponEquip); //주 무기를 장착한다.
+	}
+
 	Character->bUseControllerRotationYaw = true; //캐릭터가 컨트롤러의 Yaw 회전을 사용하도록 설정한다.
+	
+}
+void UCBComponent::SwapWeapons()
+{
+	if (CombatState == ECombatState::ECS_Reloading) return;
+	AWeapon* TempWeapon = EquippedWeapon; //장착된 무기를 임시 변수에 저장한다.
+	EquippedWeapon = SecondaryWeapon; //장착된 무기에 보조 무기를 설정한다.
+	SecondaryWeapon = TempWeapon; //보조 무기에 임시 변수에 저장된 장착된 무기를 설정한다.
+
+	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
+	AttachActorToRightHand(EquippedWeapon);
+	EquippedWeaponPositionModify();
+	EquippedWeapon->SetHUDAmmo(); //장착된 무기의 HUD 탄약을 설정한다.
+	UpdateCarriedAmmo(); //보유 탄약을 업데이트한다.
+	PlayEquipSound(EquippedWeapon);
+
+	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
+	AttachActorToBack(SecondaryWeapon); //장착된 무기를 등에 부착한다.
+}
+void UCBComponent::EquipPrimaryWeapon(AWeapon* WeaponToEquip)
+{
+	if (WeaponToEquip == nullptr) return;
 	DropEquippedWeapon(); //이미 장착된 무기가 있으면 드롭한다.
-	EquippedWeapon = WeaponEquip;
+	EquippedWeapon = WeaponToEquip;
 	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
 	AttachActorToRightHand(EquippedWeapon);
 	EquippedWeapon->SetOwner(Character);
 	EquippedWeaponPositionModify();
 	EquippedWeapon->SetHUDAmmo(); //장착된 무기의 HUD 탄약을 설정한다.
 	UpdateCarriedAmmo(); //보유 탄약을 업데이트한다.
-	PlayEquipSound();
+	PlayEquipSound(WeaponToEquip);
 	EquippedWeapon->ShowPickupWidget(false);
 	EquippedWeapon->GetAreaSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ReloadEmptyWeapon();
 }
-
+void UCBComponent::EquipSecondaryWeapon(AWeapon* WeaponToEquip)
+{
+	if (WeaponToEquip == nullptr) return;
+	SecondaryWeapon = WeaponToEquip;
+	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
+	AttachActorToBack(WeaponToEquip); //장착된 무기를 등에 부착한다.
+	PlayEquipSound(WeaponToEquip);
+	SecondaryWeapon->SetOwner(Character);
+}
 void UCBComponent::OnRep_EquippedWeapon()
 {
 	if (EquippedWeapon) {
 		EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
-
 		AttachActorToRightHand(EquippedWeapon);
+		EquippedWeapon->EnableCustomDepth(false); //장착된 무기의 커스텀 깊이를 비활성화한다.
+		EquippedWeapon->SetHUDAmmo(); //장착된 무기의 HUD 탄약을 설정한다.
 	}
-	PlayEquipSound();
+	PlayEquipSound(EquippedWeapon);
+}
+void UCBComponent::OnRep_SecondaryWeapon()
+{
+	if (SecondaryWeapon && Character) {
+		SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
+		AttachActorToBack(SecondaryWeapon); //장착된 무기를 등에 부착한다.
+		PlayEquipSound(EquippedWeapon);
+
+	}
 }
 void UCBComponent::DropEquippedWeapon()
 {
@@ -81,6 +130,21 @@ void UCBComponent::AttachActorToLeftHand(AActor* ActorToAttach)
 		FName("LeftHandSocket")
 	);
 }
+void UCBComponent::AttachActorToBack(AActor* ActorToAttach)
+{
+	if (Character == nullptr || Character->GetMesh() == nullptr || ActorToAttach == nullptr) return;
+	const USkeletalMeshSocket* BackSocket = Character->GetMesh()->GetSocketByName(FName("BackWeaponSocket"));
+	if (BackSocket) {
+		BackSocket->AttachActor(ActorToAttach, Character->GetMesh());
+		if(EWeaponType::EWT_SniperRifle == SecondaryWeapon->GetWeaponType())
+		{
+			FVector FOffset = FVector(0.f, 0.f, 0.f);
+			FRotator Offset = FRotator(0.f, 90.f, 0.f); // Z축을 위로 10만큼 올리기
+			ActorToAttach->GetRootComponent()->SetRelativeRotation(Offset); //무기의 루트 컴포넌트 위치를 조정한다.
+			ActorToAttach->GetRootComponent()->SetRelativeLocation(FOffset); //무기의 루트 컴포넌트 위치를 조정한다.
+		}
+	}
+}
 void UCBComponent::UpdateCarriedAmmo()
 {
 	if (EquippedWeapon == nullptr)return;
@@ -92,10 +156,10 @@ void UCBComponent::UpdateCarriedAmmo()
 		Controller->SetHUDCarriedAmmo(CarriedAmmo); //컨트롤러가 있다면 HUD에 보유 탄약을 설정한다.
 	}
 }
-void UCBComponent::PlayEquipSound()
+void UCBComponent::PlayEquipSound(AWeapon* WeaponToEquip)
 {
-	if (Character&& EquippedWeapon &&EquippedWeapon->EquipSound) {
-		UGameplayStatics::PlaySoundAtLocation(this, EquippedWeapon->EquipSound, Character->GetActorLocation()); //장착 사운드를 재생한다.
+	if (Character&& WeaponToEquip && WeaponToEquip->EquipSound) {
+		UGameplayStatics::PlaySoundAtLocation(this, WeaponToEquip->EquipSound, Character->GetActorLocation()); //장착 사운드를 재생한다.
 	}
 }
 void UCBComponent::ReloadEmptyWeapon()
@@ -127,6 +191,7 @@ void UCBComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UCBComponent, EquippedWeapon); //장착된 무기를 복제한다.
+	DOREPLIFETIME(UCBComponent, SecondaryWeapon); //보조 무기를 복제한다.
 	DOREPLIFETIME(UCBComponent, bisAiming);// 조준 여부를 복제한다.
 	DOREPLIFETIME(UCBComponent, CombatState); //전투 상태를 복제한다.
 	DOREPLIFETIME(UCBComponent, Grenades); //수류탄 개수를 복제한다.
@@ -158,6 +223,7 @@ void UCBComponent::OnRep_CombatState()
 		break;
 	}
 }
+
 void UCBComponent::Reload() {
 	if (CarriedAmmo > 0 && CombatState !=ECombatState::ECS_Reloading && EquippedWeapon && !EquippedWeapon->IsFull()) {
 		ServerReload(); //서버에 리로드 요청을 보낸다.
@@ -375,8 +441,6 @@ void UCBComponent::BeginPlay()
 		InitializeCarriedAmmo(); //서버에서 캐릭터의 보유 탄약을 초기화한다.
 	}
 }
-
-
 
 void UCBComponent::SetAiming(bool bAiming)
 {
@@ -598,6 +662,10 @@ void UCBComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 		InterpFOV(DeltaTime); // FOV를 보간한다.
 	}
 
+}
+bool UCBComponent::ShouldSwapWeapons()
+{
+	return (EquippedWeapon != nullptr && SecondaryWeapon != nullptr && !bisAiming && CombatState==ECombatState::ECS_Unoccupied); //장착된 무기와 보조 무기가 모두 존재하는지 확인한다.
 }
 void UCBComponent::PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount)
 {

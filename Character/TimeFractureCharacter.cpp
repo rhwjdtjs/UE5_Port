@@ -64,6 +64,7 @@ void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ATimeFractureCharacter::ReloadButtonPressed); //키보드의 C키를 눌렀을 때 CrouchButton 함수를 호출한다.
 	PlayerInputComponent->BindAction("ThrowGrenade", IE_Pressed, this, &ATimeFractureCharacter::GrenadeButtonPressed); //G키를 눌렀을 때 수류탄 투척 애니메이션 재생
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump); //스페이스바를 눌렀을 때 점프
+    PlayerInputComponent->BindAction("SwapWeapon", IE_Pressed, this, &ATimeFractureCharacter::SwapButtonPressed);
 	//프로젝트 세팅에 저장된 키의 이름을 바인드한다. this ->이 함수의 있는 함수를 불러옴
 }
 
@@ -159,13 +160,18 @@ void ATimeFractureCharacter::LookUp(float Value)
 
 void ATimeFractureCharacter::EquipButton()
 {
-	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
+	if (bDisableGameplay) return;
 	if (CombatComponent) {
-		if (HasAuthority()) { //서버에서 실행되는 경우
-			CombatComponent->EquipWeapon(OverlappingWeapon);//겹치는 무기를 장착한다.
+		if (HasAuthority()) { // 서버
+			if (OverlappingWeapon) {
+				CombatComponent->EquipWeapon(OverlappingWeapon);
+			}
+		//	else if (CombatComponent->ShouldSwapWeapons()) {
+		//		CombatComponent->SwapWeapons();
+	//		}
 		}
-		else { //클라이언트에서 실행되는 경우
-			ServerEquipButton(); //서버에서 장착 버튼을 누른다.
+		else { // 클라이언트
+			ServerEquipButton();
 		}
 	}
 }
@@ -403,7 +409,13 @@ void ATimeFractureCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 void ATimeFractureCharacter::ServerEquipButton_Implementation()
 {
 	if (CombatComponent) {
-		CombatComponent->EquipWeapon(OverlappingWeapon); //겹치는 무기를 장착한다.
+		if (OverlappingWeapon) {
+			CombatComponent->EquipWeapon(OverlappingWeapon); //겹치는 무기를 장착한다.
+		}
+	//	else if(CombatComponent->ShouldSwapWeapons())
+	//	{
+	//		CombatComponent->SwapWeapons(); //무기를 교체한다.
+	//	}
 	}
 }
 
@@ -611,6 +623,25 @@ void ATimeFractureCharacter::BeginPlay()
 	}
 	if (AttachedGrenade) {
 		AttachedGrenade->SetVisibility(false); //수류탄 메쉬를 숨긴다.
+	}
+}
+void ATimeFractureCharacter::SwapButtonPressed()
+{
+	if(CombatComponent && CombatComponent->ShouldSwapWeapons())
+	{
+		if (HasAuthority()) { // 서버
+			CombatComponent->SwapWeapons();
+		}
+		else { // 클라이언트
+			ServerSwapButtonPressed();
+		}
+	}
+}
+void ATimeFractureCharacter::ServerSwapButtonPressed_Implementation()
+{
+	if(CombatComponent && CombatComponent->ShouldSwapWeapons())
+	{
+		CombatComponent->SwapWeapons();
 	}
 }
 void ATimeFractureCharacter::UpdateHUDHealth()

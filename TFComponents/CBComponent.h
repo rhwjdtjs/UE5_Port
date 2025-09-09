@@ -17,6 +17,7 @@ public:
 	UCBComponent();
 	friend class ATimeFractureCharacter;
 	void EquipWeapon(class AWeapon* WeaponEquip); //무기를 장착하는 함수
+	void SwapWeapons(); //무기를 교체하는 함수
 	void EquippedWeaponPositionModify();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;	//복제하는 항목을 정의하는 함수
 	UFUNCTION(BlueprintCallable)
@@ -41,6 +42,10 @@ private:
 	void OnRep_CombatState(); //전투 상태가 변경되었을 때 호출되는 함수
 	UPROPERTY(ReplicatedUsing=OnRep_EquippedWeapon)
 	class AWeapon* EquippedWeapon; //장착된 무기
+	UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
+	AWeapon* SecondaryWeapon; //보조 무기
+	UFUNCTION()
+	void OnRep_SecondaryWeapon(); //보조 무기가 변경되었을 때 호출되는 함수
 	class ATimeFractureCharacter* Character; //캐릭터
 	class ATFPlayerController* Controller; //플레이어 컨트롤러
 	class ATFHUD* TFHUD; //HUD
@@ -158,6 +163,8 @@ private:
     */
 protected:
 	virtual void BeginPlay() override;
+	void EquipPrimaryWeapon(AWeapon* WeaponToEquip);
+	void EquipSecondaryWeapon(AWeapon* WeaponToEquip);
 	UFUNCTION(Server, Reliable)
 	void ServerReload(); //서버에서 재장전 요청을 처리하는 함수
 	void SetAiming(bool bAiming); //조준 상태를 설정하는 함수
@@ -169,8 +176,9 @@ protected:
 	void DropEquippedWeapon(); //장착된 무기를 떨어뜨리는 함수
 	void AttachActorToRightHand(AActor* ActorToAttach); //오른손에 액터를 부착하는 함수
 	void AttachActorToLeftHand(AActor* ActorToAttach); //왼손에 액터를 부착하는 함수
+	void AttachActorToBack(AActor* ActorToAttach); //등에 액터를 부착하는 함수
 	void UpdateCarriedAmmo(); //보유 탄약을 업데이트하는 함수
-	void PlayEquipSound(); //장착 사운드를 재생하는 함수
+	void PlayEquipSound(AWeapon* WeaponToEquip); //장착 사운드를 재생하는 함수
 	void ReloadEmptyWeapon(); //빈 무기 리로드 함수
 	void Fire();
 	UFUNCTION(Server, Reliable)
@@ -192,5 +200,6 @@ public:
 	FORCEINLINE bool IsAiming() const { return bisAiming; } //조준 여부를 반환하는 함수
 	FORCEINLINE float SetBaseWalkSpeed(float Speed) { return baseWalkSpeed = Speed; } //기본 걷는 속도를 설정하는 함수
 	FORCEINLINE float SetAimWalkSpeed(float Speed) { return AimingWalkSpeed = Speed; } //조준 상태의 걷는 속도를 설정하는 함수
+	bool ShouldSwapWeapons(); //무기를 교체할 수 있는지 여부를 확인하는 함수
 	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount); //탄약을 줍는 함수
 };

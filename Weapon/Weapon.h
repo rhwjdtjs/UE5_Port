@@ -11,6 +11,7 @@ UENUM(BlueprintType)
 enum class EWeaponState : uint8 {
 	EWS_Initial UMETA(DisplayName = "Initial State"),
 	EWS_Equipped UMETA(DisplayName = "Equipped State"),
+	EWS_EquippedSecondary UMETA(DisplayName = "Equipped Secondary State"),
 	EWS_Dropped UMETA(DisplayName = "Dropped State"),
 	EWS_MAX UMETA(DisplayName = "Default Max State"),
 };
@@ -29,8 +30,13 @@ public:
 	void DropWeapon(); //무기를 떨어뜨리는 함수
 	void AddAmmo(int32 AmmoToAdd); //탄약을 추가하는 함수
 	bool bDestroyWeapon = false; //무기를 파괴할지 여부
+	void EnableCustomDepth(bool bEnable);
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnWeaponStateSet(); //무기 상태가 설정될 때 호출되는 함수
+	virtual void OnEquipped(); //무기가 장착될 때 호출되는 함수
+	virtual void OnDropped(); //무기가 떨어질 때 호출되는 함수
+	virtual void OnEquippedSecondary(); //보조 무기로 장착될 때 호출되는 함수
 	UFUNCTION()
 	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
@@ -44,7 +50,7 @@ protected:
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
 	//사용자 깊이 수정
-	void EnableCustomDepth(bool bEnable);
+
 public:	
 	virtual void Tick(float DeltaTime) override;
 	void SetWeaponState(EWeaponState State); //무기 상태를 설정하는 함수

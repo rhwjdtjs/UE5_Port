@@ -87,7 +87,10 @@ void AWeapon::OnRep_Owner()
 		TFOwnerController = nullptr;//소유자 캐릭터와 플레이어 컨트롤러를 nullptr로 설정
 	}
 	else {
-		SetHUDAmmo();//소유자가 변경되면 HUD의 탄약을 업데이트
+		TFOwnerCharacter = TFOwnerCharacter == nullptr ? Cast<ATimeFractureCharacter>(Owner) : TFOwnerCharacter; //소유자가 캐릭터인지 확인
+		if (TFOwnerCharacter && TFOwnerCharacter->GetEquippedWeapon() && TFOwnerCharacter->GetEquippedWeapon() == this) {
+			SetHUDAmmo();//소유자가 변경되면 HUD의 탄약을 업데이트
+		}
 	}
 	
 }
@@ -150,6 +153,8 @@ void AWeapon::BeginPlay()
 	}
 }
 
+
+
 void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent,
 	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
@@ -183,57 +188,63 @@ void AWeapon::Tick(float DeltaTime)
 void AWeapon::SetWeaponState(EWeaponState State)
 {
 	WeaonState = State;//무기 상태 설정
-	switch (WeaonState)
-	{
-	case EWeaponState::EWS_Equipped:
-		ShowPickupWidget(false);//무기 위젯 숨기기
-		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);//스피어 충돌 비활성화
-		WeaponMesh->SetSimulatePhysics(false);//무기 메시 물리 시뮬레이션 활성화
-		WeaponMesh->SetEnableGravity(false);//무기 메시 중력 활성화
-		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);//무기 메시 충돌 활성화
-		
-		EnableCustomDepth(false);//사용자 정의 깊도 비활성화
-		break;
-
-	case EWeaponState::EWS_Dropped:
-		if (HasAuthority()) {
-			AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);//스피어 충돌 활성화
-		}
-		WeaponMesh->SetSimulatePhysics(true);//무기 메시 물리 시뮬레이션 활성화
-		WeaponMesh->SetEnableGravity(true);//무기 메시 중력 활성화
-		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);//무기 메시 충돌 활성화
-		WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_A);//사용자 정의 깊도 스텐실 값 설정
-		WeaponMesh->MarkRenderStateDirty();//렌더 상태를 더럽혀서 업데이트 필요
-		EnableCustomDepth(true);//사용자 정의 깊도 활성화
-		break;
-	}
+	OnWeaponStateSet();//무기 상태에 따른 설정 적용
 	
 }
-
-void AWeapon::OnRep_WeaponState()
+void AWeapon::OnWeaponStateSet()
 {
 	switch (WeaonState)
 	{
 	case EWeaponState::EWS_Equipped:
-		ShowPickupWidget(false);//장착된 무기 위젯 숨기기
-		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);//스피어 충돌 비활성화
-		WeaponMesh->SetSimulatePhysics(false);//무기 메시 물리 시뮬레이션 활성화
-		WeaponMesh->SetEnableGravity(false);//무기 메시 중력 활성화
-		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);//무기 메시 충돌 활성화
-		EnableCustomDepth(false);//사용자 정의 깊도 비활성화
+		OnEquipped();//무기 장착 시 설정 적용
+		break;
+	case EWeaponState::EWS_EquippedSecondary:
+		OnEquippedSecondary();//무기 보조 장착 시 설정 적용
 		break;
 	case EWeaponState::EWS_Dropped:
-		WeaponMesh->SetSimulatePhysics(true);//무기 메시 물리 시뮬레이션 활성화
-		WeaponMesh->SetEnableGravity(true);//무기 메시 중력 활성화
-		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);//무기 메시 충돌 활성화
-		WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_A);//사용자 정의 깊도 스텐실 값 설정
-		WeaponMesh->MarkRenderStateDirty();//렌더 상태를 더럽혀서 업데이트 필요
-		EnableCustomDepth(true);//사용자 정의 깊도 활성화
-		break;
-	case EWeaponState::EWS_MAX:
-		break;
-	default:
+		OnDropped();//무기 떨어뜨림 시 설정 적용
 		break;
 	}
 }
+void AWeapon::OnRep_WeaponState()
+{
+	OnWeaponStateSet();
+}
+void AWeapon::OnEquipped()
+{
+	ShowPickupWidget(false);//무기 위젯 숨기기
+	AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);//스피어 충돌 비활성화
+	WeaponMesh->SetSimulatePhysics(false);//무기 메시 물리 시뮬레이션 활성화
+	WeaponMesh->SetEnableGravity(false);//무기 메시 중력 활성화
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);//무기 메시 충돌 활성화
+	EnableCustomDepth(false); //장착된 무기의 커스텀 깊이를 비활성화한다.
+}
+void AWeapon::OnDropped()
+{
+	if (HasAuthority()) {
+		AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);//스피어 충돌 활성화
+	}
+	WeaponMesh->SetSimulatePhysics(true);//무기 메시 물리 시뮬레이션 활성화
+	WeaponMesh->SetEnableGravity(true);//무기 메시 중력 활성화
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);//무기 메시 충돌 활성화
+	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_A);//사용자 정의 깊도 스텐실 값 설정
+	WeaponMesh->MarkRenderStateDirty();//렌더 상태를 더럽혀서 업데이트 필요
+	EnableCustomDepth(true);//사용자 정의 깊도 활성화
+}
+
+void AWeapon::OnEquippedSecondary()
+{
+	ShowPickupWidget(false);//무기 위젯 숨기기
+	AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);//스피어 충돌 비활성화
+	WeaponMesh->SetSimulatePhysics(false);//무기 메시 물리 시뮬레이션 활성화
+	WeaponMesh->SetEnableGravity(false);//무기 메시 중력 활성화
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);//무기 메시 충돌 활성화
+	EnableCustomDepth(true); //장착된 무기의 커스텀 깊이를 비활성화한다.
+	if (WeaponMesh)
+	{
+		WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_C);//사용자 정의 깊도 스텐실 값 설정
+		WeaponMesh->MarkRenderStateDirty();//렌더 상태를 더럽혀서 업데이트 필요
+	}
+}
+
 
