@@ -127,7 +127,13 @@ private:
 	class ATFPlayerController* TfPlayerController; //플레이어 컨트롤러
 	UPROPERTY()
 	class ATFPlayerState* TfPlayerState; //플레이어 상태
+
+	//기본 무기 설정
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeapon> DefaultWeaponClass; //기본 무기 클래스
 public:
+	void SpawnDefaultWeapon(); //기본 무기를 생성하는 함수
+	void UpdateHUDAmmo(); //HUD의 탄약을 업데이트하는 함수
 	void SetOverlappingWeapon(AWeapon* Weapon); //겹치는 무기를 설정하는 함수
 	bool IsWeaponEquipped(); //무기가 장착되어 있는지 확인하는 함수
 	bool IsAiming();

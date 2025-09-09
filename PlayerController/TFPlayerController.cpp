@@ -80,7 +80,11 @@ void ATFPlayerController::SetHUDWeaponAmmo(int32 Ammos)
 		if (bHUDVaild) {
 			FString AmmoText = FString::Printf(TEXT("%d"), Ammos); // 현재 탄약과 최대 탄약을 포맷팅한다.
 			TfHud->CharacterOverlay->AmmoAmount->SetText(FText::FromString(AmmoText));
-	}
+		}
+		else {
+			bInitializeAmmos = true;
+			HUDAmmos = Ammos; // HUDAmmos를 초기화한다.
+		}
 }
 void ATFPlayerController::SetHUDCarriedAmmo(int32 Ammos)
 {
@@ -89,6 +93,10 @@ void ATFPlayerController::SetHUDCarriedAmmo(int32 Ammos)
 	if (bHUDVaild) {
 		FString CarriedAmmo = FString::Printf(TEXT("%d"), Ammos); // 현재 탄약과 최대 탄약을 포맷팅한다.
 		TfHud->CharacterOverlay->CarriedAmmoAmount->SetText(FText::FromString(CarriedAmmo));
+	}
+	else {
+		bInitializeCarriedAmmos = true;
+		HUDCarriedAmmos = Ammos; // HUDCarriedAmmos를 초기화한다.
 	}
 }
 void ATFPlayerController::SetHUDMatchCountdown(float CountdownTime)
@@ -316,6 +324,8 @@ void ATFPlayerController::PollInit() {
 				if (bInitializeShield) SetHUDShield(HUDShield, HUDMaxShield); // HUDShield와 HUDMaxShield를 설정한다.
 				if (bInitializeScore) SetHUDScore(HUDScore); // HUDScore를 설정한다.
 				if (bInitializeDefeats) SetHUDDefeats(HUDDefeats); // HUDDefeats를 설정한다.
+				if (bInitializeAmmos) SetHUDWeaponAmmo(HUDAmmos); // HUDAmmos를 설정한다.
+				if (bInitializeCarriedAmmos) SetHUDCarriedAmmo(HUDCarriedAmmos); // HUDCarriedAmmos를 설정한다.
 				ATimeFractureCharacter* TFCharacter = Cast<ATimeFractureCharacter>(GetPawn());
 				if (TFCharacter && TFCharacter->GetCombatComponent()) {
 					if (bInitializeGrenades) SetHUDGrenadeCount(TFCharacter->GetCombatComponent()->GetGrenades()); // TFCharacter의 수류탄 개수를 설정한다.

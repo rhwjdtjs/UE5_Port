@@ -348,7 +348,12 @@ void ATimeFractureCharacter::PostInitializeComponents()
 void ATimeFractureCharacter::Elim()
 {
 	if (CombatComponent && CombatComponent->EquippedWeapon) {
-		CombatComponent->EquippedWeapon->DropWeapon(); //장착된 무기를 떨어뜨린다.
+		if (CombatComponent->EquippedWeapon->bDestroyWeapon) {
+			CombatComponent->EquippedWeapon->Destroy(); //장착된 무기를 파괴한다.
+		}
+		else {
+			CombatComponent->EquippedWeapon->DropWeapon(); //장착된 무기를 떨어뜨린다.
+		}
 	}
 	MulticastElim(); //서버에서 클라이언트로 제거를 알린다.
 	GetWorldTimerManager().SetTimer(ElimTimer, this, &ATimeFractureCharacter::ElimTimerFinished, ElimDelay);
@@ -430,6 +435,25 @@ void ATimeFractureCharacter::OnRep_Health(float LastHealth)
 	UpdateHUDHealth(); //HUD의 체력을 업데이트한다.
 	if (Health < LastHealth) {
 		PlayHitReactMontage(); //피격 애니메이션을 재생한다.
+	}
+}
+void ATimeFractureCharacter::SpawnDefaultWeapon()
+{
+	ATFGameMode* TFGameMode = Cast<ATFGameMode>(UGameplayStatics::GetGameMode(this)); //현재 게임 모드를 ATFGameMode로 캐스팅한다.
+	UWorld* World = GetWorld();
+	if (TFGameMode && World && !bisElimmed && DefaultWeaponClass) {
+		AWeapon* StartingWeapon = World->SpawnActor<AWeapon>(DefaultWeaponClass);
+		StartingWeapon->bDestroyWeapon = true; //기본 무기는 제거될 때 파괴된다.
+		if(CombatComponent)
+			CombatComponent->EquipWeapon(StartingWeapon); //전투 컴포넌트의 무기를 장착한다.
+	}
+}
+void ATimeFractureCharacter::UpdateHUDAmmo()
+{
+	TfPlayerController = TfPlayerController == nullptr ? Cast<ATFPlayerController>(Controller) : TfPlayerController;//플레이어 컨트롤러를 캐스팅하여 설정한다.
+	if (TfPlayerController && CombatComponent && CombatComponent->EquippedWeapon) {
+		TfPlayerController->SetHUDCarriedAmmo(CombatComponent->CarriedAmmo); //HUD의 탄약을 업데이트한다.
+		TfPlayerController->SetHUDWeaponAmmo(CombatComponent->EquippedWeapon->GetAmmo()); //HUD의 무기 탄약을 업데이트한다.
 	}
 }
 void ATimeFractureCharacter::SetOverlappingWeapon(AWeapon* Weapon)
@@ -575,6 +599,8 @@ void ATimeFractureCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	NormalOffset = CameraBoom->SocketOffset;
+	SpawnDefaultWeapon(); //기본 무기를 생성한다.
+	UpdateHUDAmmo(); //HUD의 탄약을 업데이트한다.
 	UpdateHUDHealth();
 	UpdateHUDShield();
 	if (HasAuthority()) //서버에서 실행되는 경우

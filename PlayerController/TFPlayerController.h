@@ -52,12 +52,16 @@ private:
 	bool bInitializeScore = false; // 허드의 점수가 초기화되었는지 여부
 	bool bInitializeDefeats = false; // 허드의 처치 수가 초기화되었는지 여부
 	bool bInitializeGrenades = false; // 허드의 수류탄 개수가 초기화되었는지 여부
+	bool bInitializeAmmos = false; // 허드의 탄약이 초기화되었는지 여부
+	bool bInitializeCarriedAmmos = false; // 허드의 보유 탄약이 초기화되었는지 여부
 	float HUDHealth;
 	float HUDMaxHealth;
 	float HUDShield;
 	float HUDMaxShield;
 	float HUDScore;
 	float HUDDefeats;
+	float HUDAmmos;
+	float HUDCarriedAmmos;
 	int32 HUDGrenades;
 protected:
 	virtual void BeginPlay() override; // 플레이어 컨트롤러가 시작될 때 호출되는 함수

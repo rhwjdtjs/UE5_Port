@@ -28,6 +28,7 @@ public:
 	virtual void OnRep_Owner() override; //소유자가 변경될 때 호출되는 함수
 	void DropWeapon(); //무기를 떨어뜨리는 함수
 	void AddAmmo(int32 AmmoToAdd); //탄약을 추가하는 함수
+	bool bDestroyWeapon = false; //무기를 파괴할지 여부
 protected:
 	virtual void BeginPlay() override;
 	UFUNCTION()
