@@ -354,11 +354,22 @@ void ATimeFractureCharacter::PostInitializeComponents()
 void ATimeFractureCharacter::Elim()
 {
 	if (CombatComponent && CombatComponent->EquippedWeapon) {
-		if (CombatComponent->EquippedWeapon->bDestroyWeapon) {
-			CombatComponent->EquippedWeapon->Destroy(); //장착된 무기를 파괴한다.
+		if (CombatComponent->EquippedWeapon) {
+			if (CombatComponent->EquippedWeapon->bDestroyWeapon) {
+				CombatComponent->EquippedWeapon->Destroy(); //장착된 무기를 파괴한다.
+			}
+			else {
+				CombatComponent->EquippedWeapon->DropWeapon(); //장착된 무기를 떨어뜨린다.
+			}
 		}
-		else {
-			CombatComponent->EquippedWeapon->DropWeapon(); //장착된 무기를 떨어뜨린다.
+		if(CombatComponent->SecondaryWeapon)
+		{
+			if (CombatComponent->SecondaryWeapon->bDestroyWeapon) {
+				CombatComponent->SecondaryWeapon->Destroy(); //보조 무기를 파괴한다.
+			}
+			else {
+				CombatComponent->SecondaryWeapon->DropWeapon(); //보조 무기를 떨어뜨린다.
+			}
 		}
 	}
 	MulticastElim(); //서버에서 클라이언트로 제거를 알린다.
