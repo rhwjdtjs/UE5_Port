@@ -4,6 +4,7 @@
 #include "TFPlayerState.h"
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h"
 #include "UnrealProject_7A/PlayerController/TFPlayerController.h"
+#include "UnrealProject_7A/HUD/OverheadWidget.h"
 #include "Net/UnrealNetwork.h" //네트워크 관련 헤더 파일을 포함시킨다.
 
 void ATFPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -61,4 +62,16 @@ void ATFPlayerState::AddToDefeats(int32 DefeatAmount)
 		}
 	}
 }
+
+void ATFPlayerState::OnRep_PlayerName()
+{
+	APawn* OwnerPawn = GetPawn();
+	if (!OwnerPawn) return;
+	TFCharacter = Cast<ATimeFractureCharacter>(OwnerPawn);
+	if (TFCharacter)
+		if (UOverheadWidget* W = TFCharacter->GetOverheadWidget())
+			W->ShowPlayerNetRole(OwnerPawn);
+}
+
+
 

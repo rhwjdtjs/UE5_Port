@@ -5,6 +5,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/WidgetComponent.h"
+#include "UnrealProject_7A/HUD/OverheadWidget.h"
 #include "Net/UnrealNetwork.h"
 #include "UnrealProject_7A/Weapon/Weapon.h"
 #include "UnrealProject_7A/TFComponents/CBComponent.h"
@@ -20,6 +21,11 @@
 #include "UnrealProject_7A/Weapon/WeaponTypes.h"
 #include "Kismet/GameplayStatics.h"
 #include "UnrealProject_7A/TFComponents/BuffComponent.h"
+#include "Components/TextBlock.h"
+#include "Blueprint/UserWidget.h"
+#include "Engine/LocalPlayer.h"
+#include "Engine/Engine.h"
+#include "Engine/GameViewportClient.h"
 ATimeFractureCharacter::ATimeFractureCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -317,7 +323,9 @@ void ATimeFractureCharacter::PollInit()
 void ATimeFractureCharacter::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState(); //부모 클래스의 OnRep_PlayerState 함수를 호출한다.
-	PollInit(); //플레이어 상태를 초기화한다.
+	EnsureOverheadWidgetLocal();
+	RefreshOverheadName();
+	PollInit();
 }
 void ATimeFractureCharacter::ServerSetActorRotation_Implementation(const FRotator& NewRotation)
 {
@@ -460,6 +468,73 @@ void ATimeFractureCharacter::OnRep_Health(float LastHealth)
 		PlayHitReactMontage(); //피격 애니메이션을 재생한다.
 	}
 }
+void ATimeFractureCharacter::EnsureOverheadWidgetLocal()
+{
+	if (!OverheadWidget) return;
+
+	// 가시성/세팅 강제
+	OverheadWidget->SetVisibility(true, true);
+	OverheadWidget->SetHiddenInGame(false);
+	OverheadWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	OverheadWidget->SetDrawAtDesiredSize(true);
+	OverheadWidget->SetOwnerNoSee(false);
+	OverheadWidget->SetOnlyOwnerSee(false);
+
+	// 이미 생성되어 있으면 패스
+	if (OverheadWidget->GetUserWidgetObject()) return;
+
+	TSubclassOf<UUserWidget> WC = OverheadWidget->GetWidgetClass();
+	if (!WC) return;
+
+	// ★ OwningPlayer 우선 시도(리스너 서버의 로컬 PC)
+	APlayerController* LocalPC = nullptr;
+	if (GEngine)
+		LocalPC = GEngine->GetFirstLocalPlayerController(GetWorld());
+
+	UUserWidget* NewUW = nullptr;
+	if (LocalPC)
+	{
+		NewUW = CreateWidget<UUserWidget>(LocalPC, WC); // OwningPlayer 버전
+	}
+	if (!NewUW)
+	{
+		NewUW = CreateWidget<UUserWidget>(GetWorld(), WC); // WorldContext 버전
+	}
+	if (!NewUW) return;
+
+	OverheadWidget->SetWidget(NewUW);
+	OverheadWidget->InitWidget();
+	NewUW->SetVisibility(ESlateVisibility::HitTestInvisible);
+	UE_LOG(LogTemp, Warning, TEXT("NOT CLIENT"));
+}
+void ATimeFractureCharacter::RefreshOverheadName()
+{
+	 if (!OverheadWidget) return;
+
+    // 서버 뷰포트용 인스턴스 보장
+    EnsureOverheadWidgetLocal();
+
+    UUserWidget* UW = OverheadWidget->GetUserWidgetObject();
+    if (!UW) return;
+
+    const FString Name = (GetPlayerState() ? GetPlayerState()->GetPlayerName() : FString());
+
+    // 1) C++ UOverheadWidget이면 기존 함수 사용
+    if (UOverheadWidget* OW = Cast<UOverheadWidget>(UW))
+    {
+        OW->SetDisplayText(Name);          // 또는 OW->ShowPlayerNetRole(this);
+        OW->SetVisibility(ESlateVisibility::HitTestInvisible);
+        return;
+    }
+
+    // 2) BP UserWidget이어도 'DisplayText'를 찾아서 직접 세팅 (폴백)
+    if (UTextBlock* TB = Cast<UTextBlock>(UW->GetWidgetFromName(TEXT("DisplayText"))))
+    {
+        TB->SetText(FText::FromString(Name));
+        UW->SetVisibility(ESlateVisibility::HitTestInvisible);
+    }
+	UE_LOG(LogTemp, Warning, TEXT("NOT CLIENT"));
+}
 void ATimeFractureCharacter::SpawnDefaultWeapon()
 {
 	ATFGameMode* TFGameMode = Cast<ATFGameMode>(UGameplayStatics::GetGameMode(this)); //현재 게임 모드를 ATFGameMode로 캐스팅한다.
@@ -467,8 +542,11 @@ void ATimeFractureCharacter::SpawnDefaultWeapon()
 	if (TFGameMode && World && !bisElimmed && DefaultWeaponClass) {
 		AWeapon* StartingWeapon = World->SpawnActor<AWeapon>(DefaultWeaponClass);
 		StartingWeapon->bDestroyWeapon = true; //기본 무기는 제거될 때 파괴된다.
-		if(CombatComponent)
+		if (CombatComponent) {
 			CombatComponent->EquipWeapon(StartingWeapon); //전투 컴포넌트의 무기를 장착한다.
+			
+		}
+
 	}
 }
 void ATimeFractureCharacter::UpdateHUDAmmo()
@@ -504,6 +582,13 @@ bool ATimeFractureCharacter::IsWeaponEquipped()
 bool ATimeFractureCharacter::IsAiming()
 {
 	return (CombatComponent && CombatComponent->bisAiming); //전투 컴포넌트가 존재하고, 전투 컴포넌트의 조준 여부를 반환한다.
+}
+
+UOverheadWidget* ATimeFractureCharacter::GetOverheadWidget() const
+{
+	if (OverheadWidget)
+		return Cast<UOverheadWidget>(OverheadWidget->GetUserWidgetObject());
+	return nullptr;
 }
 
 ECombatState ATimeFractureCharacter::GetCombatState() const
@@ -622,6 +707,29 @@ void ATimeFractureCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	NormalOffset = CameraBoom->SocketOffset;
+	// 바로 시도
+	if (OverheadWidget)
+	{
+		OverheadWidget->SetWidgetSpace(EWidgetSpace::Screen);
+		OverheadWidget->SetDrawAtDesiredSize(true);
+		OverheadWidget->SetOwnerNoSee(false);
+		OverheadWidget->SetOnlyOwnerSee(false);
+
+		if (GEngine)
+		{
+			if (APlayerController* LocalPC = GEngine->GetFirstLocalPlayerController(GetWorld()))
+			{
+				if (ULocalPlayer* LP = LocalPC->GetLocalPlayer())
+				{
+					// ★★★ 핵심: 리슨서버의 로컬 플레이어를 OwnerPlayer로 지정
+					OverheadWidget->SetOwnerPlayer(LP);
+				}
+			}
+		}
+	}
+	EnsureOverheadWidgetLocal();
+	RefreshOverheadName();
+	
 	SpawnDefaultWeapon(); //기본 무기를 생성한다.
 	UpdateHUDAmmo(); //HUD의 탄약을 업데이트한다.
 	UpdateHUDHealth();
@@ -646,6 +754,15 @@ void ATimeFractureCharacter::SwapButtonPressed()
 		else { // 클라이언트
 			ServerSwapButtonPressed();
 		}
+	}
+}
+void ATimeFractureCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	if (HasAuthority())
+	{
+		EnsureOverheadWidgetLocal();
+		RefreshOverheadName();
 	}
 }
 void ATimeFractureCharacter::ServerSwapButtonPressed_Implementation()
@@ -684,5 +801,7 @@ void ATimeFractureCharacter::Tick(float DeltaTime)
 	CameraBoom->SocketOffset = NewSocketOffset;
 	AimOffset(DeltaTime); //조준 오프셋을 계산한다.
 	HideCameraIfCharacterClose(); //캐릭터가 가까이 있을 때 카메라를 숨긴다.
+	UpdateHUDAmmo();
+	UE_LOG(LogTemp, Warning, TEXT("OwnerPlayer = %s"), OverheadWidget->GetOwnerPlayer() ? TEXT("SET") : TEXT("NULL"));
 }
 

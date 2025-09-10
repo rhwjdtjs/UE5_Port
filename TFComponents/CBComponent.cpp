@@ -608,6 +608,7 @@ void UCBComponent::SetHUDCrossharis(float DeltaTime)
 
 void UCBComponent::ThrowGrenade()
 {
+	if (CombatState == ECombatState::ECS_Reloading) return; //리로드 상태에서는 수류탄을 던지지 않는다.
 	if (Grenades == 0) return; //수류탄이 없으면 함수를 종료한다.
 	if (EquippedWeapon == nullptr || Character == nullptr) return; //장착된 무기나 캐릭터가 없으면 함수를 종료한다.
 	if (CombatState != ECombatState::ECS_Unoccupied) return; //전투 상태가 비어있지 않으면 수류탄을 던지지 않는다.
@@ -662,11 +663,8 @@ void UCBComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 		InterpFOV(DeltaTime); // FOV를 보간한다.
 	}
 	if (EquippedWeapon) {
-		UpdateCarriedAmmo();
-		UpdateAmmoValues();
-		UpdateHUDGrenades();
+		UpdateHUDGrenades(); //HUD의 수류탄 개수를 업데이트한다.
 	}
-
 }
 bool UCBComponent::ShouldSwapWeapons()
 {

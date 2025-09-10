@@ -84,5 +84,6 @@ protected:
 	float TimeSyncFrequency = 5.f; // 시간 동기화 주기 (초 단위)
 	float TimeSyncRunningTime = 0.f; // 시간 동기화가 얼마나 진행되었는지 저장하는 변수
 	float ClientServerDelta = 0.f; // 클라이언트와 서버 간의 시간 차이를 저장하는 변수
-	
+
+
 };

@@ -32,6 +32,7 @@ protected:
 	virtual void Destroyed() override; //캐릭터가 파괴될 때 호출되는 함수
 	virtual void BeginPlay() override;
 	void SwapButtonPressed(); //무기 교체 버튼 함수
+	virtual void PossessedBy(AController* NewController) override;	
 	UFUNCTION(Server, Reliable)
 	void ServerSwapButtonPressed(); //서버에서 무기 교체 버튼 함수
 	//
@@ -54,6 +55,7 @@ protected:
 	//움직임 함수
 	void PollInit(); //허드와 같은 함수 초기화
 	virtual void OnRep_PlayerState() override; //플레이어 상태가 변경되었을 때 호출되는 함수
+
 private:
 	UFUNCTION(Server, Reliable)
 	void ServerSetActorRotation(const FRotator& NewRotation);
@@ -135,6 +137,8 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeapon> DefaultWeaponClass; //기본 무기 클래스
 public:
+	void EnsureOverheadWidgetLocal();
+	void RefreshOverheadName();
 	void SpawnDefaultWeapon(); //기본 무기를 생성하는 함수
 	void UpdateHUDAmmo(); //HUD의 탄약을 업데이트하는 함수
 	void SetOverlappingWeapon(AWeapon* Weapon); //겹치는 무기를 설정하는 함수
@@ -154,6 +158,7 @@ public:
 	FORCEINLINE void SetShield(float Amount) { Shield = Amount; } //실드를 설정하는 함수
 	FORCEINLINE float GetShield() const { return Shield; } //실드를 설정하는 함수
 	FORCEINLINE float GetMaxShield() const { return MaxShield; } //최대 실드를 반환하는 함수
+	class UOverheadWidget* GetOverheadWidget() const;
 	ECombatState GetCombatState() const; //전투 상태를 반환하는 함수 
 	AWeapon* GetEquippedWeapon();
 	void PlayFireMontage(bool bAiming); //무기 발사 모션 재생 함수
