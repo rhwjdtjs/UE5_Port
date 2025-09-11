@@ -28,6 +28,9 @@ public:
 	void ShowSniperScopeWidget(bool bShowScope); //스나이퍼 스코프 위젯 표시 함수
 	bool bisElimmed = false; //플레이어가 제거되었는지 여부
 	void PlayThrowGrendadeMontage(); //수류탄 투척 애니메이션 몽타주 재생 함수
+	void HandleChatKey();
+	void HandleChatCancel();
+	void HandleChatSubmit();
 protected:
 	virtual void Destroyed() override; //캐릭터가 파괴될 때 호출되는 함수
 	virtual void BeginPlay() override;

@@ -37,6 +37,13 @@ public:
 	UPROPERTY()
 	class UAlert* Alert; //알림 위젯을 저장하는 변수
 	void AddAlert(); //알림 위젯을 추가하는 함수
+	UPROPERTY(EditAnywhere, Category = "Chat")
+	TSubclassOf<UUserWidget> ChatWidgetClass;
+
+	UPROPERTY()
+	class UChatWidget* ChatWidget;
+
+	void AddChatWidget();
 protected:
 	virtual void BeginPlay() override; //게임 시작 시 호출되는 함수, 자식 클래스에서 구현할 수 있다.
 	

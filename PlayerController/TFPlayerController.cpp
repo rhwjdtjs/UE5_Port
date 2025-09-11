@@ -15,6 +15,10 @@
 #include "UnrealProject_7A/TFComponents/CBComponent.h" // CBComponent 헤더파일을 포함시킨다.
 #include "UnrealProject_7A/GameState/TFGameState.h" // TFPlayerState 헤더파일을 포함시킨다.
 #include "UnrealProject_7A/PlayerState/TFPlayerState.h" // TFPlayerState 헤더파일을 포함시킨다.
+#include "UnrealProject_7A/HUD/ChatWidget.h"
+#include "Components/ScrollBox.h"
+#include "Components/TextBlock.h"
+#include "Components/EditableTextBox.h"
 void ATFPlayerController::SetHUDHealth(float Health, float MaxHealth)
 {
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
@@ -333,6 +337,41 @@ void ATFPlayerController::PollInit() {
 
 			}
 		}
+	}
+}
+void ATFPlayerController::ServerSendChatMessage_Implementation(const FString& Message)
+{
+	APlayerState* PS = GetPlayerState<APlayerState>();
+	FString SenderName = PS ? PS->GetPlayerName() : TEXT("Unknown");
+
+	// 모든 플레이어에게 메시지 브로드캐스트
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ATFPlayerController* PC = Cast<ATFPlayerController>(*It);
+		if (PC)
+		{
+			PC->ClientReceiveChatMessage(SenderName, Message);
+		}
+	}
+}
+void ATFPlayerController::ClientReceiveChatMessage_Implementation(const FString& Sender, const FString& Message)
+{
+	UE_LOG(LogTemp, Warning, TEXT("ClientReceiveChatMessage: %s : %s"), *Sender, *Message);
+
+	ATFHUD* Hud = Cast<ATFHUD>(GetHUD());
+	if (!Hud) { UE_LOG(LogTemp, Warning, TEXT("HUD is NULL")); return; }
+
+	if (!Hud->ChatWidget)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ChatWidget is NULL, creating..."));
+		Hud->AddChatWidget();
+	}
+
+	if (Hud->ChatWidget)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AddChatMessage EXCUTE!"));
+		Hud->ChatWidget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+		Hud->ChatWidget->AddChatMessage(Sender, Message);
 	}
 }
 // CharacterHUD 헤더파일을 포함시킨다.

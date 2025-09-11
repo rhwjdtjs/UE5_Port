@@ -26,6 +26,11 @@
 #include "Engine/LocalPlayer.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
+#include "UnrealProject_7A/HUD/ChatWidget.h"
+#include "UnrealProject_7A/HUD/TFHUD.h"
+#include "Components/ScrollBox.h"
+#include "Components/TextBlock.h"
+#include "Components/EditableTextBox.h"
 ATimeFractureCharacter::ATimeFractureCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -71,10 +76,61 @@ void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	PlayerInputComponent->BindAction("ThrowGrenade", IE_Pressed, this, &ATimeFractureCharacter::GrenadeButtonPressed); //G키를 눌렀을 때 수류탄 투척 애니메이션 재생
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump); //스페이스바를 눌렀을 때 점프
     PlayerInputComponent->BindAction("SwapWeapon", IE_Pressed, this, &ATimeFractureCharacter::SwapButtonPressed);
+	PlayerInputComponent->BindAction("Chat", IE_Pressed, this, &ATimeFractureCharacter::HandleChatKey);
+	PlayerInputComponent->BindAction("ChatCancel", IE_Pressed, this, &ATimeFractureCharacter::HandleChatCancel);
+	PlayerInputComponent->BindAction("ChatSubmit", IE_Pressed, this, &ATimeFractureCharacter::HandleChatSubmit);
 	//프로젝트 세팅에 저장된 키의 이름을 바인드한다. this ->이 함수의 있는 함수를 불러옴
 }
 
+void ATimeFractureCharacter::HandleChatKey()
+{
+	ATFPlayerController* PC = Cast<ATFPlayerController>(Controller);
+	if (PC)
+	{
+		ATFHUD* HUD = Cast<ATFHUD>(PC->GetHUD());
+		if (HUD && HUD->ChatWidgetClass)
+		{
+			if (!HUD->ChatWidget) // 아직 생성 안 됐다면
+			{
+				HUD->ChatWidget = CreateWidget<UChatWidget>(PC, HUD->ChatWidgetClass);
+				if (HUD->ChatWidget)
+				{
+					HUD->ChatWidget->AddToViewport();
+				}
+			}
 
+			if (HUD->ChatWidget && !HUD->ChatWidget->IsChatOpen())
+			{
+				HUD->ChatWidget->OpenChat();
+			}
+		}
+	}
+}
+
+void ATimeFractureCharacter::HandleChatSubmit()
+{
+	ATFPlayerController* PC = Cast<ATFPlayerController>(Controller);
+	if (PC)
+	{
+		ATFHUD* HUD = Cast<ATFHUD>(PC->GetHUD());
+		if (HUD && HUD->ChatWidget && HUD->ChatWidget->IsChatOpen())
+		{
+			HUD->ChatWidget->SubmitAndClose();   // Enter → 전송 후 닫기
+		}
+	}
+}
+void ATimeFractureCharacter::HandleChatCancel() // y → 취소
+{
+	ATFPlayerController* PC = Cast<ATFPlayerController>(Controller);
+	if (PC)
+	{
+		ATFHUD* HUD = Cast<ATFHUD>(PC->GetHUD());
+		if (HUD && HUD->ChatWidget && HUD->ChatWidget->IsChatOpen())
+		{
+			HUD->ChatWidget->CancelAndClose();
+		}
+	}
+}
 void ATimeFractureCharacter::MoveForward(float Value)
 {
 	if (bDisableGameplay) return;
@@ -802,6 +858,5 @@ void ATimeFractureCharacter::Tick(float DeltaTime)
 	AimOffset(DeltaTime); //조준 오프셋을 계산한다.
 	HideCameraIfCharacterClose(); //캐릭터가 가까이 있을 때 카메라를 숨긴다.
 	UpdateHUDAmmo();
-	UE_LOG(LogTemp, Warning, TEXT("OwnerPlayer = %s"), OverheadWidget->GetOwnerPlayer() ? TEXT("SET") : TEXT("NULL"));
 }
 

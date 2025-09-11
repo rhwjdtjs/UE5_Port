@@ -5,6 +5,7 @@
 #include "GameFrameWork/PlayerController.h"
 #include "CharacterOverlay.h"
 #include "Alert.h"
+#include "ChatWidget.h"
 void ATFHUD::DrawHUD()
 {
 	Super::DrawHUD(); //drawhud의 베이스 함수를 불러옴
@@ -46,9 +47,22 @@ void ATFHUD::AddAlert()
 	}
 }
 
+void ATFHUD::AddChatWidget()
+{
+	APlayerController* PC = GetOwningPlayerController();
+	if (PC && ChatWidgetClass)
+	{
+		ChatWidget = CreateWidget<UChatWidget>(PC, ChatWidgetClass);
+		if (ChatWidget)
+		{
+			ChatWidget->AddToViewport();
+		}
+	}
+}
+
 void ATFHUD::BeginPlay()
 {
-	Super::BeginPlay(); //베이스 클래스의 BeginPlay 함수를 호출
+	Super::BeginPlay();
 }
 
 void ATFHUD::AddCharacterOverlay()

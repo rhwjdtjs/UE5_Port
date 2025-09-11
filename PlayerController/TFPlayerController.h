@@ -30,6 +30,11 @@ public:
 	virtual float GetServerTime(); // 서버 시간을 가져오는 함수
 	void OnMatchStateSet(FName State); // 매치 상태가 변경될 때 호출되는 함수
 	void HandleCoolDown(); // 쿨다운 상태를 처리하는 함수
+	UFUNCTION(Server, Reliable)
+	void ServerSendChatMessage(const FString& Message);
+
+	UFUNCTION(Client, Reliable)
+	void ClientReceiveChatMessage(const FString& Sender, const FString& Message);
 private:
 	UPROPERTY()
 	class ATFHUD* TfHud; // 메인캐릭터 허드	
@@ -63,6 +68,7 @@ private:
 	float HUDAmmos;
 	float HUDCarriedAmmos;
 	int32 HUDGrenades;
+
 protected:
 	virtual void BeginPlay() override; // 플레이어 컨트롤러가 시작될 때 호출되는 함수
 	void SetHUDTime(); // HUD의 시간을 설정하는 함수
