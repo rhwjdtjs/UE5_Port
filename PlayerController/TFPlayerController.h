@@ -31,10 +31,12 @@ public:
 	void OnMatchStateSet(FName State); // 매치 상태가 변경될 때 호출되는 함수
 	void HandleCoolDown(); // 쿨다운 상태를 처리하는 함수
 	UFUNCTION(Server, Reliable)
-	void ServerSendChatMessage(const FString& Message);
+	void ServerSendChatMessage(const FString& Message); //0913 채팅
 
 	UFUNCTION(Client, Reliable)
-	void ClientReceiveChatMessage(const FString& Sender, const FString& Message);
+	void ClientReceiveChatMessage(const FString& Sender, const FString& Message);//0913 채팅
+	UFUNCTION(Client, Reliable)
+	void ClientPlayHitConfirmSound(class USoundCue* HitSound); //0914 hitsound
 private:
 	UPROPERTY()
 	class ATFHUD* TfHud; // 메인캐릭터 허드	

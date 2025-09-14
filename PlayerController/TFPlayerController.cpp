@@ -19,6 +19,7 @@
 #include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
 #include "Components/EditableTextBox.h"
+#include "Sound/SoundCue.h"
 void ATFPlayerController::SetHUDHealth(float Health, float MaxHealth)
 {
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
@@ -198,6 +199,13 @@ void ATFPlayerController::CheckTimeSync(float DeltaTime)
 		TimeSyncRunningTime = 0.f; // 시간 동기화 진행 시간을 초기화한다.
 	}
 }
+void ATFPlayerController::ClientPlayHitConfirmSound_Implementation(USoundCue* HitSound)
+{
+	if (HitSound)
+	{
+		UGameplayStatics::PlaySound2D(this, HitSound);
+	}
+}
 void ATFPlayerController::ClientReportServerTime_Implementation(float TimeOfClientRequest, float TimeServerReceivedClientRequest)
 {
 	float RoundTripTime = GetWorld()->GetTimeSeconds() - TimeOfClientRequest; // 왕복 시간을 계산한다.
@@ -339,7 +347,7 @@ void ATFPlayerController::PollInit() {
 		}
 	}
 }
-void ATFPlayerController::ServerSendChatMessage_Implementation(const FString& Message)
+void ATFPlayerController::ServerSendChatMessage_Implementation(const FString& Message)//0913 채팅
 {
 	APlayerState* PS = GetPlayerState<APlayerState>();
 	FString SenderName = PS ? PS->GetPlayerName() : TEXT("Unknown");
@@ -354,7 +362,7 @@ void ATFPlayerController::ServerSendChatMessage_Implementation(const FString& Me
 		}
 	}
 }
-void ATFPlayerController::ClientReceiveChatMessage_Implementation(const FString& Sender, const FString& Message)
+void ATFPlayerController::ClientReceiveChatMessage_Implementation(const FString& Sender, const FString& Message)//0913 채팅
 {
 	UE_LOG(LogTemp, Warning, TEXT("ClientReceiveChatMessage: %s : %s"), *Sender, *Message);
 

@@ -31,7 +31,12 @@ public:
 	void HandleChatKey();
 	void HandleChatCancel();
 	void HandleChatSubmit();
+	UFUNCTION(BlueprintImplementableEvent)
+	void BloodScreen(); //0914 피격이펙트
+	UFUNCTION(Client, Reliable)
+	void ClientShowBloodScreen();
 protected:
+	virtual void Jump() override;
 	virtual void Destroyed() override; //캐릭터가 파괴될 때 호출되는 함수
 	virtual void BeginPlay() override;
 	void SwapButtonPressed(); //무기 교체 버튼 함수
@@ -39,6 +44,12 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void ServerSwapButtonPressed(); //서버에서 무기 교체 버튼 함수
 	//
+	void Dive();
+	UFUNCTION(Server, Reliable)
+	void ServerDivePressed();   
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastDive();       
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 	void Turn(float Value);
@@ -107,6 +118,8 @@ private:
 	class UAnimMontage* ElimMontage; //피격 애니메이션 몽타주
 	UPROPERTY(EditAnywhere, Category = Combat)
 	class UAnimMontage* ReloadMontage; //재장전 애니메이션 몽타주
+	UPROPERTY(EditAnywhere, Category = Combat)
+	class UAnimMontage* DiveMontage;
 
 	UPROPERTY(EditAnywhere)
 	float CameraThreshold = 200.f; //카메라가 캐릭터와 얼마나 가까이 있을 때 카메라를 숨길지 결정하는 임계값
@@ -125,7 +138,8 @@ private:
 	void OnRep_Shield(float LastShield); //실드가 바뀔 때 호출되는 함수
 	UPROPERTY(Replicated)
 	FRotator MoveRotation; //캐릭터의 이동 회전
-
+	UPROPERTY(EditAnywhere)
+	float RollDistance = 200.f;
 	FTimerHandle ElimTimer; //플레이어 제거 타이머 핸들
 	UPROPERTY(EditDefaultsOnly)
 	float ElimDelay = 3.f; //플레이어 제거 지연 시간
@@ -139,6 +153,13 @@ private:
 	//기본 무기 설정
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeapon> DefaultWeaponClass; //기본 무기 클래스
+	bool bIsDodging;
+	UPROPERTY(EditAnywhere)
+	class USoundCue* HitCharacterSound;
+	UPROPERTY(EditAnywhere)
+	USoundCue* HitConfirmSound;
+	//0914 피격 ui
+	
 public:
 	void EnsureOverheadWidgetLocal();
 	void RefreshOverheadName();
