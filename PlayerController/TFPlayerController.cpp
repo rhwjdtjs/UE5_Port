@@ -23,9 +23,34 @@
 #include "UnrealProject_7A/HUD/ReturnToMainMenu.h"
 #include "Components/HorizontalBox.h"
 #include "Blueprint/WidgetTree.h"
+void ATFPlayerController::ClientAddKillFeedMessage_Implementation(const FString& Killer, const FString& Victim)
+{
+	AddKillFeedMessage(Killer, Victim); // 클라에서 실제 메시지 추가 실행
+}
 void ATFPlayerController::AddKillFeedMessage(const FString& Killer, const FString& Victim)
 {
+		TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud;
+		if (!TfHud || !TfHud->CharacterOverlay) return;
 
+		// BP: CharacterOverlay 안에 ScrollBox 이름을 정확히 "KillFeedBox" 로!
+		UScrollBox* KillFeedBox = Cast<UScrollBox>(
+			TfHud->CharacterOverlay->GetWidgetFromName(TEXT("KillFeedBox")));
+		if (!KillFeedBox) return;
+
+		
+		UWidgetTree* WT = TfHud->CharacterOverlay->WidgetTree;
+		if (!WT) return;
+
+		UTextBlock* NewMessage = WT->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
+		const FString Msg = FString::Printf(TEXT("%s killed %s"), *Killer, *Victim);
+		NewMessage->SetText(FText::FromString(Msg));
+		KillFeedBox->AddChild(NewMessage);
+
+		// 오래된 메시지 정리 (예: 5개 유지)
+		if (KillFeedBox->GetChildrenCount() > 5)
+		{
+			KillFeedBox->RemoveChildAt(0);
+		}
 }
 void ATFPlayerController::SetupInputComponent()
 {
@@ -110,6 +135,7 @@ void ATFPlayerController::SetHUDShield(float Shield, float MaxShield)
 		HUDMaxShield = MaxShield; // HUDHealth와 HUDMaxHealth를 초기화한다.
 	}
 }
+
 void ATFPlayerController::SetHUDScore(float Score)
 {
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
@@ -123,6 +149,7 @@ void ATFPlayerController::SetHUDScore(float Score)
 		HUDScore = Score; // HUDScore를 초기화한다.
 	}
 }
+
 void ATFPlayerController::SetHUDDefeats(int32 Defeats)
 {
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
@@ -136,6 +163,7 @@ void ATFPlayerController::SetHUDDefeats(int32 Defeats)
 		HUDDefeats = Defeats; // HUDDefeats를 초기화한다.
 	}
 }
+
 void ATFPlayerController::SetHUDWeaponAmmo(int32 Ammos)
 {
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
@@ -440,7 +468,51 @@ void ATFPlayerController::ClientReceiveChatMessage_Implementation(const FString&
 		Hud->ChatWidget->AddChatMessage(Sender, Message);
 	}
 }
+	void ATFPlayerController::UpdateScoreboard()
+	{
+		if (!ScoreboardWidget) return;
 
+		UScrollBox* PlayerListBox = Cast<UScrollBox>(ScoreboardWidget->GetWidgetFromName(TEXT("PlayerListBox")));
+		if (!PlayerListBox) return;
+
+		PlayerListBox->ClearChildren();
+
+		ATFGameState* GS = Cast<ATFGameState>(UGameplayStatics::GetGameState(this));
+		if (!GS) return;
+
+		for (APlayerState* PS : GS->PlayerArray)
+		{
+			ATFPlayerState* TFPS = Cast<ATFPlayerState>(PS);
+			if (TFPS && ScoreboardRowClass)
+			{
+				// Row 위젯 생성 (WBP_ScoreboardRow)
+				UUserWidget* Row = CreateWidget<UUserWidget>(this, ScoreboardRowClass);
+				if (!Row) continue;
+
+				// 내부 TextBlock 찾기
+				UTextBlock* NameText = Cast<UTextBlock>(Row->GetWidgetFromName(TEXT("NameText")));
+				UTextBlock* KillsText = Cast<UTextBlock>(Row->GetWidgetFromName(TEXT("KillsText")));
+				UTextBlock* DeathsText = Cast<UTextBlock>(Row->GetWidgetFromName(TEXT("DeathsText")));
+
+				if (NameText) {
+					FString DisplayString = TFPS->GetPlayerName() + TEXT(" / ");
+					NameText->SetText(FText::FromString(DisplayString));
+				}
+				if (KillsText) {
+					FString DisplayString = FString::FromInt(FMath::FloorToInt(TFPS->GetScore())) + TEXT(" / ");
+					KillsText->SetText(FText::FromString(DisplayString));
+				}
+				if (DeathsText)
+				{
+					DeathsText->SetText(FText::AsNumber(TFPS->GetDefeats()));
+				}
+
+				// ScrollBox에 추가
+				PlayerListBox->AddChild(Row);
+			}
+		}
+	}
+/*
 void ATFPlayerController::UpdateScoreboard()
 {
 	if (!ScoreboardWidget) return;
@@ -481,6 +553,7 @@ void ATFPlayerController::UpdateScoreboard()
 		PlayerListBox->AddChild(Row);
 	}
 	}
+	*/
 // CharacterHUD 헤더파일을 포함시킨다.
 void ATFPlayerController::BeginPlay()
 {

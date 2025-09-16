@@ -23,9 +23,7 @@ public:
 	class UProgressBar* ShieldBar;
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* ShieldText;
-	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* ScoreAmount;
-	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* DefeatsAmount;
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* AmmoAmount;

@@ -73,6 +73,21 @@ void ATFGameMode::PlayerEliminated(ATimeFractureCharacter* ElimmedCharacter, ATF
 	if (VictimPlayerState) {
 		VictimPlayerState->AddToDefeats(1); //피해자 플레이어 상태에 처치 수를 추가한다.
 	}
+	if (AttackerController && VictimController)
+	{
+		FString KillerName = AttackerController->PlayerState->GetPlayerName();
+		FString VictimName = VictimController->PlayerState->GetPlayerName();
+
+		// 모든 클라이언트에 브로드캐스트
+		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+		{
+			ATFPlayerController* PC = Cast<ATFPlayerController>(*It);
+			if (PC)
+			{
+				PC->ClientAddKillFeedMessage(KillerName, VictimName);
+			}
+		}
+	}
 }
 
 void ATFGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)

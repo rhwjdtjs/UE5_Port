@@ -22,6 +22,7 @@ void ATFPlayerState::OnRep_Score()
 		TFPlayerController = TFPlayerController == nullptr ? Cast<ATFPlayerController>(TFCharacter->Controller) : TFPlayerController; //플레이어 컨트롤러의 포인터를 저장한다.
 		if(TFPlayerController) {
 			TFPlayerController->SetHUDScore(GetScore()); //플레이어 컨트롤러의 SetHUDScore 함수를 호출하여 HUD에 점수를 설정한다.
+			TFPlayerController->UpdateScoreboard();
 		}
 	}
 }
@@ -47,6 +48,7 @@ void ATFPlayerState::OnRep_Defeats()
 		TFPlayerController = TFPlayerController == nullptr ? Cast<ATFPlayerController>(TFCharacter->Controller) : TFPlayerController; //플레이어 컨트롤러의 포인터를 저장한다.
 		if (TFPlayerController) {
 			TFPlayerController->SetHUDDefeats(Defeats); //플레이어 컨트롤러의 SetHUDDefeats 함수를 호출하여 HUD에 처치 수를 설정한다.
+			TFPlayerController->UpdateScoreboard();
 		}
 	}
 }
@@ -71,6 +73,11 @@ void ATFPlayerState::OnRep_PlayerName()
 	if (TFCharacter)
 		if (UOverheadWidget* W = TFCharacter->GetOverheadWidget())
 			W->ShowPlayerNetRole(OwnerPawn);
+
+	if (ATFPlayerController* PC = Cast<ATFPlayerController>(GetWorld()->GetFirstPlayerController()))
+	{
+		PC->UpdateScoreboard(); // 이름 복제 완료되면 스코어보드 다시 갱신
+	}
 }
 
 

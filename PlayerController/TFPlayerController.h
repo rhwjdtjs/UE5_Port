@@ -16,6 +16,9 @@ class UNREALPROJECT_7A_API ATFPlayerController : public APlayerController
 	
 public:
 	//ui
+	void UpdateScoreboard();
+	UFUNCTION(Client, Reliable)
+	void ClientAddKillFeedMessage(const FString& Killer, const FString& Victim);
 	void AddKillFeedMessage(const FString& Killer, const FString& Victim);
 	virtual void SetupInputComponent() override; // 입력 컴포넌트를 설정하는 함수
 	void ShowReturnToMainMenu(); // 메인 메뉴로 돌아가는 위젯을 표시하는 함수
@@ -93,7 +96,7 @@ private:
 
 	UFUNCTION()
 	void HideScoreboard();
-	void UpdateScoreboard();
+
 protected:
 	virtual void BeginPlay() override; // 플레이어 컨트롤러가 시작될 때 호출되는 함수
 	void SetHUDTime(); // HUD의 시간을 설정하는 함수
