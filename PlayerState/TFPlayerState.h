@@ -22,6 +22,7 @@ public:
 	virtual void OnRep_Defeats();
 	void AddToDefeats(int32 DefeatAmount);
 	virtual void OnRep_PlayerName() override;
+	FORCEINLINE int32 GetDefeats() const { return Defeats; }
 private:
 	UPROPERTY()
 	class ATimeFractureCharacter* TFCharacter; //캐릭터의 포인터를 저장한다.

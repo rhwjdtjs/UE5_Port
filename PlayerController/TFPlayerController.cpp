@@ -21,12 +21,45 @@
 #include "Components/EditableTextBox.h"
 #include "Sound/SoundCue.h"
 #include "UnrealProject_7A/HUD/ReturnToMainMenu.h"
+#include "Components/HorizontalBox.h"
+#include "Blueprint/WidgetTree.h"
+void ATFPlayerController::AddKillFeedMessage(const FString& Killer, const FString& Victim)
+{
+
+}
 void ATFPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent(); // 부모 클래스의 SetupInputComponent 호출
 	if (InputComponent == nullptr) return;
 
 	InputComponent->BindAction("Quit", IE_Pressed, this, &ATFPlayerController::ShowReturnToMainMenu); // "Quit" 액션이 눌렸을 때 ShowReturnToMainMenu 함수 호출
+	InputComponent->BindAction("Scoreboard", IE_Pressed, this, &ATFPlayerController::ShowScoreboard);
+	InputComponent->BindAction("Scoreboard", IE_Released, this, &ATFPlayerController::HideScoreboard);
+}
+void ATFPlayerController::ShowScoreboard()
+{
+	if (ScoreboardWidget == nullptr && ScoreboardClass)
+	{
+		ScoreboardWidget = CreateWidget<UUserWidget>(this, ScoreboardClass);
+		if (ScoreboardWidget)
+		{
+			ScoreboardWidget->AddToViewport(50);
+		}
+	}
+
+	if (ScoreboardWidget)
+	{
+		ScoreboardWidget->SetVisibility(ESlateVisibility::Visible);
+		UpdateScoreboard(); // 켤 때 항상 갱신
+	}
+}
+
+void ATFPlayerController::HideScoreboard()
+{
+	if (ScoreboardWidget)
+	{
+		ScoreboardWidget->SetVisibility(ESlateVisibility::Hidden);
+	}
 }
 void ATFPlayerController::ShowReturnToMainMenu()
 {
@@ -407,6 +440,47 @@ void ATFPlayerController::ClientReceiveChatMessage_Implementation(const FString&
 		Hud->ChatWidget->AddChatMessage(Sender, Message);
 	}
 }
+
+void ATFPlayerController::UpdateScoreboard()
+{
+	if (!ScoreboardWidget) return;
+
+	UScrollBox* PlayerListBox = Cast<UScrollBox>(ScoreboardWidget->GetWidgetFromName(TEXT("PlayerListBox")));
+	if (!PlayerListBox) return;
+
+	PlayerListBox->ClearChildren();
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ATFPlayerController* PC = Cast<ATFPlayerController>(*It);
+		if (!PC || !PC->PlayerState) continue;
+
+		ATFPlayerState* PS = Cast<ATFPlayerState>(PC->PlayerState);
+		if (!PS) continue;
+		if (!ScoreboardRowClass) continue;
+		UUserWidget* Row = CreateWidget<UUserWidget>(this, ScoreboardRowClass);
+		if (!Row) continue;
+
+		UTextBlock* NameText = Cast<UTextBlock>(Row->GetWidgetFromName(TEXT("NameText")));
+		UTextBlock* KillsText = Cast<UTextBlock>(Row->GetWidgetFromName(TEXT("KillsText")));
+		UTextBlock* DeathsText = Cast<UTextBlock>(Row->GetWidgetFromName(TEXT("DeathsText")));
+
+		if (NameText) {
+			FString DisplayString = PS->GetPlayerName() + TEXT(" / ");
+			NameText->SetText(FText::FromString(DisplayString));
+		}
+		if (KillsText) {
+			FString DisplayString = FString::FromInt(FMath::FloorToInt(PS->GetScore())) + TEXT(" / ");
+			KillsText->SetText(FText::FromString(DisplayString));
+		}
+		if (DeathsText)
+		{
+			DeathsText->SetText(FText::AsNumber(PS->GetDefeats()));
+		}
+
+		PlayerListBox->AddChild(Row);
+	}
+	}
 // CharacterHUD 헤더파일을 포함시킨다.
 void ATFPlayerController::BeginPlay()
 {
