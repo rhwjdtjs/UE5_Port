@@ -20,6 +20,31 @@
 #include "Components/TextBlock.h"
 #include "Components/EditableTextBox.h"
 #include "Sound/SoundCue.h"
+#include "UnrealProject_7A/HUD/ReturnToMainMenu.h"
+void ATFPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent(); // 부모 클래스의 SetupInputComponent 호출
+	if (InputComponent == nullptr) return;
+
+	InputComponent->BindAction("Quit", IE_Pressed, this, &ATFPlayerController::ShowReturnToMainMenu); // "Quit" 액션이 눌렸을 때 ShowReturnToMainMenu 함수 호출
+}
+void ATFPlayerController::ShowReturnToMainMenu()
+{
+	if (ReturnToMainMenuClass == nullptr) return;
+	if(ReturnToMainMenu == nullptr) {
+		ReturnToMainMenu = CreateWidget<UReturnToMainMenu>(this, ReturnToMainMenuClass); // ReturnToMainMenu 위젯 생성
+	}
+	if (ReturnToMainMenu) {
+		bReturnToMainMenuOpen = !bReturnToMainMenuOpen;
+		if (bReturnToMainMenuOpen) {
+			ReturnToMainMenu->MenuSetup(); // 메뉴 설정
+		}
+		else {
+			ReturnToMainMenu->MenuTearDown(); // 메뉴 해제
+		}
+	}
+
+}
 void ATFPlayerController::SetHUDHealth(float Health, float MaxHealth)
 {
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.

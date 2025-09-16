@@ -15,6 +15,15 @@ class UNREALPROJECT_7A_API ATFPlayerController : public APlayerController
 	GENERATED_BODY()
 	
 public:
+	//ui
+	virtual void SetupInputComponent() override; // 입력 컴포넌트를 설정하는 함수
+	void ShowReturnToMainMenu(); // 메인 메뉴로 돌아가는 위젯을 표시하는 함수
+	UPROPERTY(EditAnywhere, Category = UI)
+	TSubclassOf<class UUserWidget> ReturnToMainMenuClass; // 메인 메뉴로 돌아가는 위젯 클래스
+	UPROPERTY()
+	class UReturnToMainMenu* ReturnToMainMenu; // 메인 메뉴로 돌아가는 위젯 인스턴스
+	bool bReturnToMainMenuOpen = false; // 메인 메뉴로 돌아가는 위젯이 열려있는지 여부
+	//허드
 	void SetHUDHealth(float Health, float MaxHealth); // 허드의 체력을 설정하는 함수
 	void SetHUDShield(float Shield, float MaxShield); // 허드의 체력을 설정하는 함수
 	void SetHUDScore(float Score); // 허드의 점수를 설정하는 함수
