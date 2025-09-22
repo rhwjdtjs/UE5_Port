@@ -28,6 +28,14 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 private:
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayWireEffects(const FVector& Start, const FVector& Target);
+	UPROPERTY(EditDefaultsOnly, Category = "Wire|Effects")
+	class UNiagaraSystem* WireShootEffect;  
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastDrawWire(const FVector& Start, const FVector& End);
+	UPROPERTY(EditDefaultsOnly, Category = "Wire|Effects")
+	class UNiagaraSystem* WireImpactEffect;   // 충돌 파티클 (Niagara)
 	UPROPERTY()
 	class ATimeFractureCharacter* Character;
 	UPROPERTY(ReplicatedUsing = OnRep_WireState)

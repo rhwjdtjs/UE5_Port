@@ -9,6 +9,9 @@
 #include "CombatStates.h"
 #include "Net/UnrealNetwork.h"
 #include "UnrealProject_7A/Character/TFAniminstance.h"
+#include "NiagaraSystem.h"
+#include "NiagaraFunctionLibrary.h"
+#include "Kismet/GameplayStatics.h"
 // Sets default values for this component's properties
 UWireComponent::UWireComponent()
 {
@@ -27,38 +30,59 @@ void UWireComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(UWireComponent, bIsAttached);
 	DOREPLIFETIME(UWireComponent, WireTarget);
 }
+void UWireComponent::MulticastDrawWire_Implementation(const FVector& Start, const FVector& End)
+{
+	FVector FaceStart = Start;
+	if (Character && Character->GetMesh())
+	{
+		FaceStart = Character->GetActorLocation()
+			+ Character->GetActorForwardVector() * 50.f
+			+ FVector(0.f, 0.f, 70.f);
+	}
+	DrawDebugLine(
+		GetWorld(),
+		FaceStart,
+		End,
+		FColor::Green,
+		false,     
+		0.05f,     
+		0,         
+		2.0f       
+	);
+}
+void UWireComponent::MulticastPlayWireEffects_Implementation(const FVector& Start, const FVector& Target)
+{
+	if (WireShootEffect)
+	{
+		UNiagaraComponent* NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			WireShootEffect,                                  
+			Character->GetMesh(),                             
+			FName("muzz"),                                    
+			FVector::ZeroVector,                              
+			FRotator::ZeroRotator,                           
+			EAttachLocation::SnapToTargetIncludingScale,      
+			true                                              
+		);
+	}
+
+	if (WireImpactEffect)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			WireImpactEffect,
+			Target,
+			FRotator::ZeroRotator
+		);
+	}
+}
 void UWireComponent::OnRep_WireState()
 {
-	/*
 	if (!Character) Character = Cast<ATimeFractureCharacter>(GetOwner());
 	if (!Character) return;
-
-	//  디버그: 내가 클라인지/서버인지, 값이 뭔지 확인
-	UE_LOG(LogTemp, Warning, TEXT("[OnRep_WireState] %s  bIsAttached=%s"),
-		Character->HasAuthority() ? TEXT("SERVER") : TEXT("CLIENT"),
-		bIsAttached ? TEXT("True") : TEXT("False"));
-
-	// (선택) 여기서 AnimInstance에 바로 반영해도 되지만,
-	// AnimInstance가 매 프레임 WireComponent를 읽으므로 생략 가능.
-	// 남겨두고 싶다면 안전하게:
-	if (USkeletalMeshComponent* Mesh = Character->GetMesh())
-		if (UTFAniminstance* Anim = Cast<UTFAniminstance>(Mesh->GetAnimInstance()))
-			Anim->bIsWireAttached = bIsAttached;
-
-	// 이동모드는 서버만 (클라에서 바꾸면 흔들림 생김)
-	if (Character->HasAuthority())
-		if (auto* Move = Character->GetCharacterMovement())
-			Move->SetMovementMode(bIsAttached ? MOVE_Flying : MOVE_Falling);
-	*/
-	if (!Character) Character = Cast<ATimeFractureCharacter>(GetOwner());
-	if (!Character) return;
-
-	// 디버그: 어디서 불렸는지 로그
 	UE_LOG(LogTemp, Warning, TEXT("[OnRep_WireState] %s bIsAttached=%s"),
 		Character->HasAuthority() ? TEXT("SERVER") : TEXT("CLIENT"),
 		bIsAttached ? TEXT("True") : TEXT("False"));
 
-	// 클라 전용: AnimInstance에 bool 반영
 	if (!Character->HasAuthority()) //  클라에서만 실행
 	{
 		if (USkeletalMeshComponent* Mesh = Character->GetMesh())
@@ -98,14 +122,15 @@ void UWireComponent::ServerFireWire_Implementation()
 	Params.AddIgnoredActor(Character);
 
 	const bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, TraceChannel, Params);
-	if (!bHit) return;                     // 허공이면 종료 (원하면 허용으로 바꿔도 됨)
+	if (!bHit) return;                    
 
 	WireTarget = Hit.ImpactPoint;
 	bIsAttached = true;
 
 	if (UCharacterMovementComponent* Move = Character->GetCharacterMovement())
 		Move->SetMovementMode(MOVE_Flying);
-         
+	MulticastPlayWireEffects(Start, WireTarget);
+	MulticastDrawWire(Start, WireTarget);
 }
 void UWireComponent::FireWire()
 {
@@ -131,17 +156,6 @@ void UWireComponent::ReleaseWire()
 void UWireComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	/*
-	if (bIsAttached && Character && !Character->IsElimmed()) {
-		FVector Direction = (WireTarget - Character->GetActorLocation()).GetSafeNormal();
-		FVector NewVelocity = Direction * PullSpeed;
-		Character->GetCharacterMovement()->Velocity = NewVelocity;
-
-		if(FVector::Dist(Character->GetActorLocation(), WireTarget) < 150.f) {
-			ReleaseWire();
-		}
-	}
-	*/
 	if (bIsAttached && Character)
 	{
 		FVector ToTarget = WireTarget - Character->GetActorLocation();
