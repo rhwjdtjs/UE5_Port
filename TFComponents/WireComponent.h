@@ -28,6 +28,16 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 private:
+	FTimerHandle CooldownUITimerHandle;
+	float RemainingCooldown = 0.f;
+	UPROPERTY(EditAnywhere, Category = "Wire|UI")
+	TSubclassOf<class UUserWidget> WireCooldownWidgetClass;
+	UPROPERTY()
+	class UUserWidget* WireCooldownWidget;
+	void UpdateWireCooldownUI();
+	void TickWireCooldownUI();
+	UPROPERTY()
+	class UTextBlock* WireCooldownText;
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastPlayWireSound();
 	void ResetWireCooldown();

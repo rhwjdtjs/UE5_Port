@@ -14,6 +14,10 @@
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
+#include "Blueprint/UserWidget.h"
+#include "Components/TextBlock.h"
+#include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
 // Sets default values for this component's properties
 UWireComponent::UWireComponent()
 {
@@ -41,6 +45,54 @@ void UWireComponent::MulticastPlayWireSound_Implementation()
 			WireFireSound,
 			Character->GetActorLocation()
 		);
+	}
+}
+void UWireComponent::UpdateWireCooldownUI()
+{
+	if (!WireCooldownText) return;
+
+	// 남은 시간 계산
+	float Remaining = GetWorld()->GetTimerManager().GetTimerRemaining(CooldownTimerHandle);
+
+	if (Remaining > 0.f)
+	{
+		FString CooldownString = FString::Printf(TEXT("Wire(Q)-CoolTimeLeft - %.1f"), Remaining);
+		WireCooldownText->SetText(FText::FromString(CooldownString));
+
+		// 일정 주기로 다시 호출 (예: 0.1초마다)
+		GetWorld()->GetTimerManager().SetTimer(
+			CooldownUITimerHandle,
+			this,
+			&UWireComponent::UpdateWireCooldownUI,
+			0.1f,
+			false
+		);
+	}
+	else
+	{
+		WireCooldownText->SetText(FText::GetEmpty()); // 텍스트 숨김
+	}
+}
+void UWireComponent::TickWireCooldownUI()
+{
+	if (WireCooldownText)
+	{
+		RemainingCooldown -= 1.f;
+		if (RemainingCooldown > 0.f)
+		{
+			FString CooldownMsg = FString::Printf(TEXT("Wire(Q)-CoolTimeLeft - %.0f"), RemainingCooldown);
+			WireCooldownText->SetText(FText::FromString(CooldownMsg));
+		}
+		else
+		{
+			WireCooldownText->SetText(FText::GetEmpty());
+			if (WireCooldownWidget)
+			{
+				WireCooldownWidget->SetVisibility(ESlateVisibility::Hidden);
+			}
+			// 타이머 정지
+			Character->GetWorldTimerManager().ClearTimer(CooldownUITimerHandle);
+		}
 	}
 }
 void UWireComponent::ResetWireCooldown()
@@ -99,10 +151,6 @@ void UWireComponent::OnRep_WireState()
 {
 	if (!Character) Character = Cast<ATimeFractureCharacter>(GetOwner());
 	if (!Character) return;
-	UE_LOG(LogTemp, Warning, TEXT("[OnRep_WireState] %s bIsAttached=%s"),
-		Character->HasAuthority() ? TEXT("SERVER") : TEXT("CLIENT"),
-		bIsAttached ? TEXT("True") : TEXT("False"));
-
 	if (!Character->HasAuthority()) //  클라에서만 실행
 	{
 		if (USkeletalMeshComponent* Mesh = Character->GetMesh())
@@ -171,10 +219,53 @@ void UWireComponent::FireWire()
 	if (Character && !Character->HasAuthority())
 	{
 		ServerFireWire();
-		return;
 	}
 	else {
 		ServerFireWire();
+	}
+	if (Character && Character->IsLocallyControlled())
+	{
+		if (!WireCooldownWidget && WireCooldownWidgetClass)
+		{
+			WireCooldownWidget = CreateWidget<UUserWidget>(
+				Character->GetWorld(),
+				WireCooldownWidgetClass
+			);
+			if (WireCooldownWidget)
+			{
+				WireCooldownWidget->AddToViewport();
+				WireCooldownText = Cast<UTextBlock>(
+					WireCooldownWidget->GetWidgetFromName(TEXT("WireCoolTime"))
+				);
+			}
+		}
+
+		if (WireCooldownWidget)
+		{
+			WireCooldownWidget->SetVisibility(ESlateVisibility::Visible);
+		}
+
+		RemainingCooldown = WireCooldown;
+		UpdateWireCooldownUI();
+		Character->GetWorldTimerManager().SetTimer(
+			CooldownUITimerHandle,
+			this,
+			&UWireComponent::TickWireCooldownUI,
+			1.0f,
+			true
+		);
+	}
+
+	bCanFireWire = false;
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().SetTimer(
+			CooldownTimerHandle,
+			this,
+			&UWireComponent::ResetWireCooldown,
+			WireCooldown,
+			false
+		);
 	}
 }
 
