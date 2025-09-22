@@ -28,6 +28,18 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 private:
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastPlayWireSound();
+	void ResetWireCooldown();
+	UPROPERTY(ReplicatedUsing = OnRep_CanFireWire)
+	bool bCanFireWire = true;
+	UFUNCTION()
+	void OnRep_CanFireWire();
+	UPROPERTY(EditAnywhere, Category = "Wire")
+	float WireCooldown = 3.0f; // 3ÃÊ ÄðÅ¸ÀÓ
+	FTimerHandle CooldownTimerHandle;
+	UPROPERTY(EditAnywhere, Category = "Wire|Effects")
+	USoundBase* WireFireSound;
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastPlayWireEffects(const FVector& Start, const FVector& Target);
 	UPROPERTY(EditDefaultsOnly, Category = "Wire|Effects")

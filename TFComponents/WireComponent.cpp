@@ -12,6 +12,8 @@
 #include "NiagaraSystem.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "TimerManager.h"
+#include "Engine/World.h"
 // Sets default values for this component's properties
 UWireComponent::UWireComponent()
 {
@@ -29,6 +31,24 @@ void UWireComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UWireComponent, bIsAttached);
 	DOREPLIFETIME(UWireComponent, WireTarget);
+}
+void UWireComponent::MulticastPlayWireSound_Implementation()
+{
+	if (WireFireSound && Character)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			WireFireSound,
+			Character->GetActorLocation()
+		);
+	}
+}
+void UWireComponent::ResetWireCooldown()
+{
+	bCanFireWire = true;
+}
+void UWireComponent::OnRep_CanFireWire()
+{
 }
 void UWireComponent::MulticastDrawWire_Implementation(const FVector& Start, const FVector& End)
 {
@@ -104,6 +124,7 @@ void UWireComponent::ServerReleaseWire_Implementation()
 }
 void UWireComponent::ServerFireWire_Implementation()
 {
+	if (!bCanFireWire) return;
 	if (!Character) return;
 	if (Character->IsElimmed() || Character->bIsDodging ||
 		Character->GetCombatState() == ECombatState::ECS_Reloading ||
@@ -131,15 +152,30 @@ void UWireComponent::ServerFireWire_Implementation()
 		Move->SetMovementMode(MOVE_Flying);
 	MulticastPlayWireEffects(Start, WireTarget);
 	MulticastDrawWire(Start, WireTarget);
+	MulticastPlayWireSound();
+	bCanFireWire = false;
+	UWorld* World = GetWorld();
+	if (World) {
+		World->GetTimerManager().SetTimer(
+			CooldownTimerHandle,
+			this,
+			&UWireComponent::ResetWireCooldown,
+			WireCooldown,
+			false
+		);
+	}
 }
 void UWireComponent::FireWire()
 {
+	if (!bCanFireWire) return;
 	if (Character && !Character->HasAuthority())
 	{
 		ServerFireWire();
 		return;
 	}
-	ServerFireWire();
+	else {
+		ServerFireWire();
+	}
 }
 
 void UWireComponent::ReleaseWire()
