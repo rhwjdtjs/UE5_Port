@@ -8,7 +8,7 @@ public class UnrealProject_7A : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "Niagara","Slate","MultiplayerSessions","OnlineSubsystem" ,"OnlineSubsystemSteam" ,      // ¡Ú Ãß°¡
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "Niagara","Slate","MultiplayerSessions","OnlineSubsystem" ,"OnlineSubsystemSteam" ,"UMG","Slate",
             "SlateCore"});
 
 

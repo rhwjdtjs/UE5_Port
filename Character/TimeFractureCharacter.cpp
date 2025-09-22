@@ -33,6 +33,7 @@
 #include "Components/EditableTextBox.h"
 #include "TFAniminstance.h"
 #include "Sound/SoundCue.h"
+#include "UnrealProject_7A/TFComponents/WireComponent.h"
 ATimeFractureCharacter::ATimeFractureCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -58,30 +59,33 @@ ATimeFractureCharacter::ATimeFractureCharacter()
 	AttachedGrenade = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("AttachedGrenade"));
 	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket")); //수류탄 메쉬를 캐릭터의 메쉬에 부착한다.
 	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision); //수류탄 메쉬의 충돌을 비활성화한다.
+
+	WireComponent = CreateDefaultSubobject<UWireComponent>(TEXT("WireComponent")); //와이어 컴포넌트 생성
 	// StandingCameraOffset = FVector(0.f, 30.f, 143.f);    //카메라의 상대 위치를 설정한다. 캐릭터의 머리 위에 카메라가 위치하도록 한다.
 	// CrouchingCameraOffset = FVector(0.f, 0.f, 90.f); // 더 낮은 위치
 }
 void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-		PlayerInputComponent->BindAxis("MoveForward", this, &ATimeFractureCharacter::MoveForward);
-		PlayerInputComponent->BindAxis("MoveRight", this, &ATimeFractureCharacter::MoveRight);
-		PlayerInputComponent->BindAxis("Turn", this, &ATimeFractureCharacter::Turn);
-		PlayerInputComponent->BindAxis("LookUp", this, &ATimeFractureCharacter::LookUp);
-		PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ATimeFractureCharacter::EquipButton); //키보드의 E키를 눌렀을 때 EquipButton 함수를 호출한다.
-		PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ATimeFractureCharacter::CrouchButton); //키보드의 C키를 눌렀을 때 CrouchButton 함수를 호출한다.
-		PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &ATimeFractureCharacter::AimButton); //우클릭키를 눌렀을 때 AimButton 함수를 호출한다.
-		PlayerInputComponent->BindAction("Aim", IE_Released, this, &ATimeFractureCharacter::AimButtonRelease); //우클릭키를 떼었을 때 AimButtonRelease 함수를 호출한다.
-		PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ATimeFractureCharacter::FireButtonPressed); //우클릭키를 눌렀을 때 AimButton 함수를 호출한다.
-		PlayerInputComponent->BindAction("Fire", IE_Released, this, &ATimeFractureCharacter::FireButtonReleased); //우클릭키를 떼었을 때 AimButtonRelease 함수를 호출한다.
-		PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ATimeFractureCharacter::ReloadButtonPressed); //키보드의 C키를 눌렀을 때 CrouchButton 함수를 호출한다.
-		PlayerInputComponent->BindAction("ThrowGrenade", IE_Pressed, this, &ATimeFractureCharacter::GrenadeButtonPressed); //G키를 눌렀을 때 수류탄 투척 애니메이션 재생
-		PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ATimeFractureCharacter::Jump); //스페이스바를 눌렀을 때 점프
+	PlayerInputComponent->BindAxis("MoveForward", this, &ATimeFractureCharacter::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &ATimeFractureCharacter::MoveRight);
+	PlayerInputComponent->BindAxis("Turn", this, &ATimeFractureCharacter::Turn);
+	PlayerInputComponent->BindAxis("LookUp", this, &ATimeFractureCharacter::LookUp);
+	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ATimeFractureCharacter::EquipButton); //키보드의 E키를 눌렀을 때 EquipButton 함수를 호출한다.
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ATimeFractureCharacter::CrouchButton); //키보드의 C키를 눌렀을 때 CrouchButton 함수를 호출한다.
+	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &ATimeFractureCharacter::AimButton); //우클릭키를 눌렀을 때 AimButton 함수를 호출한다.
+	PlayerInputComponent->BindAction("Aim", IE_Released, this, &ATimeFractureCharacter::AimButtonRelease); //우클릭키를 떼었을 때 AimButtonRelease 함수를 호출한다.
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ATimeFractureCharacter::FireButtonPressed); //우클릭키를 눌렀을 때 AimButton 함수를 호출한다.
+	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ATimeFractureCharacter::FireButtonReleased); //우클릭키를 떼었을 때 AimButtonRelease 함수를 호출한다.
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ATimeFractureCharacter::ReloadButtonPressed); //키보드의 C키를 눌렀을 때 CrouchButton 함수를 호출한다.
+	PlayerInputComponent->BindAction("ThrowGrenade", IE_Pressed, this, &ATimeFractureCharacter::GrenadeButtonPressed); //G키를 눌렀을 때 수류탄 투척 애니메이션 재생
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ATimeFractureCharacter::Jump); //스페이스바를 눌렀을 때 점프
     PlayerInputComponent->BindAction("SwapWeapon", IE_Pressed, this, &ATimeFractureCharacter::SwapButtonPressed);
 	PlayerInputComponent->BindAction("Chat", IE_Pressed, this, &ATimeFractureCharacter::HandleChatKey);
 	PlayerInputComponent->BindAction("ChatCancel", IE_Pressed, this, &ATimeFractureCharacter::HandleChatCancel);
 	PlayerInputComponent->BindAction("ChatSubmit", IE_Pressed, this, &ATimeFractureCharacter::HandleChatSubmit);
 	PlayerInputComponent->BindAction("Dive", IE_Pressed, this, &ATimeFractureCharacter::Dive);
+	PlayerInputComponent->BindAction("Wire", IE_Pressed, this, &ATimeFractureCharacter::WireButtonPressed); //와이어 액션 바인딩
 	//프로젝트 세팅에 저장된 키의 이름을 바인드한다. this ->이 함수의 있는 함수를 불러옴
 }
 
@@ -356,6 +360,18 @@ void ATimeFractureCharacter::GrenadeButtonPressed()
 		CombatComponent->ThrowGrenade(); //전투 컴포넌트의 수류탄 투척을 호출한다.
 	}
 }
+void ATimeFractureCharacter::WireButtonPressed()
+{
+	if (WireComponent) {
+		WireComponent->FireWire();
+	}
+}
+void ATimeFractureCharacter::WireButtonReleased()
+{
+	if (WireComponent) {
+		WireComponent->ReleaseWire();
+	}
+}
 void ATimeFractureCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCursor)
 {
 	if (bisElimmed) return;
@@ -453,6 +469,7 @@ void ATimeFractureCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ATimeFractureCharacter, Shield); //Shield를 복제한다.
 	DOREPLIFETIME(ATimeFractureCharacter, bDisableGameplay);//bDisableGameplay를 복제한다.
 	DOREPLIFETIME(ATimeFractureCharacter, MoveRotation);//bisElimmed를 복제한다.
+	DOREPLIFETIME(ATimeFractureCharacter, WireComponent);
 }
 void ATimeFractureCharacter::PostInitializeComponents()
 {

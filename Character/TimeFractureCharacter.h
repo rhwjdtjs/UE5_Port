@@ -35,6 +35,8 @@ public:
 	void BloodScreen(); //0914 피격이펙트
 	UFUNCTION(Client, Reliable)
 	void ClientShowBloodScreen();
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "Wire", meta = (AllowPrivateAccess = "true"))
+	class UWireComponent* WireComponent;
 protected:
 	virtual void Jump() override;
 	virtual void Destroyed() override; //캐릭터가 파괴될 때 호출되는 함수
@@ -63,6 +65,8 @@ protected:
 	void FireButtonReleased(); //발사 버튼 해제 함수
 	void ReloadButtonPressed(); //재장전 버튼 함수
 	void GrenadeButtonPressed(); //수류탄 버튼 함수
+	void WireButtonPressed(); //와이어 버튼 함수
+	void WireButtonReleased(); //와이어 버튼 해제 함수
 	UFUNCTION()
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController,
 		AActor* DamageCursor); //피해를 받았을 때 호출되는 함수
@@ -71,6 +75,8 @@ protected:
 	virtual void OnRep_PlayerState() override; //플레이어 상태가 변경되었을 때 호출되는 함수
 
 private:
+
+
 	UFUNCTION(Server, Reliable)
 	void ServerSetActorRotation(const FRotator& NewRotation);
 	float AO_YAW; //조준 회전 Yaw 값, 서버에서 클라이언트로 복제되는 변수
@@ -153,7 +159,7 @@ private:
 	//기본 무기 설정
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeapon> DefaultWeaponClass; //기본 무기 클래스
-	bool bIsDodging;
+	
 	UPROPERTY(EditAnywhere)
 	class USoundCue* HitCharacterSound;
 	UPROPERTY(EditAnywhere)
@@ -161,6 +167,7 @@ private:
 	//0914 피격 ui
 	
 public:
+	bool bIsDodging;
 	void EnsureOverheadWidgetLocal();
 	void RefreshOverheadName();
 	void SpawnDefaultWeapon(); //기본 무기를 생성하는 함수

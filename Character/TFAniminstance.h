@@ -23,6 +23,8 @@ public:
 		bool bIsInAir; //캐릭터가 공중에 있는지 여부를 저장한다.
 		UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 		bool bIsCrouching; //캐릭터가 크라우치 상태인지 여부를 저장한다.
+		UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+		bool bIsWireAttached; //와이어가 걸려있는지 여부를 저장하는 변수
 private:
 	class AWeapon* EquippedWeapon; //장착된 무기를 저장하는 변수
 	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true")) //블루프린트에서 읽기전용으로 사용가능하다.
@@ -58,4 +60,5 @@ private:
 	bool bEliminated; //캐릭터가 제거되었는지 여부를 저장하는 변수
 	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	bool bUseFABRIK; //FABRIK 애니메이션을 사용할지 여부를 저장하는 변수
+
 };

@@ -7,12 +7,14 @@
 #include "Kismet/KismetMathLibrary.h" //수학 라이브러리를 포함시킨다
 #include "UnrealProject_7A/TFComponents/CombatStates.h" //전투 상태를 포함시킨다
 #include "UnrealProject_7A/Weapon/Weapon.h" //무기의 헤더파일을 포함시킨다
+#include "UnrealProject_7A/TFComponents/WireComponent.h" //와이어 컴포넌트를 포함시킨다
 void UTFAniminstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation(); //부모클래스의 초기화함수 호출
-
-	TFCharacter = Cast<ATimeFractureCharacter>(TryGetPawnOwner()); //캐릭터의 포인터를 저장한다
-	
+	if (!TFCharacter)
+	{
+		TFCharacter = Cast<ATimeFractureCharacter>(TryGetPawnOwner());
+	}
 }
 
 void UTFAniminstance::NativeUpdateAnimation(float DeltaTime)
@@ -26,6 +28,11 @@ void UTFAniminstance::NativeUpdateAnimation(float DeltaTime)
 	{
 		return;
 	}
+	if (TFCharacter && TFCharacter->WireComponent)
+	{
+		bIsWireAttached = TFCharacter->WireComponent->IsAttached();
+	}
+
 	FVector Velocity = TFCharacter->GetVelocity(); //캐릭터의 속도를 가져온다.
 	Velocity.Z = 0.f; //Z축의 속도를 0으로 만든다.
 	Speed = Velocity.Size(); //캐릭터의 속도를 저장한다.
@@ -43,7 +50,7 @@ void UTFAniminstance::NativeUpdateAnimation(float DeltaTime)
 	AO_Yaw = TFCharacter->GETAO_YAW(); //캐릭터의 조준 회전 Yaw 값을 가져온다.
 	AO_Pitch = TFCharacter->GETAO_PITCH(); //캐릭터의 조준 회전 Pitch 값을 가져온다.
 	EquippedWeapon = TFCharacter->GetEquippedWeapon(); //캐릭터가 장착한 무기를 가져온다.
-
+	
 	if (bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMesh() && TFCharacter->GetMesh())
 	{
 		// 왼손 IK 설정 (기존 코드와 동일)
