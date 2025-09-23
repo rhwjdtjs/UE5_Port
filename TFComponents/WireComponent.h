@@ -28,9 +28,26 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 private:
+	UPROPERTY(EditAnywhere, Category = "Wire|Effects")
+	class UNiagaraSystem* WireTravelEffect;   // 날아가는 동안 옆에서 루프 재생할 이펙트
+
+	UPROPERTY()
+	class UNiagaraComponent* ActiveTravelEffectLeft;
+	UPROPERTY()
+	class UNiagaraComponent* ActiveTravelEffectLeftFront;
+	UPROPERTY()
+	class UNiagaraComponent* ActiveTravelEffectRightFront;
+	UPROPERTY()
+	class UNiagaraComponent* ActiveTravelEffectRight;
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastStartZipperSound();
+	UPROPERTY(EditAnywhere, Category = "Wire")
+	USoundBase* ZipperLoopSound;   // 날아가는 동안 재생할 소리
+	UPROPERTY()
+	UAudioComponent* ZipperAudioComponent;
 	FTimerHandle CooldownUITimerHandle;
 	float RemainingCooldown = 0.f;
-	UPROPERTY(EditAnywhere, Category = "Wire|UI")
+	UPROPERTY(EditAnywhere, Category = "Wire")
 	TSubclassOf<class UUserWidget> WireCooldownWidgetClass;
 	UPROPERTY()
 	class UUserWidget* WireCooldownWidget;
@@ -48,15 +65,14 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Wire")
 	float WireCooldown = 3.0f; // 3초 쿨타임
 	FTimerHandle CooldownTimerHandle;
-	UPROPERTY(EditAnywhere, Category = "Wire|Effects")
+	UPROPERTY(EditAnywhere, Category = "Wire")
 	USoundBase* WireFireSound;
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastPlayWireEffects(const FVector& Start, const FVector& Target);
-	UPROPERTY(EditDefaultsOnly, Category = "Wire|Effects")
-	class UNiagaraSystem* WireShootEffect;  
+ 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastDrawWire(const FVector& Start, const FVector& End);
-	UPROPERTY(EditDefaultsOnly, Category = "Wire|Effects")
+	UPROPERTY(EditDefaultsOnly, Category = "Wire")
 	class UNiagaraSystem* WireImpactEffect;   // 충돌 파티클 (Niagara)
 	UPROPERTY()
 	class ATimeFractureCharacter* Character;
@@ -66,9 +82,9 @@ private:
 	bool bIsAttached = false; //와이어가 걸려있는지
 
 	UPROPERTY(EditAnywhere, Category="Wire")
-	float PullSpeed = 2000.f; //이동속도
+	float PullSpeed = 2500.f; //이동속도
 	UPROPERTY(EditaNYWHERE, Category="Wire")
-	float MaxWireDistance = 3000.f; //최대 와이어거리(라인트레이스)
+	float MaxWireDistance = 10000.f; //최대 와이어거리(라인트레이스)
 
 	UPROPERTY(EditAnywhere, Category="Wire")
 	TEnumAsByte<ECollisionChannel> TraceChannel = ECC_Visibility; //라인트레이스 충돌채널

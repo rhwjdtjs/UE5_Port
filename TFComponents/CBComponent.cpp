@@ -668,7 +668,8 @@ void UCBComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 }
 bool UCBComponent::ShouldSwapWeapons()
 {
-	return (EquippedWeapon != nullptr && SecondaryWeapon != nullptr && !bisAiming && CombatState==ECombatState::ECS_Unoccupied); //장착된 무기와 보조 무기가 모두 존재하는지 확인한다.
+	return (EquippedWeapon != nullptr && SecondaryWeapon != nullptr && !bisAiming && CombatState!=ECombatState::ECS_ThrowingGrenade && 
+		CombatState!=ECombatState::ECS_Reloading); //장착된 무기와 보조 무기가 모두 존재하는지 확인한다.
 }
 void UCBComponent::PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount)
 {

@@ -37,14 +37,13 @@ void UChatWidget::AddChatMessage(const FString& PlayerName, const FString& Messa
         SetVisibility(ESlateVisibility::SelfHitTestInvisible);
     }
 
-    // ★ 3초 뒤 자동 닫기 예약 (수신자도 동일)
- //   if (UWorld* World = GetWorld())
-//    {
- //       World->GetTimerManager().ClearTimer(AutoCloseTimer);
- //       World->GetTimerManager().SetTimer(
-   //         AutoCloseTimer, this, &UChatWidget::AutoClose, 3.f, false
-//        );
-   // }
+    if (UWorld* World = GetWorld())
+    {
+        World->GetTimerManager().ClearTimer(AutoCloseTimer);
+        World->GetTimerManager().SetTimer(
+            AutoCloseTimer, this, &UChatWidget::ClearChatMessages, 3.f, false
+        );
+    }
 }
 
 void UChatWidget::OpenChat()
@@ -176,4 +175,13 @@ void UChatWidget::SendMessageToServer(const FString& Msg)
             TFPC->ServerSendChatMessage(Msg);
         }
     }
+}
+
+void UChatWidget::ClearChatMessages()
+{
+    if (ChatBox)
+    {
+        ChatBox->ClearChildren(); // 채팅 로그 싹 지우기
+    }
+    SetVisibility(ESlateVisibility::Collapsed); // 창 자체 숨기기
 }

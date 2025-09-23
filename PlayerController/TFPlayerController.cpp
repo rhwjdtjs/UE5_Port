@@ -29,9 +29,10 @@ void ATFPlayerController::ClientAddKillFeedMessage_Implementation(const FString&
 }
 void ATFPlayerController::AddKillFeedMessage(const FString& Killer, const FString& Victim)
 {
+
 		TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud;
 		if (!TfHud || !TfHud->CharacterOverlay) return;
-
+		FTimerHandle KillFeedClearTimer;
 		// BP: CharacterOverlay 안에 ScrollBox 이름을 정확히 "KillFeedBox" 로!
 		UScrollBox* KillFeedBox = Cast<UScrollBox>(
 			TfHud->CharacterOverlay->GetWidgetFromName(TEXT("KillFeedBox")));
@@ -45,7 +46,16 @@ void ATFPlayerController::AddKillFeedMessage(const FString& Killer, const FStrin
 		const FString Msg = FString::Printf(TEXT("%s killed %s"), *Killer, *Victim);
 		NewMessage->SetText(FText::FromString(Msg));
 		KillFeedBox->AddChild(NewMessage);
-
+		// 3초 뒤 전체 클리어
+		GetWorld()->GetTimerManager().ClearTimer(KillFeedClearTimer);
+		GetWorld()->GetTimerManager().SetTimer(
+			KillFeedClearTimer,
+			[KillFeedBox]()
+			{
+				KillFeedBox->ClearChildren();
+			},
+			3.f, false
+		);
 		// 오래된 메시지 정리 (예: 5개 유지)
 		if (KillFeedBox->GetChildrenCount() > 5)
 		{

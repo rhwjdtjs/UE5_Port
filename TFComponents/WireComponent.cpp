@@ -18,6 +18,9 @@
 #include "Components/TextBlock.h"
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/AudioComponent.h"
+#include "Sound/SoundBase.h"
+#include "NiagaraComponent.h"
 // Sets default values for this component's properties
 UWireComponent::UWireComponent()
 {
@@ -35,6 +38,24 @@ void UWireComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UWireComponent, bIsAttached);
 	DOREPLIFETIME(UWireComponent, WireTarget);
+}
+void UWireComponent::MulticastStartZipperSound_Implementation()
+{
+	if (Character && ZipperLoopSound)
+	{
+		ZipperAudioComponent = UGameplayStatics::SpawnSoundAttached(
+			ZipperLoopSound,
+			Character->GetRootComponent(),
+			NAME_None,
+			FVector::ZeroVector,
+			EAttachLocation::KeepRelativeOffset,
+			true   // bStopWhenAttachedToDestroyed = true
+		);
+		if (ZipperAudioComponent)
+		{
+			ZipperAudioComponent->Play();
+		}
+	}
 }
 void UWireComponent::MulticastPlayWireSound_Implementation()
 {
@@ -124,16 +145,55 @@ void UWireComponent::MulticastDrawWire_Implementation(const FVector& Start, cons
 }
 void UWireComponent::MulticastPlayWireEffects_Implementation(const FVector& Start, const FVector& Target)
 {
-	if (WireShootEffect)
+	if (Character && WireTravelEffect)
 	{
-		UNiagaraComponent* NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAttached(
-			WireShootEffect,                                  
-			Character->GetMesh(),                             
-			FName("muzz"),                                    
-			FVector::ZeroVector,                              
-			FRotator::ZeroRotator,                           
-			EAttachLocation::SnapToTargetIncludingScale,      
-			true                                              
+		USkeletalMeshComponent* Mesh = Character->GetMesh();
+		FTransform SocketTransformLL = Mesh->GetSocketTransform(FName("LeftUpLeg"));
+		FRotator SocketRotLL = SocketTransformLL.Rotator();
+		FTransform SocketTransformRL = Mesh->GetSocketTransform(FName("RightUpLeg"));
+		FRotator SocketRotRL = SocketTransformRL.Rotator();
+		FTransform SocketTransformLA = Mesh->GetSocketTransform(FName("LeftArm"));
+		FRotator SocketRotLA = SocketTransformLA.Rotator();
+		FTransform SocketTransformRA = Mesh->GetSocketTransform(FName("RightArm"));
+		FRotator SocketRotRA = SocketTransformRA.Rotator();
+		// 왼쪽
+		ActiveTravelEffectLeft = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			WireTravelEffect,
+			Mesh,
+			FName("LeftUpLeg"), // 중심부 소켓에 붙이고
+			FVector(50.f, -100.f, 0.f), // 소켓 기준 옆으로 밀기
+			SocketRotLL,
+			EAttachLocation::KeepRelativeOffset,
+			true
+		);
+
+		ActiveTravelEffectRight = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			WireTravelEffect,
+			Mesh,
+			FName("RightUpLeg"),
+			FVector(50.f, 100.f, 0.f),
+			SocketRotRL,
+			EAttachLocation::KeepRelativeOffset,
+			true
+		);
+		ActiveTravelEffectLeftFront = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			WireTravelEffect,
+			Mesh,
+			FName("LeftArm"),   // 필요하면 "UpperArm_L" 같은 실제 소켓명 확인
+			FVector(100.f, -100.f, 0.f),
+			SocketRotLA,
+			EAttachLocation::KeepRelativeOffset,
+			true
+		);
+
+		ActiveTravelEffectRightFront = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			WireTravelEffect,
+			Mesh,
+			FName("RightArm"),  // 필요하면 "UpperArm_R"
+			FVector(100.f, 100.f, 0.f),
+			SocketRotRA,
+			EAttachLocation::KeepRelativeOffset,
+			true
 		);
 	}
 
@@ -167,6 +227,30 @@ void UWireComponent::ServerReleaseWire_Implementation()
 	bIsAttached = false;
 
 	if (Character && Character->GetCharacterMovement()) {
+		if (ZipperAudioComponent && ZipperAudioComponent->IsPlaying())
+		{
+			ZipperAudioComponent->Stop();
+			ZipperAudioComponent = nullptr;
+		}
+		if (ActiveTravelEffectLeft)
+		{
+			ActiveTravelEffectLeft->Deactivate();
+			ActiveTravelEffectLeft = nullptr;
+		}
+		if (ActiveTravelEffectRight)
+		{
+			ActiveTravelEffectRight->Deactivate();
+			ActiveTravelEffectRight = nullptr;
+		}
+		if (ActiveTravelEffectLeftFront)
+		{
+			ActiveTravelEffectLeftFront->Deactivate();
+			ActiveTravelEffectLeftFront = nullptr;
+		}
+		if (ActiveTravelEffectRightFront) {
+			ActiveTravelEffectRightFront->Deactivate();
+			ActiveTravelEffectRightFront = nullptr;
+		}
 		Character->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling); //걷기모드로 변경
 	}
 }
@@ -175,7 +259,6 @@ void UWireComponent::ServerFireWire_Implementation()
 	if (!bCanFireWire) return;
 	if (!Character) return;
 	if (Character->IsElimmed() || Character->bIsDodging ||
-		Character->GetCombatState() == ECombatState::ECS_Reloading ||
 		Character->GetCombatState() == ECombatState::ECS_ThrowingGrenade)
 		return;
 
@@ -201,6 +284,7 @@ void UWireComponent::ServerFireWire_Implementation()
 	MulticastPlayWireEffects(Start, WireTarget);
 	MulticastDrawWire(Start, WireTarget);
 	MulticastPlayWireSound();
+	MulticastStartZipperSound();
 	bCanFireWire = false;
 	UWorld* World = GetWorld();
 	if (World) {
@@ -273,6 +357,30 @@ void UWireComponent::ReleaseWire()
 {
 	if (Character && !Character->HasAuthority())
 	{
+		if (ZipperAudioComponent && ZipperAudioComponent->IsPlaying())
+		{
+			ZipperAudioComponent->Stop();
+			ZipperAudioComponent = nullptr;
+		}
+		if (ActiveTravelEffectLeft)
+		{
+			ActiveTravelEffectLeft->Deactivate();
+			ActiveTravelEffectLeft = nullptr;
+		}
+		if (ActiveTravelEffectRight)
+		{
+			ActiveTravelEffectRight->Deactivate();
+			ActiveTravelEffectRight = nullptr;
+		}
+		if (ActiveTravelEffectLeftFront)
+		{
+			ActiveTravelEffectLeftFront->Deactivate();
+			ActiveTravelEffectLeftFront = nullptr;
+		}
+		if (ActiveTravelEffectRightFront) {
+			ActiveTravelEffectRightFront->Deactivate();
+			ActiveTravelEffectRightFront = nullptr;
+		}
 		ServerReleaseWire();
 		return;
 	}

@@ -48,4 +48,6 @@ private:
     void FocusInput();
     void CloseToGameOnly(bool bKeepVisibleForFeed);
     void SendMessageToServer(const FString& Msg);
+    UFUNCTION()
+    void ClearChatMessages();
 };
