@@ -165,7 +165,8 @@ private:
 	UPROPERTY(EditAnywhere)
 	USoundCue* HitConfirmSound;
 	//0914 ÇÇ°Ý ui
-	
+	UFUNCTION(NetMulticast, UnReliable)
+	void MulticastHitCharacterSound();
 public:
 	bool bIsDodging;
 	void EnsureOverheadWidgetLocal();

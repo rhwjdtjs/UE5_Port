@@ -30,7 +30,10 @@ protected:
 private:
 	UPROPERTY(EditAnywhere, Category = "Wire|Effects")
 	class UNiagaraSystem* WireTravelEffect;   // 날아가는 동안 옆에서 루프 재생할 이펙트
-
+	UFUNCTION(Client, Reliable)
+	void ClientWireFail();
+	UFUNCTION(NetMulticast,Reliable)
+	void MulticastWireSuccess();
 	UPROPERTY()
 	class UNiagaraComponent* ActiveTravelEffectLeft;
 	UPROPERTY()

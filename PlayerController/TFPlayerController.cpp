@@ -113,6 +113,50 @@ void ATFPlayerController::ShowReturnToMainMenu()
 	}
 
 }
+void ATFPlayerController::ClientShowKilledWidget_Implementation()
+{
+	if (KilledWidgetClass == nullptr) return;
+
+	//if (KilledWidgetInstance)
+	//{
+	//	KilledWidgetInstance->RemoveFromParent();
+//		KilledWidgetInstance = nullptr;
+//	}
+
+	KilledWidgetInstance = CreateWidget<UUserWidget>(this, KilledWidgetClass);
+	if (KilledWidgetInstance)
+	{
+		KilledWidgetInstance->AddToViewport();
+		// 필요하면 타이머로 자동 제거
+		FTimerHandle Th;
+		GetWorldTimerManager().SetTimer(Th, [this]()
+			{
+				if (KilledWidgetInstance) { KilledWidgetInstance->RemoveFromParent(); KilledWidgetInstance = nullptr; }
+			}, 3.0f, false); // 3초 후 제거
+	}
+}
+void ATFPlayerController::ClientShowKillWidget_Implementation()
+{
+	if (KillWidgetClass == nullptr) return;
+
+	//if (KillWidgetInstance)
+	//{
+//		KillWidgetInstance->RemoveFromParent();
+//		KillWidgetInstance = nullptr;
+//	}
+
+	KillWidgetInstance = CreateWidget<UUserWidget>(this, KillWidgetClass);
+	if (KillWidgetInstance)
+	{
+		KillWidgetInstance->AddToViewport();
+		// 필요하면 타이머로 자동 제거
+		FTimerHandle Th;
+		GetWorldTimerManager().SetTimer(Th, [this]()
+			{
+				if (KillWidgetInstance) { KillWidgetInstance->RemoveFromParent(); KillWidgetInstance = nullptr; }
+			}, 3.0f, false); // 3초 후 제거
+	}
+}
 void ATFPlayerController::SetHUDHealth(float Health, float MaxHealth)
 {
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud; // TfHud가 nullptr이면 GetHUD()를 통해 HUD를 가져오고, 그렇지 않으면 기존의 TfHud를 사용한다.
@@ -478,7 +522,22 @@ void ATFPlayerController::ClientReceiveChatMessage_Implementation(const FString&
 		Hud->ChatWidget->AddChatMessage(Sender, Message);
 	}
 }
-	void ATFPlayerController::UpdateScoreboard()
+void ATFPlayerController::ClientPlayBulletWhiz_Implementation(const FVector& Location)
+{
+	if(BulletFlyBySound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			GetWorld(),
+			BulletFlyBySound,
+			Location,
+			1.f,
+			1.f,
+			0.f,
+			BulletFlyByAttenuation
+		);
+	}
+}
+void ATFPlayerController::UpdateScoreboard()
 	{
 		if (!ScoreboardWidget) return;
 
@@ -569,6 +628,8 @@ void ATFPlayerController::BeginPlay()
 {
 	Super::BeginPlay(); // 부모 클래스의 BeginPlay 호출
 	ServerCheckMatchState(); // 서버에 매치 상태를 확인 요청
+	UE_LOG(LogTemp, Warning, TEXT("[PC] KillWidgetClass: %s"), *GetNameSafe(KillWidgetClass));
+	UE_LOG(LogTemp, Warning, TEXT("[PC] KilledWidgetClass: %s"), *GetNameSafe(KilledWidgetClass));
 }
 void ATFPlayerController::Tick(float DeltaTime)
 {

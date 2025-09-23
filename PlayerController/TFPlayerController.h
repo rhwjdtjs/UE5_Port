@@ -15,6 +15,13 @@ class UNREALPROJECT_7A_API ATFPlayerController : public APlayerController
 	GENERATED_BODY()
 	
 public:
+	UPROPERTY(EditAnywhere, Category = "Projectile|Sound")
+	USoundBase* BulletFlyBySound;
+
+	UPROPERTY(EditAnywhere, Category = "Projectile|Sound")
+	USoundAttenuation* BulletFlyByAttenuation;
+	UFUNCTION(Client, Unreliable)
+	void ClientPlayBulletWhiz(const FVector& Location);
 	//ui
 	void UpdateScoreboard();
 	UFUNCTION(Client, Reliable)
@@ -26,6 +33,16 @@ public:
 	TSubclassOf<class UUserWidget> ReturnToMainMenuClass; // 메인 메뉴로 돌아가는 위젯 클래스
 	UPROPERTY()
 	class UReturnToMainMenu* ReturnToMainMenu; // 메인 메뉴로 돌아가는 위젯 인스턴스
+	UFUNCTION(Client, Reliable)
+	void ClientShowKillWidget();
+
+	UFUNCTION(Client, Reliable)
+	void ClientShowKilledWidget();
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UUserWidget> KillWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UUserWidget> KilledWidgetClass;
 	bool bReturnToMainMenuOpen = false; // 메인 메뉴로 돌아가는 위젯이 열려있는지 여부
 	//허드
 	void SetHUDHealth(float Health, float MaxHealth); // 허드의 체력을 설정하는 함수
@@ -51,6 +68,11 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ClientPlayHitConfirmSound(class USoundCue* HitSound); //0914 hitsound
 private:
+	UPROPERTY()
+	class UUserWidget* KillWidgetInstance;
+
+	UPROPERTY()
+	class UUserWidget* KilledWidgetInstance;
 	UPROPERTY()
 	class ATFHUD* TfHud; // 메인캐릭터 허드	
 	UPROPERTY()

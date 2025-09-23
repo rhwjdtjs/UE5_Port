@@ -39,6 +39,100 @@ void UWireComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(UWireComponent, bIsAttached);
 	DOREPLIFETIME(UWireComponent, WireTarget);
 }
+void UWireComponent::MulticastWireSuccess_Implementation()
+{
+	bCanFireWire = false;
+
+	// 쿨타임 시작
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().SetTimer(
+			CooldownTimerHandle,
+			this,
+			&UWireComponent::ResetWireCooldown,
+			WireCooldown,
+			false
+		);
+	}
+
+	// 로컬 UI 처리
+	if (Character && Character->IsLocallyControlled())
+	{
+		if (!WireCooldownWidget && WireCooldownWidgetClass)
+		{
+			WireCooldownWidget = CreateWidget<UUserWidget>(
+				Character->GetWorld(),
+				WireCooldownWidgetClass
+			);
+			if (WireCooldownWidget)
+			{
+				WireCooldownWidget->AddToViewport();
+				WireCooldownText = Cast<UTextBlock>(
+					WireCooldownWidget->GetWidgetFromName(TEXT("WireCoolTime"))
+				);
+			}
+		}
+
+		if (WireCooldownWidget)
+		{
+			WireCooldownWidget->SetVisibility(ESlateVisibility::Visible);
+		}
+
+		RemainingCooldown = WireCooldown;
+		UpdateWireCooldownUI();
+		Character->GetWorldTimerManager().SetTimer(
+			CooldownUITimerHandle,
+			this,
+			&UWireComponent::TickWireCooldownUI,
+			1.0f,
+			true
+		);
+	}
+}
+void UWireComponent::ClientWireFail_Implementation()
+{
+	if (Character && Character->IsLocallyControlled())
+	{
+		if (!WireCooldownWidget && WireCooldownWidgetClass)
+		{
+			WireCooldownWidget = CreateWidget<UUserWidget>(
+				Character->GetWorld(),
+				WireCooldownWidgetClass
+			);
+			if (WireCooldownWidget)
+			{
+				WireCooldownWidget->AddToViewport();
+				WireCooldownText = Cast<UTextBlock>(
+					WireCooldownWidget->GetWidgetFromName(TEXT("WireCoolTime"))
+				);
+			}
+		}
+
+		if (WireCooldownWidget && WireCooldownText)
+		{
+			WireCooldownWidget->SetVisibility(ESlateVisibility::Visible);
+			WireCooldownText->SetText(FText::FromString(TEXT("There is no target for the wire.")));
+
+			// 1초 뒤 자동 숨김
+			FTimerHandle TempHandle;
+			Character->GetWorldTimerManager().SetTimer(
+				TempHandle,
+				[this]()
+				{
+					if (WireCooldownText)
+					{
+						WireCooldownText->SetText(FText::GetEmpty());
+					}
+					if (WireCooldownWidget)
+					{
+						WireCooldownWidget->SetVisibility(ESlateVisibility::Hidden);
+					}
+				},
+				1.0f, false
+			);
+		}
+	}
+}
 void UWireComponent::MulticastStartZipperSound_Implementation()
 {
 	if (Character && ZipperLoopSound)
@@ -136,11 +230,11 @@ void UWireComponent::MulticastDrawWire_Implementation(const FVector& Start, cons
 		GetWorld(),
 		FaceStart,
 		End,
-		FColor::Green,
+		FColor::Black,
 		false,     
-		0.05f,     
+		1.f,     
 		0,         
-		2.0f       
+		1.0f       
 	);
 }
 void UWireComponent::MulticastPlayWireEffects_Implementation(const FVector& Start, const FVector& Target)
@@ -274,8 +368,17 @@ void UWireComponent::ServerFireWire_Implementation()
 	Params.AddIgnoredActor(Character);
 
 	const bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, TraceChannel, Params);
-	if (!bHit) return;                    
-
+	if (!bHit) {
+		if (Character->IsLocallyControlled()) // 서버 본인
+		{
+			ClientWireFail_Implementation();
+		}
+		else
+		{
+			ClientWireFail(); // 다른 클라
+		}
+		return;
+	}
 	WireTarget = Hit.ImpactPoint;
 	bIsAttached = true;
 
@@ -285,17 +388,8 @@ void UWireComponent::ServerFireWire_Implementation()
 	MulticastDrawWire(Start, WireTarget);
 	MulticastPlayWireSound();
 	MulticastStartZipperSound();
-	bCanFireWire = false;
-	UWorld* World = GetWorld();
-	if (World) {
-		World->GetTimerManager().SetTimer(
-			CooldownTimerHandle,
-			this,
-			&UWireComponent::ResetWireCooldown,
-			WireCooldown,
-			false
-		);
-	}
+	MulticastWireSuccess();
+	
 }
 void UWireComponent::FireWire()
 {
@@ -307,6 +401,7 @@ void UWireComponent::FireWire()
 	else {
 		ServerFireWire();
 	}
+	/*
 	if (Character && Character->IsLocallyControlled())
 	{
 		if (!WireCooldownWidget && WireCooldownWidgetClass)
@@ -351,6 +446,7 @@ void UWireComponent::FireWire()
 			false
 		);
 	}
+	*/
 }
 
 void UWireComponent::ReleaseWire()
@@ -395,7 +491,22 @@ void UWireComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 	{
 		FVector ToTarget = WireTarget - Character->GetActorLocation();
 		float Dist = ToTarget.Size();
-
+		FHitResult WallHit;
+		FCollisionQueryParams Params;
+		Params.AddIgnoredActor(Character);
+		bool bBlocked = GetWorld()->LineTraceSingleByChannel(
+			WallHit,
+			Character->GetActorLocation(),
+			WireTarget,
+			ECC_Visibility,
+			Params
+		);
+		if (bBlocked && WallHit.Distance < 100.f)
+		{
+			// 벽에 너무 가까이 → 강제 해제
+			ReleaseWire();
+			return;
+		}
 		if (Dist > 120.f) // 목표까지 아직 멀면 계속 끌기
 		{
 			FVector Dir = ToTarget.GetSafeNormal();

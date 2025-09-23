@@ -9,6 +9,7 @@
 #include "Sound/SoundCue.h"
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h"
 #include "UnrealProject_7A/UnrealProject_7A.h"
+#include "UnrealProject_7A/PlayerController/TFPlayerController.h"
 AProjectile::AProjectile()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -70,6 +71,7 @@ void AProjectile::BeginPlay()
 	if (HasAuthority()) {
 		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnHit); // 서버에서만 Hit 이벤트를 바인딩
 	}
+	
 	CollisionBox->IgnoreActorWhenMoving(GetInstigator(), true); // 발사체가 발사자를 무시하도록 설정
 }
 
@@ -88,7 +90,6 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 void AProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 void AProjectile::SpawnTrailSystem()

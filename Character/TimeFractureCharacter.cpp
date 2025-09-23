@@ -142,7 +142,10 @@ void ATimeFractureCharacter::Dive() //0914 구르기
 {
 	if (CombatComponent->EquippedWeapon == nullptr) return;
 	if (bIsDodging) return;
-
+	if (WireComponent && WireComponent->IsAttached())
+	{
+		return;
+	}
 	// 로컬에서만 서버에 요청
 	if (!HasAuthority())
 	{
@@ -155,6 +158,11 @@ void ATimeFractureCharacter::Dive() //0914 구르기
 }
 void ATimeFractureCharacter::ServerDivePressed_Implementation() //0914 구르기
 {
+	if (bIsDodging) return;
+	if (WireComponent && WireComponent->IsAttached())
+	{
+		return;
+	}
 	MulticastDive(); // 서버가 모든 클라에 전달
 }
 void ATimeFractureCharacter::MulticastDive_Implementation() //0914 구르기
@@ -398,7 +406,7 @@ void ATimeFractureCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, c
 		ClientShowBloodScreen();
 	}
 	Health = FMath::Clamp(Health - DamageToHealth, 0.f, MaxHealth); //체력을 감소시키고, 최소값은 0, 최대값은 최대 체력으로 제한한다.
-	UGameplayStatics::PlaySoundAtLocation(this, HitCharacterSound, GetActorLocation()); //장착 사운드를 재생한다.
+	MulticastHitCharacterSound();
 	UpdateHUDHealth(); //HUD의 체력을 업데이트한다.
 	UpdateHUDShield(); //HUD의 실드를 업데이트한다.
 	PlayHitReactMontage(); //피격 애니메이션을 재생한다.
@@ -598,6 +606,10 @@ void ATimeFractureCharacter::OnRep_Health(float LastHealth)
 	if (Health < LastHealth) {
 		PlayHitReactMontage(); //피격 애니메이션을 재생한다.
 	}
+}
+void ATimeFractureCharacter::MulticastHitCharacterSound_Implementation()
+{
+	UGameplayStatics::PlaySoundAtLocation(this, HitCharacterSound, GetActorLocation()); //장착 사운드를 재생한다.
 }
 void ATimeFractureCharacter::EnsureOverheadWidgetLocal()
 {

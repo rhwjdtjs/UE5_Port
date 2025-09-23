@@ -18,7 +18,6 @@ public:
 	UPROPERTY(EditAnywhere)
 	class UBoxComponent* CollisionBox;
 protected:
-
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	void StartDestroyTimer(); // 발사체 파괴 타이머 시작 함수

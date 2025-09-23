@@ -77,6 +77,11 @@ void ATFGameMode::PlayerEliminated(ATimeFractureCharacter* ElimmedCharacter, ATF
 	{
 		FString KillerName = AttackerController->PlayerState->GetPlayerName();
 		FString VictimName = VictimController->PlayerState->GetPlayerName();
+		// 킬 한 사람한테만 WBP_Kill 보여주기
+		AttackerController->ClientShowKillWidget();
+
+		// 죽은 사람한테만 WBP_Killed 보여주기
+		VictimController->ClientShowKilledWidget();
 
 		// 모든 클라이언트에 브로드캐스트
 		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
