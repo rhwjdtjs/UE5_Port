@@ -16,4 +16,6 @@ class UNREALPROJECT_7A_API ALBGameMode : public AGameMode
 	
 public:
 	virtual void PostLogin(APlayerController* NewPlayer) override; //플레이어 컨트롤러를 받아들인다.
+	UFUNCTION(Server, Reliable)
+	void ServerStartMatch(); //서버에서 매치를 시작하는 함수
 };

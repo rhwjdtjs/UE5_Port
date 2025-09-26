@@ -15,6 +15,15 @@ class UNREALPROJECT_7A_API ATFPlayerController : public APlayerController
 	GENERATED_BODY()
 	
 public:
+	UFUNCTION(Client, Reliable)
+	void ClientEnableStartButton();  // 버튼 활성화 신호
+
+	UFUNCTION(BlueprintCallable)
+	void RequestStartMatch();        // 버튼 눌렀을 때 실행
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class ULobbyWidget> LobbyWidgetClass; // 로비 위젯 클래스
+	UPROPERTY()
+	class ULobbyWidget* LobbyWidget;
 	UPROPERTY(EditAnywhere, Category = "Projectile|Sound")
 	USoundBase* BulletFlyBySound;
 

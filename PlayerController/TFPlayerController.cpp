@@ -23,6 +23,8 @@
 #include "UnrealProject_7A/HUD/ReturnToMainMenu.h"
 #include "Components/HorizontalBox.h"
 #include "Blueprint/WidgetTree.h"
+#include "UnrealProject_7A/GameMode/LBGameMode.h"
+#include "UnrealProject_7A/HUD/LobbyWidget.h"
 void ATFPlayerController::ClientAddKillFeedMessage_Implementation(const FString& Killer, const FString& Victim)
 {
 	AddKillFeedMessage(Killer, Victim); // 클라에서 실제 메시지 추가 실행
@@ -295,6 +297,9 @@ void ATFPlayerController::OnPossess(APawn* InPawn)
 		SetHUDHealth(TfCharacter->GetHealth(), TfCharacter->GetMaxHealth()); // TfCharacter의 체력과 최대 체력을 HUD에 설정한다.
 		SetHUDShield(TfCharacter->GetShield(), TfCharacter->GetMaxShield()); // TfCharacter의 쉴드와 최대 쉴드를 HUD에 설정한다.
 	}
+	bShowMouseCursor = false;
+	FInputModeGameOnly InputMode;
+	SetInputMode(InputMode);
 }
 
 void ATFPlayerController::SetHUDTime()
@@ -537,6 +542,46 @@ void ATFPlayerController::ClientPlayBulletWhiz_Implementation(const FVector& Loc
 		);
 	}
 }
+void ATFPlayerController::ClientEnableStartButton_Implementation()
+{
+	if (!LobbyWidget)
+	{
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle, [this]()
+			{
+				if (LobbyWidget)
+				{
+					LobbyWidget->ShowStartButton();
+					bShowMouseCursor = true;
+
+					FInputModeGameAndUI InputMode;
+					InputMode.SetWidgetToFocus(LobbyWidget->TakeWidget());
+					InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+					SetInputMode(InputMode);
+				}
+			}, 0.2f, false);
+		return;
+	}
+
+	LobbyWidget->ShowStartButton();
+	bShowMouseCursor = true;
+
+	FInputModeGameAndUI InputMode;
+	InputMode.SetWidgetToFocus(LobbyWidget->TakeWidget());
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	SetInputMode(InputMode);
+}
+void ATFPlayerController::RequestStartMatch()
+{
+	if (HasAuthority())  // 호스트만 가능
+	{
+		ALBGameMode* LobbyGM = Cast<ALBGameMode>(UGameplayStatics::GetGameMode(this));
+		if (LobbyGM)
+		{
+			LobbyGM->ServerStartMatch();
+		}
+	}
+}
 void ATFPlayerController::UpdateScoreboard()
 	{
 		if (!ScoreboardWidget) return;
@@ -627,9 +672,27 @@ void ATFPlayerController::UpdateScoreboard()
 void ATFPlayerController::BeginPlay()
 {
 	Super::BeginPlay(); // 부모 클래스의 BeginPlay 호출
-	ServerCheckMatchState(); // 서버에 매치 상태를 확인 요청
-	UE_LOG(LogTemp, Warning, TEXT("[PC] KillWidgetClass: %s"), *GetNameSafe(KillWidgetClass));
-	UE_LOG(LogTemp, Warning, TEXT("[PC] KilledWidgetClass: %s"), *GetNameSafe(KilledWidgetClass));
+	ServerCheckMatchState();
+
+	if (IsLocalController() && LobbyWidgetClass)
+	{
+		LobbyWidget = CreateWidget<ULobbyWidget>(this, LobbyWidgetClass);
+		if (LobbyWidget)
+		{
+			LobbyWidget->AddToViewport();
+			LobbyWidget->HideStartButton(); // 무조건 숨김 (호스트라도)
+		}
+	}
+	if (HasAuthority())
+	{
+		if (GetWorld()->GetAuthGameMode()->GetClass()->GetName().Contains("TFGameMode")) // 인게임 모드 이름
+		{
+			bShowMouseCursor = false;
+
+			FInputModeGameOnly InputMode;
+			SetInputMode(InputMode);
+		}
+	}
 }
 void ATFPlayerController::Tick(float DeltaTime)
 {
