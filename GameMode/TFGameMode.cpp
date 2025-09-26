@@ -8,6 +8,9 @@
 #include "Gameframework/PlayerStart.h"
 #include "UnrealProject_7A/PlayerState/TFPlayerState.h"
 #include "UnrealProject_7A/GameState/TFGameState.h"
+#include "Engine/World.h"
+#include "TimerManager.h"
+#include "UnrealProject_7A/System/TFGameInstance.h"
 namespace MatchState {
 	const FName CoolDown = FName(TEXT("CoolDown")); //경기 시간이 끝나고 승자를 결정하는 상태
 }
@@ -39,6 +42,7 @@ void ATFGameMode::OnMatchStateSet()
 }
 void ATFGameMode::WarmupToStartMatch()
 {
+	/*
 	if (MatchState == MatchState::WaitingToStart) {
 		CountdownTime = WarmupTime - GetWorld()->GetTimeSeconds() + LevelStartingTime; //게임 시작 전 대기 시간을 설정한다.
 		if (CountdownTime <= 0.f) {
@@ -55,6 +59,35 @@ void ATFGameMode::WarmupToStartMatch()
 		CountdownTime = CoolDownTime+WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime; //게임 진행 중 대기 시간을 설정한다.
 		if (CountdownTime <= 0.f) {
 			RestartGame(); //쿨다운 시간이 끝나면 게임을 재시작한다.
+		}
+	}
+	*/
+	if (MatchState == MatchState::WaitingToStart) {
+		CountdownTime = WarmupTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+
+		if (CountdownTime <= 0.f) {
+			UTFGameInstance* GI = GetGameInstance<UTFGameInstance>();
+
+			if (GI && !GI->bFirstWarmupDone) {
+				GI->bFirstWarmupDone = true;
+				RestartGame();  // 처음 웜업 끝나면 딱 1번만 리셋
+			}
+			else {
+				StartMatch();   // 그 뒤부턴 그냥 매치 시작
+			}
+		}
+	}
+	else if (MatchState == MatchState::InProgress) {
+		CountdownTime = WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if (CountdownTime <= 0.f) {
+			SetMatchState(MatchState::CoolDown);
+			LevelStartingTime = GetWorld()->GetTimeSeconds();
+		}
+	}
+	else if (MatchState == MatchState::CoolDown) {
+		CountdownTime = CoolDownTime + WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if (CountdownTime <= 0.f) {
+			RestartGame(); // 쿨다운 끝날 때는 항상 리셋
 		}
 	}
 }
@@ -86,11 +119,8 @@ void ATFGameMode::PlayerEliminated(ATimeFractureCharacter* ElimmedCharacter, ATF
 		// 모든 클라이언트에 브로드캐스트
 		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 		{
-			ATFPlayerController* PC = Cast<ATFPlayerController>(*It);
-			if (PC)
-			{
-				PC->ClientAddKillFeedMessage(KillerName, VictimName);
-			}
+			if (ATFPlayerController* KillerPC = Cast<ATFPlayerController>(*It))
+				KillerPC->ClientAddKillFeedMessage(KillerName, VictimName);
 		}
 	}
 }

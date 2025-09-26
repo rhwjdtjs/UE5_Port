@@ -19,6 +19,7 @@ public:
 	UPROPERTY(Replicated)
 	TArray<ATFPlayerState*> TopScorePlayers; //어	떤 게임 상태를 저장하는 배열
 
+	
 private:
 	float TopScore = 0.f; //최고 점수
 };

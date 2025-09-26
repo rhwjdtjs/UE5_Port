@@ -33,4 +33,6 @@ public:
 	class UTextBlock* MatchCountDownText;
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* GrenadeAmount;
+	UPROPERTY(meta = (BindWidget))
+	class UScrollBox* KillFeedBox;
 };

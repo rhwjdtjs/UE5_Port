@@ -30,6 +30,5 @@ private:
 	class ATFPlayerController* TFPlayerController; //플레이어 컨트롤러의 포인터를 저장한다.
 	UPROPERTY(ReplicatedUsing = OnRep_Defeats)
 	int32 Defeats;
-
 	
 };

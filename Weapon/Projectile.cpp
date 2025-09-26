@@ -10,6 +10,12 @@
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h"
 #include "UnrealProject_7A/UnrealProject_7A.h"
 #include "UnrealProject_7A/PlayerController/TFPlayerController.h"
+#include "Engine/EngineTypes.h"       // FOverlapResult 정의
+#include "Engine/World.h"             // GetWorld()
+#include "GameFramework/Actor.h"      // AActor
+#include "GameFramework/Pawn.h"       // APawn
+#include "PhysicsEngine/PhysicsCollisionHandler.h" // UE5.5에서 Overlap 관련 타입들 여기로 분리됨
+#include "CollisionQueryParams.h" // FCollisionQueryParams
 AProjectile::AProjectile()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -60,6 +66,7 @@ void AProjectile::StartDestroyTimer()
 		DestroyTime
 	);
 }
+
 
 // Called when the game starts or when spawned
 void AProjectile::BeginPlay()

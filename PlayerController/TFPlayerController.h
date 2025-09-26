@@ -6,15 +6,16 @@
 #include "GameFramework/PlayerController.h"
 #include "TFPlayerController.generated.h"
 
-/**
- * 
- */
+
+
 UCLASS()
 class UNREALPROJECT_7A_API ATFPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 	
 public:
+	UFUNCTION(Client, Reliable)
+	void ClientPlayPickupEffects(USoundCue* Sound, class UNiagaraSystem* Effect, FVector Location, FRotator Rotation);
 	UFUNCTION(Client, Reliable)
 	void ClientEnableStartButton();  // 버튼 활성화 신호
 
@@ -24,13 +25,6 @@ public:
 	TSubclassOf<class ULobbyWidget> LobbyWidgetClass; // 로비 위젯 클래스
 	UPROPERTY()
 	class ULobbyWidget* LobbyWidget;
-	UPROPERTY(EditAnywhere, Category = "Projectile|Sound")
-	USoundBase* BulletFlyBySound;
-
-	UPROPERTY(EditAnywhere, Category = "Projectile|Sound")
-	USoundAttenuation* BulletFlyByAttenuation;
-	UFUNCTION(Client, Unreliable)
-	void ClientPlayBulletWhiz(const FVector& Location);
 	//ui
 	void UpdateScoreboard();
 	UFUNCTION(Client, Reliable)
@@ -149,6 +143,5 @@ protected:
 	float TimeSyncFrequency = 5.f; // 시간 동기화 주기 (초 단위)
 	float TimeSyncRunningTime = 0.f; // 시간 동기화가 얼마나 진행되었는지 저장하는 변수
 	float ClientServerDelta = 0.f; // 클라이언트와 서버 간의 시간 차이를 저장하는 변수
-
-
+	/** 새로 소유한 폰/컴뽀넌트 참조 캐싱 + 현재 값 즉시 HUD 반영(오버레이 없으면 캐시에 저장) */
 };

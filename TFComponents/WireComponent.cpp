@@ -39,6 +39,40 @@ void UWireComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(UWireComponent, bIsAttached);
 	DOREPLIFETIME(UWireComponent, WireTarget);
 }
+void UWireComponent::ClientWallFail_Implementation()
+{
+	if (bIsAttached && Character)
+	{
+		FVector ToTarget = WireTarget - Character->GetActorLocation();
+		float Dist = ToTarget.Size();
+		FHitResult WallHit;
+		FCollisionQueryParams Params;
+		Params.AddIgnoredActor(Character);
+		bool bBlocked = GetWorld()->LineTraceSingleByChannel(
+			WallHit,
+			Character->GetActorLocation(),
+			WireTarget,
+			ECC_Visibility,
+			Params
+		);
+		if (bBlocked && WallHit.Distance < 100.f)
+		{
+			// 벽에 너무 가까이 → 강제 해제
+			ReleaseWire();
+			return;
+		}
+		if (Dist > 120.f) // 목표까지 아직 멀면 계속 끌기
+		{
+			FVector Dir = ToTarget.GetSafeNormal();
+			Character->GetCharacterMovement()->Velocity = Dir * PullSpeed;
+		}
+		else
+		{
+			// 목표 근처면 자동 해제
+			ReleaseWire();
+		}
+	}
+}
 void UWireComponent::MulticastWireSuccess_Implementation()
 {
 	bCanFireWire = false;
@@ -487,36 +521,43 @@ void UWireComponent::ReleaseWire()
 void UWireComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	if (bIsAttached && Character)
+	if (Character->HasAuthority())
 	{
-		FVector ToTarget = WireTarget - Character->GetActorLocation();
-		float Dist = ToTarget.Size();
-		FHitResult WallHit;
-		FCollisionQueryParams Params;
-		Params.AddIgnoredActor(Character);
-		bool bBlocked = GetWorld()->LineTraceSingleByChannel(
-			WallHit,
-			Character->GetActorLocation(),
-			WireTarget,
-			ECC_Visibility,
-			Params
-		);
-		if (bBlocked && WallHit.Distance < 100.f)
+		if (bIsAttached && Character)
 		{
-			// 벽에 너무 가까이 → 강제 해제
-			ReleaseWire();
-			return;
-		}
-		if (Dist > 120.f) // 목표까지 아직 멀면 계속 끌기
-		{
-			FVector Dir = ToTarget.GetSafeNormal();
-			Character->GetCharacterMovement()->Velocity = Dir * PullSpeed;
-		}
-		else
-		{
-			// 목표 근처면 자동 해제
-			ReleaseWire();
+			FVector ToTarget = WireTarget - Character->GetActorLocation();
+			float Dist = ToTarget.Size();
+			FHitResult WallHit;
+			FCollisionQueryParams Params;
+			Params.AddIgnoredActor(Character);
+			bool bBlocked = GetWorld()->LineTraceSingleByChannel(
+				WallHit,
+				Character->GetActorLocation(),
+				WireTarget,
+				ECC_Visibility,
+				Params
+			);
+			if (bBlocked && WallHit.Distance < 100.f)
+			{
+				// 벽에 너무 가까이 → 강제 해제
+				ReleaseWire();
+				return;
+			}
+			if (Dist > 120.f) // 목표까지 아직 멀면 계속 끌기
+			{
+				FVector Dir = ToTarget.GetSafeNormal();
+				Character->GetCharacterMovement()->Velocity = Dir * PullSpeed;
+			}
+			else
+			{
+				// 목표 근처면 자동 해제
+				ReleaseWire();
+			}
 		}
 	}
+	else {
+		ClientWallFail();
+	}
+
 }
 

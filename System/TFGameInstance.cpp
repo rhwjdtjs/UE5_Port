@@ -25,25 +25,25 @@ void UTFGameInstance::OnPreLoadMap(const FString& MapName)
 {
     FLoadingScreenAttributes Attr;
 
-    // 로딩이 끝나도 자동 종료 
     Attr.bAutoCompleteWhenLoadingCompletes = true;
-
-    // 반드시 우리가 끄기 전까진 재생 유지
     Attr.bWaitForManualStop = false;
-
-    // 스킵 금지
     Attr.bMoviesAreSkippable = false;
-
-    // 최소 표시 시간 (영상 길이와 맞춰주면 됨)
-    Attr.MinimumLoadingScreenDisplayTime = 5.0f;
-
     Attr.bAllowInEarlyStartup = true;
-
-    // Content/Movies/ 폴더에 있는 파일 이름 (확장자 제거)
-    Attr.MoviePaths = { "LoadingVideo"};
-
-    // 한 번만 재생
     Attr.PlaybackType = EMoviePlaybackType::MT_Normal;
+
+    if (!bLogoPlayed)
+    {
+        // 처음 실행 → 로고 무비
+        Attr.MoviePaths = { LogoMovie };
+        Attr.MinimumLoadingScreenDisplayTime = 10.0f;
+        bLogoPlayed = true; // 다음부턴 로고 안 나오게
+    }
+    else
+    {
+        // 이후 로딩 무비
+        Attr.MoviePaths = { LoadingVideo };
+        Attr.MinimumLoadingScreenDisplayTime = 5.0f;
+    }
 
     GetMoviePlayer()->SetupLoadingScreen(Attr);
 }

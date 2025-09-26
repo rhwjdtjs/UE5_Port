@@ -4,6 +4,7 @@
 #include "HealthPickup.h"
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h"
 #include "UnrealProject_7A/TFComponents/BuffComponent.h"
+#include "UnrealProject_7A/PlayerController/TFPlayerController.h"
 AHealthPickup::AHealthPickup()
 {
 	bReplicates = true;
@@ -20,6 +21,9 @@ void AHealthPickup::OnSphereOverlap(
 		if (Buff) {
 			Buff->Heal(HealAmount, HealingTime); //BuffComponent의 Heal 함수를 호출한다.
 		}
+		if (ATFPlayerController* PC = Cast<ATFPlayerController>(TFCharacter->Controller))
+		{
+			PC->ClientPlayPickupEffects(PickupSound, PickupEffect, GetActorLocation(), GetActorRotation());
+		}
 	}
-	Destroy();//탄약 픽업 액터를 파괴한다.
 }

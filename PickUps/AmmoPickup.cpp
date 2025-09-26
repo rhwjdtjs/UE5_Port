@@ -4,6 +4,7 @@
 #include "AmmoPickup.h"
 #include "UnrealProject_7A/TFComponents/CBComponent.h"
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h"
+#include "UnrealProject_7A/PlayerController/TFPlayerController.h"
 void AAmmoPickup::OnSphereOverlap(
 	UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -15,7 +16,10 @@ void AAmmoPickup::OnSphereOverlap(
 		if (CBComp) {
 			CBComp->PickupAmmo(WeaponType, AmmoAmount);//전투 컴포넌트의 PickupAmmo 함수를 호출하여 탄약을 추가한다.
 		}
+		if (ATFPlayerController* PC = Cast<ATFPlayerController>(TFCharacter->Controller))
+		{
+			PC->ClientPlayPickupEffects(PickupSound, PickupEffect, GetActorLocation(), GetActorRotation());
+		}
 	}
-	Destroy();//탄약 픽업 액터를 파괴한다.
 }
 

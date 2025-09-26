@@ -5,7 +5,7 @@
 
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h"
 #include "UnrealProject_7A/TFComponents/BuffComponent.h"
-
+#include "UnrealProject_7A/PlayerController/TFPlayerController.h"
 
 AShieldPickup::AShieldPickup()
 {
@@ -23,6 +23,9 @@ void AShieldPickup::OnSphereOverlap(
 		if (Buff) {
 			Buff->Shield(ShieldAmount, ShieldTime); //BuffComponent의 Shield 함수를 호출한다.
 		}
+		if (ATFPlayerController* PC = Cast<ATFPlayerController>(TFCharacter->Controller))
+		{
+			PC->ClientPlayPickupEffects(PickupSound, PickupEffect, GetActorLocation(), GetActorRotation());
+		}
 	}
-	Destroy();//탄약 픽업 액터를 파괴한다.
 }

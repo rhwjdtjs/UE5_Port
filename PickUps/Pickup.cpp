@@ -9,6 +9,9 @@
 #include "UnrealProject_7A/UnrealProject_7A.h"
 #include "NiagaraComponent.h"
 #include "NiagarafunctionLibrary.h"
+#include "UnrealProject_7A/Character/TimeFractureCharacter.h"
+#include "UnrealProject_7A/PlayerController/TFPlayerController.h"
+
 // Sets default values
 APickup::APickup()
 {
@@ -39,6 +42,14 @@ void APickup::BeginPlay()
 	if (HasAuthority()) //서버에서만 실행
 		GetWorldTimerManager().SetTimer(BindOverlapTimer, this, &APickup::BindOverlapTimerFinished, BindoverlapTime);
 }
+void APickup::MulticastPlayPickupEffects_Implementation()
+{
+	if (PickupSound)
+		UGameplayStatics::PlaySoundAtLocation(this, PickupSound, GetActorLocation());
+
+	if (PickupEffect)
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, PickupEffect, GetActorLocation(), GetActorRotation());
+}
 void APickup::BindOverlapTimerFinished()
 {
 	OverlapSphere->OnComponentBeginOverlap.AddDynamic(this, &APickup::OnSphereOverlap);
@@ -55,6 +66,7 @@ void APickup::Tick(float DeltaTime)
 void APickup::Destroyed()
 {
 	Super::Destroyed();
+	/*
 	if (PickupSound) {
 		UGameplayStatics::PlaySoundAtLocation(this, PickupSound, GetActorLocation());
 	}
@@ -66,11 +78,16 @@ void APickup::Destroyed()
 			GetActorRotation()
 		);
 	}
+	*/
 }
 
 void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	if (!HasAuthority() || bPickedUp) return;     // 중복 방지
+	bPickedUp = true;
 
+	MulticastPlayPickupEffects();                 // <-- 모두에게 재생
+	Destroy();                                    // 그 다음 파괴
 }
 
 

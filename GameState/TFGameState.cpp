@@ -25,3 +25,4 @@ void ATFGameState::UpdateTopScorePlayers(ATFPlayerState* ScoringPlayer)
 		TopScore = ScoringPlayer->GetScore(); // TopScore를 ScoringPlayer의 점수로 설정한다.
 	}
 }
+

@@ -4,7 +4,7 @@
 #include "SpeedPickup.h"
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h"
 #include "UnrealProject_7A/TFComponents/BuffComponent.h"
-
+#include "UnrealProject_7A/PlayerController/TFPlayerController.h"
 
 void ASpeedPickup::OnSphereOverlap(
 	UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -17,6 +17,9 @@ void ASpeedPickup::OnSphereOverlap(
 		if (Buff) {
 			Buff->BuffSpeed(BaseSpeedBuff, CrouchSpeedBuff, SpeedBuffTime); //BuffComponent의 BuffSpeed 함수를 호출한다.
 		}
+		if (ATFPlayerController* PC = Cast<ATFPlayerController>(TFCharacter->Controller))
+		{
+			PC->ClientPlayPickupEffects(PickupSound, PickupEffect, GetActorLocation(), GetActorRotation());
+		}
 	}
-	Destroy();//탄약 픽업 액터를 파괴한다.
 }

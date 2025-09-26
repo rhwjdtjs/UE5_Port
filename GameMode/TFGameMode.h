@@ -35,8 +35,8 @@ public:
 	float LevelStartingTime = 0.f; // 레벨 시작 시간
 private:
 	float CountdownTime = 5.f; // 카운트다운 시간
+	bool bFirstWarmupDone = false;
 protected:
 	virtual void BeginPlay() override; // 게임 시작 시 호출되는 함수
 	virtual void OnMatchStateSet() override; // 매치 상태가 변경될 때 호출되는 함수
-	
 };

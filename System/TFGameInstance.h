@@ -18,10 +18,14 @@ public:
 	virtual void Init() override;
 	virtual void Shutdown() override;
 
-	UPROPERTY(EditDefaultsOnly, Category="LoadingScreen")
-	float MinimumDisplayTime = 0.f;
-	UPROPERTY(EditDefaultsOnly, Category = "LoadingScreen")
-	FString MovieName = TEXT("LoadingVideo");
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movies")
+	FString LogoMovie = TEXT("LogoMovie");
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movies")
+	FString LoadingVideo = TEXT("LoadingVideo");
+	bool bFirstWarmupDone = false;
+	// 로고 무비를 이미 재생했는지 체크
+	bool bLogoPlayed = false;
 
 private:
 	void OnPreLoadMap(const FString& MapName);

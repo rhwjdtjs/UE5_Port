@@ -32,6 +32,8 @@ private:
 	class UNiagaraSystem* WireTravelEffect;   // 날아가는 동안 옆에서 루프 재생할 이펙트
 	UFUNCTION(Client, Reliable)
 	void ClientWireFail();
+	UFUNCTION(Client, Reliable)
+	void ClientWallFail();
 	UFUNCTION(NetMulticast,Reliable)
 	void MulticastWireSuccess();
 	UPROPERTY()

@@ -25,6 +25,9 @@
 #include "Blueprint/WidgetTree.h"
 #include "UnrealProject_7A/GameMode/LBGameMode.h"
 #include "UnrealProject_7A/HUD/LobbyWidget.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
+
 void ATFPlayerController::ClientAddKillFeedMessage_Implementation(const FString& Killer, const FString& Victim)
 {
 	AddKillFeedMessage(Killer, Victim); // 클라에서 실제 메시지 추가 실행
@@ -36,8 +39,7 @@ void ATFPlayerController::AddKillFeedMessage(const FString& Killer, const FStrin
 		if (!TfHud || !TfHud->CharacterOverlay) return;
 		FTimerHandle KillFeedClearTimer;
 		// BP: CharacterOverlay 안에 ScrollBox 이름을 정확히 "KillFeedBox" 로!
-		UScrollBox* KillFeedBox = Cast<UScrollBox>(
-			TfHud->CharacterOverlay->GetWidgetFromName(TEXT("KillFeedBox")));
+		UScrollBox* KillFeedBox = TfHud->CharacterOverlay->KillFeedBox;
 		if (!KillFeedBox) return;
 
 		
@@ -300,6 +302,7 @@ void ATFPlayerController::OnPossess(APawn* InPawn)
 	bShowMouseCursor = false;
 	FInputModeGameOnly InputMode;
 	SetInputMode(InputMode);
+	
 }
 
 void ATFPlayerController::SetHUDTime()
@@ -344,6 +347,7 @@ void ATFPlayerController::CheckTimeSync(float DeltaTime)
 		TimeSyncRunningTime = 0.f; // 시간 동기화 진행 시간을 초기화한다.
 	}
 }
+
 void ATFPlayerController::ClientPlayHitConfirmSound_Implementation(USoundCue* HitSound)
 {
 	if (HitSound)
@@ -370,12 +374,12 @@ void ATFPlayerController::ReceivedPlayer()
 		ServerRequestimeSync(GetWorld()->GetTimeSeconds()); // 로컬 컨트롤러인 경우 서버에 현재 시간을 요청한다.
 	}
 }
+
 float ATFPlayerController::GetServerTime()
 {
 	if (HasAuthority()) return GetWorld()->GetTimeSeconds(); // 서버 권한이 있는 경우 현재 월드의 시간을 반환한다.
 	else return GetWorld()->GetTimeSeconds() + ClientServerDelta; // 서버 권한이 없는 경우 클라이언트와 서버 간의 시간 차이를 더하여 시간을 반환한다.
 }
-
 void ATFPlayerController::OnMatchStateSet(FName State) {
 	MatchState = State;
 	if (MatchState == MatchState::InProgress) {
@@ -456,7 +460,15 @@ void ATFPlayerController::ClientJoinMatch_Implementation(FName StateOfMatch, flo
 	CoolDownTime = CoolDown; // 쿨다운 시간을 설정한다.
 	OnMatchStateSet(MatchState); // 매치 상태가 변경되었을 때 호출되는 함수를 실행한다.
 	if (TfHud && MatchState == MatchState::WaitingToStart) {
-		TfHud->AddAlert(); // HUD에 알림 위젯을 추가한다.
+		TfHud->AddAlert();
+	}
+	else {
+		FTimerHandle DelayHandle;
+		GetWorldTimerManager().SetTimer(DelayHandle, [this]() {
+			if (TfHud && MatchState == MatchState::WaitingToStart) {
+				TfHud->AddAlert();
+			}
+			}, 0.2f, false);
 	}
 }
 void ATFPlayerController::ServerCheckMatchState_Implementation()
@@ -527,21 +539,6 @@ void ATFPlayerController::ClientReceiveChatMessage_Implementation(const FString&
 		Hud->ChatWidget->AddChatMessage(Sender, Message);
 	}
 }
-void ATFPlayerController::ClientPlayBulletWhiz_Implementation(const FVector& Location)
-{
-	if(BulletFlyBySound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(
-			GetWorld(),
-			BulletFlyBySound,
-			Location,
-			1.f,
-			1.f,
-			0.f,
-			BulletFlyByAttenuation
-		);
-	}
-}
 void ATFPlayerController::ClientEnableStartButton_Implementation()
 {
 	if (!LobbyWidget)
@@ -570,6 +567,17 @@ void ATFPlayerController::ClientEnableStartButton_Implementation()
 	InputMode.SetWidgetToFocus(LobbyWidget->TakeWidget());
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	SetInputMode(InputMode);
+}
+void ATFPlayerController::ClientPlayPickupEffects_Implementation(USoundCue* Sound, UNiagaraSystem* Effect, FVector Location, FRotator Rotation)
+{
+	if (Sound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, Sound, Location);
+	}
+	if (Effect)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, Effect, Location, Rotation);
+	}
 }
 void ATFPlayerController::RequestStartMatch()
 {
@@ -693,6 +701,7 @@ void ATFPlayerController::BeginPlay()
 			SetInputMode(InputMode);
 		}
 	}
+	
 }
 void ATFPlayerController::Tick(float DeltaTime)
 {

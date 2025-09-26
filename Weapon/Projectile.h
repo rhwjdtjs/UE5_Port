@@ -46,8 +46,6 @@ public:
 	virtual void Tick(float DeltaTime) override;
 private:
 	
-	
-	
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* TracerNiagara; // 발사체의 트레이서 효과를 위한 나이아가라 시스템 템플릿;
 	class UNiagaraComponent* TracerNiagaraComponent; // 발사체의 트레이서 효과를 위한 나이아가라 컴포넌트;
