@@ -14,6 +14,12 @@ class UNREALPROJECT_7A_API ATFPlayerController : public APlayerController
 	GENERATED_BODY()
 	
 public:
+	UPROPERTY(ReplicatedUsing = OnRep_MatchState)
+
+	FName MatchState;
+	UFUNCTION()
+	void OnRep_MatchState(); // 매치 상태가 변경되었을 때 호출되는 함수
+	void OnMatchStateSet(FName State); // 매치 상태가 변경될 때 호출되는 함수
 	UFUNCTION(Client, Reliable)
 	void ClientPlayPickupEffects(USoundCue* Sound, class UNiagaraSystem* Effect, FVector Location, FRotator Rotation);
 	UFUNCTION(Client, Reliable)
@@ -61,7 +67,7 @@ public:
 	virtual void Tick(float DeltaTime) override; // 매 프레임마다 호출되는 함수
 	virtual void ReceivedPlayer() override; // 플레이어가 컨트롤러를 받았을 때 호출되는 함수
 	virtual float GetServerTime(); // 서버 시간을 가져오는 함수
-	void OnMatchStateSet(FName State); // 매치 상태가 변경될 때 호출되는 함수
+	
 	void HandleCoolDown(); // 쿨다운 상태를 처리하는 함수
 	UFUNCTION(Server, Reliable)
 	void ServerSendChatMessage(const FString& Message); //0913 채팅
@@ -70,7 +76,11 @@ public:
 	void ClientReceiveChatMessage(const FString& Sender, const FString& Message);//0913 채팅
 	UFUNCTION(Client, Reliable)
 	void ClientPlayHitConfirmSound(class USoundCue* HitSound); //0914 hitsound
+	UFUNCTION(Client, Reliable)
+	void ClientJoinMatch(FName StateOfMatch, float Warmup, float Match, float StartingTime, float CoolDown); // 클라이언트가 매치 상태를 확인
 private:
+	FTimerHandle KillFeedClearTimer;
+	FTimerHandle PollInitTimerHandle;
 	UPROPERTY()
 	class UUserWidget* KillWidgetInstance;
 
@@ -85,11 +95,7 @@ private:
 	float MatchTime = 0.f; // 매치 시간 (초 단위)
 	float WarmupTime = 0.f; // 웜업 시간 (초 단위)
 	float CoolDownTime = 0.f; // 쿨다운 시간 (초 단위)
-	UPROPERTY(ReplicatedUsing=OnRep_MatchState)
 
-	FName MatchState;
-	UFUNCTION()
-	void OnRep_MatchState(); // 매치 상태가 변경되었을 때 호출되는 함수
 	UPROPERTY()
 	class UCharacterOverlay* CharacterOverlay; // 캐릭터 오버레이 위젯
 	bool bInitializeHealth = false; // 허드의 체력이 초기화되었는지 여부
@@ -132,8 +138,7 @@ protected:
 	//클라이언트와 서버 시간 맞추기
 	UFUNCTION(Server, Reliable)
 	void ServerCheckMatchState(); // 서버가 매치 상태를 확인
-	UFUNCTION(Client, Reliable)
-	void ClientJoinMatch(FName StateOfMatch, float Warmup, float Match, float StartingTime, float CoolDown); // 클라이언트가 매치 상태를 확인
+	
 	UFUNCTION(Server, Reliable)
 	void ServerRequestimeSync(float TimeOfClientRequest); // 클라이언트가 서버의 현재 시간을 요청
 	UFUNCTION(Client, Reliable)

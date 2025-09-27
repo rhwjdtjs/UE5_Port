@@ -4,8 +4,8 @@
 #include "TFGameMode.h"
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h"
 #include "UnrealProject_7A/PlayerController/TFPlayerController.h"
-#include "Kismet/gameplayStatics.h"
-#include "Gameframework/PlayerStart.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/PlayerStart.h"
 #include "UnrealProject_7A/PlayerState/TFPlayerState.h"
 #include "UnrealProject_7A/GameState/TFGameState.h"
 #include "Engine/World.h"
@@ -17,6 +17,7 @@ namespace MatchState {
 ATFGameMode::ATFGameMode()
 {
 	bDelayedStart = true; //게임 시작을 지연시킨다.
+	bUseSeamlessTravel = true; // 꼭 활성화
 }
 
 void ATFGameMode::Tick(float DeltaTime)
@@ -33,59 +34,53 @@ void ATFGameMode::BeginPlay()
 void ATFGameMode::OnMatchStateSet()
 {
 	Super::OnMatchStateSet(); //부모 클래스의 OnMatchStateSet 함수를 호출한다.
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It) { //현재 월드의 모든 플레이어 컨트롤러를 반복한다.
-		ATFPlayerController* TFPlayer = Cast<ATFPlayerController>(*It); //현재 플레이어 컨트롤러를 ATFPlayerController로 캐스팅한다.
-		if (TFPlayer) {
-			TFPlayer->OnMatchStateSet(MatchState); //플레이어 컨트롤러의 OnMatchStateSet 함수를 호출한다.
+	// 상태 전환될 때 '그 상태의 시작 시점'으로 리셋
+	if (MatchState == MatchState::InProgress)
+	{
+		LevelStartingTime = GetWorld()->GetTimeSeconds(); // 매치 시작 시점
+	}
+	else if (MatchState == MatchState::CoolDown)
+	{
+		LevelStartingTime = GetWorld()->GetTimeSeconds(); // 쿨다운 시작 시점
+	}
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ATFPlayerController* PC = Cast<ATFPlayerController>(*It))
+		{
+			// 상태/시간값만 푸시 (RPC 한 번만!)
+			PC->ClientJoinMatch(MatchState, WarmupTime, MatchTime, LevelStartingTime, CoolDownTime);
+
+			
 		}
 	}
 }
 void ATFGameMode::WarmupToStartMatch()
 {
-	/*
 	if (MatchState == MatchState::WaitingToStart) {
-		CountdownTime = WarmupTime - GetWorld()->GetTimeSeconds() + LevelStartingTime; //게임 시작 전 대기 시간을 설정한다.
-		if (CountdownTime <= 0.f) {
-			StartMatch(); //대기 시간이 끝나면 게임을 시작한다.
-		}
-	}
-		else if (MatchState == MatchState::InProgress) {
-			CountdownTime = WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime; //게임 진행 중 대기 시간을 설정한다.
-			if (CountdownTime <= 0.f) {
-				SetMatchState(MatchState::CoolDown); //게임 시간이 끝나면 쿨다운 상태로 전환한다.
-			}
-		}
-		else if (MatchState == MatchState::CoolDown) {
-		CountdownTime = CoolDownTime+WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime; //게임 진행 중 대기 시간을 설정한다.
-		if (CountdownTime <= 0.f) {
-			RestartGame(); //쿨다운 시간이 끝나면 게임을 재시작한다.
-		}
-	}
-	*/
-	if (MatchState == MatchState::WaitingToStart) {
-		CountdownTime = WarmupTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
-
+		//CountdownTime = WarmupTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		CountdownTime = WarmupTime - (GetWorld()->GetTimeSeconds() - LevelStartingTime);
 		if (CountdownTime <= 0.f) {
 			UTFGameInstance* GI = GetGameInstance<UTFGameInstance>();
-
 			if (GI && !GI->bFirstWarmupDone) {
 				GI->bFirstWarmupDone = true;
 				RestartGame();  // 처음 웜업 끝나면 딱 1번만 리셋
 			}
 			else {
-				StartMatch();   // 그 뒤부턴 그냥 매치 시작
+				StartMatch(); // 대기 시간이 끝나면 게임을 시작한다.
 			}
 		}
 	}
 	else if (MatchState == MatchState::InProgress) {
-		CountdownTime = WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		//CountdownTime = WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		CountdownTime = MatchTime - (GetWorld()->GetTimeSeconds() - LevelStartingTime);
 		if (CountdownTime <= 0.f) {
 			SetMatchState(MatchState::CoolDown);
-			LevelStartingTime = GetWorld()->GetTimeSeconds();
+			//LevelStartingTime = GetWorld()->GetTimeSeconds();
 		}
 	}
 	else if (MatchState == MatchState::CoolDown) {
-		CountdownTime = CoolDownTime + WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		//CountdownTime = CoolDownTime + WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		CountdownTime = CoolDownTime - (GetWorld()->GetTimeSeconds() - LevelStartingTime);
 		if (CountdownTime <= 0.f) {
 			RestartGame(); // 쿨다운 끝날 때는 항상 리셋
 		}

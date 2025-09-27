@@ -140,6 +140,7 @@ void ATimeFractureCharacter::HandleChatCancel() // y → 취소0913 채팅
 }
 void ATimeFractureCharacter::Dive() //0914 구르기
 {
+	if (CombatComponent->CombatState == ECombatState::ECS_Reloading) return;
 	if (CombatComponent->EquippedWeapon == nullptr) return;
 	if (bIsDodging) return;
 	if (WireComponent && WireComponent->IsAttached())
@@ -158,6 +159,7 @@ void ATimeFractureCharacter::Dive() //0914 구르기
 }
 void ATimeFractureCharacter::ServerDivePressed_Implementation() //0914 구르기
 {
+	if (CombatComponent->CombatState == ECombatState::ECS_Reloading) return;
 	if (bIsDodging) return;
 	if (WireComponent && WireComponent->IsAttached())
 	{
@@ -167,6 +169,7 @@ void ATimeFractureCharacter::ServerDivePressed_Implementation() //0914 구르기
 }
 void ATimeFractureCharacter::MulticastDive_Implementation() //0914 구르기
 {
+	if (CombatComponent->CombatState == ECombatState::ECS_Reloading) return;
 	if (bIsDodging) return;
 
 	UTFAniminstance* TFAnim = Cast<UTFAniminstance>(GetMesh()->GetAnimInstance());
@@ -950,7 +953,7 @@ void ATimeFractureCharacter::Tick(float DeltaTime)
 	if (bIsDodging)
 	{
 		FVector ForwardDir = GetActorForwardVector();
-		AddMovementInput(ForwardDir, 1.0f);
+		AddMovementInput(ForwardDir, 3.0f);
 	}
 	float TargetArmLength = IsAiming() ? AimCameraOffset : normalAimCameraOffset; // 앉으면 더 가까이
 	float NewArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArmLength, DeltaTime, CameraInterpSpeed);

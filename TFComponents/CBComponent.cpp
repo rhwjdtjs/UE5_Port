@@ -21,6 +21,8 @@
 #include "UnrealProject_7A/Character/TFAnimInstance.h"
 #include "UnrealProject_7A/Weapon/Projectile.h"
 #include "Components/BoxComponent.h"
+#include "UnrealProject_7A/PlayerState/TFPlayerState.h"
+
 UCBComponent::UCBComponent()
 {
 
@@ -358,14 +360,51 @@ void UCBComponent::FinishReload()
 	}
 }
 
+void UCBComponent::PushAllHUDFromCombat()
+{
+	Controller = Controller == nullptr ? Cast<ATFPlayerController>(Character ? Character->Controller : nullptr) : Controller;
+	if (!Controller) return;
+
+	// 체력/쉴드
+	if (Character)
+	{
+		Controller->SetHUDHealth(Character->GetHealth(), Character->GetMaxHealth());
+		Controller->SetHUDShield(Character->GetShield(), Character->GetMaxShield());
+	}
+
+	// 장탄 수
+	if (EquippedWeapon)
+	{
+		Controller->SetHUDWeaponAmmo(EquippedWeapon->GetAmmo());
+	}
+	else
+	{
+		Controller->SetHUDWeaponAmmo(0);
+	}
+
+	// 보유 탄약
+	UpdateCarriedAmmo(); // 내부에서 Controller->SetHUDCarriedAmmo 호출함
+
+	// 수류탄
+	UpdateHUDGrenades();
+
+	// 스코어/데스
+	if (ATFPlayerState* PS = Character ? Character->GetPlayerState<ATFPlayerState>() : nullptr)
+	{
+		Controller->SetHUDScore(PS->GetScore());
+		Controller->SetHUDDefeats(PS->GetDefeats());
+	}
+}
+
 void UCBComponent::ServerFinishReload_Implementation()
 {
 	CombatState = ECombatState::ECS_Unoccupied;
+	UpdateAmmoValues(); // 누락되어 있던 서버측 탄약 반영
 }
 	
 void UCBComponent::OnRep_CarriedAmmo()
 {
-	//Controller = Controller == nullptr ? Cast<ATFPlayerController>(Character->Controller) : Controller; //컨트롤러를 가져온다.
+	Controller = Controller == nullptr ? Cast<ATFPlayerController>(Character->Controller) : Controller; //컨트롤러를 가져온다.
 	if (Controller) {
 		Controller->SetHUDCarriedAmmo(CarriedAmmo); //컨트롤러가 있다면 HUD에 보유 탄약을 설정한다.
 	}
@@ -662,9 +701,9 @@ void UCBComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 		SetHUDCrossharis(DeltaTime); // 매 프레임마다 HUD의 크로스헤어를 설정한다.
 		InterpFOV(DeltaTime); // FOV를 보간한다.
 	}
-	if (EquippedWeapon) {
-		UpdateHUDGrenades(); //HUD의 수류탄 개수를 업데이트한다.
-	}
+	//if (EquippedWeapon) {
+//		UpdateHUDGrenades(); //HUD의 수류탄 개수를 업데이트한다.
+//	}
 }
 bool UCBComponent::ShouldSwapWeapons()
 {

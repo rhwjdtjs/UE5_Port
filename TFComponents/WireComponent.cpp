@@ -75,6 +75,7 @@ void UWireComponent::ClientWallFail_Implementation()
 }
 void UWireComponent::MulticastWireSuccess_Implementation()
 {
+	/*
 	bCanFireWire = false;
 
 	// 쿨타임 시작
@@ -121,6 +122,46 @@ void UWireComponent::MulticastWireSuccess_Implementation()
 			1.0f,
 			true
 		);
+	}
+	*/
+	bCanFireWire = false;
+
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().SetTimer(
+			CooldownTimerHandle, this, &UWireComponent::ResetWireCooldown, WireCooldown, false);
+	}
+
+	if (Character && Character->IsLocallyControlled())
+	{
+		if (!WireCooldownWidget && WireCooldownWidgetClass)
+		{
+			if (APlayerController* PC = Cast<APlayerController>(Character->GetController()))
+			{
+				WireCooldownWidget = CreateWidget<UUserWidget>(PC, WireCooldownWidgetClass);
+				if (WireCooldownWidget)
+				{
+					WireCooldownWidget->AddToViewport();
+					WireCooldownText = Cast<UTextBlock>(WireCooldownWidget->GetWidgetFromName(TEXT("WireCoolTime")));
+				}
+			}
+		}
+
+		if (WireCooldownWidget)
+		{
+			WireCooldownWidget->SetVisibility(ESlateVisibility::Visible);
+		}
+
+		RemainingCooldown = WireCooldown;
+		if (WireCooldownText)
+		{
+			WireCooldownText->SetText(FText::FromString(
+				FString::Printf(TEXT("Wire(Q)-CoolTimeLeft - %.0f"), RemainingCooldown)));
+		}
+
+		Character->GetWorldTimerManager().ClearTimer(CooldownUITimerHandle);
+		Character->GetWorldTimerManager().SetTimer(
+			CooldownUITimerHandle, this, &UWireComponent::TickWireCooldownUI, 1.0f, true);
 	}
 }
 void UWireComponent::ClientWireFail_Implementation()
@@ -349,11 +390,27 @@ void UWireComponent::OnRep_WireState()
 			}
 		}
 	}
+	if (!bIsAttached)
+	{
+		MulticastStopWireEffects(); // 로컬에도 안전하게 정리
+	}
+}
+void UWireComponent::MulticastStopWireEffects_Implementation()
+{
+	if (ZipperAudioComponent && ZipperAudioComponent->IsPlaying())
+	{
+		ZipperAudioComponent->Stop();
+		ZipperAudioComponent = nullptr;
+	}
+	if (ActiveTravelEffectLeft) { ActiveTravelEffectLeft->Deactivate(); ActiveTravelEffectLeft = nullptr; }
+	if (ActiveTravelEffectRight) { ActiveTravelEffectRight->Deactivate(); ActiveTravelEffectRight = nullptr; }
+	if (ActiveTravelEffectLeftFront) { ActiveTravelEffectLeftFront->Deactivate(); ActiveTravelEffectLeftFront = nullptr; }
+	if (ActiveTravelEffectRightFront) { ActiveTravelEffectRightFront->Deactivate(); ActiveTravelEffectRightFront = nullptr; }
 }
 void UWireComponent::ServerReleaseWire_Implementation()
 {
 	bIsAttached = false;
-
+	MulticastStopWireEffects(); 
 	if (Character && Character->GetCharacterMovement()) {
 		if (ZipperAudioComponent && ZipperAudioComponent->IsPlaying())
 		{
@@ -384,6 +441,7 @@ void UWireComponent::ServerReleaseWire_Implementation()
 }
 void UWireComponent::ServerFireWire_Implementation()
 {
+	if (Character->bIsCrouched) return;
 	if (!bCanFireWire) return;
 	if (!Character) return;
 	if (Character->IsElimmed() || Character->bIsDodging ||
@@ -428,6 +486,7 @@ void UWireComponent::ServerFireWire_Implementation()
 void UWireComponent::FireWire()
 {
 	if (!bCanFireWire) return;
+	if (Character->bIsCrouched) return;
 	if (Character && !Character->HasAuthority())
 	{
 		ServerFireWire();
@@ -556,7 +615,22 @@ void UWireComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 		}
 	}
 	else {
-		ClientWallFail();
+		// 클라 보정이 필요하다면 'RPC 호출'이 아니라 '로컬'로 처리
+		if (Character && Character->IsLocallyControlled() && bIsAttached)
+		{
+			// 벽 체크 & 너무 가까우면 로컬에서 먼저 풀기 요청
+			FHitResult WallHit;
+			FCollisionQueryParams Params;
+			Params.AddIgnoredActor(Character);
+			bool bBlocked = GetWorld()->LineTraceSingleByChannel(
+				WallHit, Character->GetActorLocation(), WireTarget, ECC_Visibility, Params);
+
+			float Dist = (WireTarget - Character->GetActorLocation()).Size();
+			if ((bBlocked && WallHit.Distance < 100.f) || Dist <= 120.f)
+			{
+				ReleaseWire(); // 이건 서버 RPC를 타게 됨
+			}
+		}
 	}
 
 }

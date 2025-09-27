@@ -6,6 +6,8 @@
 #include "CharacterOverlay.h"
 #include "Alert.h"
 #include "ChatWidget.h"
+#include "UnrealProject_7A/Character/TimeFractureCharacter.h"
+#include "UnrealProject_7A/TFComponents/CBComponent.h"
 void ATFHUD::DrawHUD()
 {
 	Super::DrawHUD(); //drawhud의 베이스 함수를 불러옴
@@ -67,11 +69,34 @@ void ATFHUD::BeginPlay()
 
 void ATFHUD::AddCharacterOverlay()
 {
+	/*
 	APlayerController* PlayerController=GetOwningPlayerController(); //현재 플레이어 컨트롤러를 가져옴
 	if (PlayerController && CharacterOverlayClass) //플레이어 컨트롤러가 유효하고 캐릭터 오버레이 클래스가 설정되어 있다면
 	{
 		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharacterOverlayClass); //캐릭터 오버레이 위젯을 생성
 		CharacterOverlay->AddToViewport(); //위젯을 화면에 추가
+	}
+	*/
+	APlayerController* PlayerController = GetOwningPlayerController();
+	if (PlayerController && CharacterOverlayClass)
+	{
+		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharacterOverlayClass);
+		if (CharacterOverlay)
+		{
+			CharacterOverlay->AddToViewport();
+
+			// ★★★ 오버레이가 방금 생겼으니 현재값을 즉시 HUD로 밀어넣는다.
+			if (APawn* P = PlayerController->GetPawn())
+			{
+				if (ATimeFractureCharacter* C = Cast<ATimeFractureCharacter>(P))
+				{
+					if (UCBComponent* CB = C->GetCombatComponent())
+					{
+						CB->PushAllHUDFromCombat();
+					}
+				}
+			}
+		}
 	}
 }
 

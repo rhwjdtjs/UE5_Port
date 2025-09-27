@@ -100,4 +100,6 @@ private:
 
 	UFUNCTION()
 	void OnRep_WireState();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastStopWireEffects();
 };

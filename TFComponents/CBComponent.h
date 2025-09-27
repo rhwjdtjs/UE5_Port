@@ -22,6 +22,8 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;	//복제하는 항목을 정의하는 함수
 	UFUNCTION(BlueprintCallable)
 	void FinishReload(); //재장전 완료 함수
+	UFUNCTION(BlueprintCallable)
+	void PushAllHUDFromCombat();
 	UFUNCTION(Server, Reliable)
 	void ServerFinishReload();
 	void FireButtonPressed(bool bPressed); //발사 버튼이 눌렸을 때 호출되는 함수
