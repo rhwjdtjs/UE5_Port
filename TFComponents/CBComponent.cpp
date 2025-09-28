@@ -701,9 +701,9 @@ void UCBComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 		SetHUDCrossharis(DeltaTime); // 매 프레임마다 HUD의 크로스헤어를 설정한다.
 		InterpFOV(DeltaTime); // FOV를 보간한다.
 	}
-	//if (EquippedWeapon) {
-//		UpdateHUDGrenades(); //HUD의 수류탄 개수를 업데이트한다.
-//	}
+	if (EquippedWeapon) {
+		UpdateHUDGrenades(); //HUD의 수류탄 개수를 업데이트한다.
+	}
 }
 bool UCBComponent::ShouldSwapWeapons()
 {

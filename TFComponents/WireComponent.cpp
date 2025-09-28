@@ -75,55 +75,6 @@ void UWireComponent::ClientWallFail_Implementation()
 }
 void UWireComponent::MulticastWireSuccess_Implementation()
 {
-	/*
-	bCanFireWire = false;
-
-	// 쿨타임 시작
-	if (UWorld* World = GetWorld())
-	{
-		World->GetTimerManager().SetTimer(
-			CooldownTimerHandle,
-			this,
-			&UWireComponent::ResetWireCooldown,
-			WireCooldown,
-			false
-		);
-	}
-
-	// 로컬 UI 처리
-	if (Character && Character->IsLocallyControlled())
-	{
-		if (!WireCooldownWidget && WireCooldownWidgetClass)
-		{
-			WireCooldownWidget = CreateWidget<UUserWidget>(
-				Character->GetWorld(),
-				WireCooldownWidgetClass
-			);
-			if (WireCooldownWidget)
-			{
-				WireCooldownWidget->AddToViewport();
-				WireCooldownText = Cast<UTextBlock>(
-					WireCooldownWidget->GetWidgetFromName(TEXT("WireCoolTime"))
-				);
-			}
-		}
-
-		if (WireCooldownWidget)
-		{
-			WireCooldownWidget->SetVisibility(ESlateVisibility::Visible);
-		}
-
-		RemainingCooldown = WireCooldown;
-		UpdateWireCooldownUI();
-		Character->GetWorldTimerManager().SetTimer(
-			CooldownUITimerHandle,
-			this,
-			&UWireComponent::TickWireCooldownUI,
-			1.0f,
-			true
-		);
-	}
-	*/
 	bCanFireWire = false;
 
 	if (UWorld* World = GetWorld())
@@ -494,52 +445,6 @@ void UWireComponent::FireWire()
 	else {
 		ServerFireWire();
 	}
-	/*
-	if (Character && Character->IsLocallyControlled())
-	{
-		if (!WireCooldownWidget && WireCooldownWidgetClass)
-		{
-			WireCooldownWidget = CreateWidget<UUserWidget>(
-				Character->GetWorld(),
-				WireCooldownWidgetClass
-			);
-			if (WireCooldownWidget)
-			{
-				WireCooldownWidget->AddToViewport();
-				WireCooldownText = Cast<UTextBlock>(
-					WireCooldownWidget->GetWidgetFromName(TEXT("WireCoolTime"))
-				);
-			}
-		}
-
-		if (WireCooldownWidget)
-		{
-			WireCooldownWidget->SetVisibility(ESlateVisibility::Visible);
-		}
-
-		RemainingCooldown = WireCooldown;
-		UpdateWireCooldownUI();
-		Character->GetWorldTimerManager().SetTimer(
-			CooldownUITimerHandle,
-			this,
-			&UWireComponent::TickWireCooldownUI,
-			1.0f,
-			true
-		);
-	}
-
-	bCanFireWire = false;
-	if (UWorld* World = GetWorld())
-	{
-		World->GetTimerManager().SetTimer(
-			CooldownTimerHandle,
-			this,
-			&UWireComponent::ResetWireCooldown,
-			WireCooldown,
-			false
-		);
-	}
-	*/
 }
 
 void UWireComponent::ReleaseWire()

@@ -27,6 +27,8 @@
 #include "UnrealProject_7A/HUD/LobbyWidget.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include "Blueprint/WidgetBlueprintLibrary.h" // Alert/Overlay 위젯을 안전하게 강제 제거할 때 사용
+
 
 void ATFPlayerController::ClientAddKillFeedMessage_Implementation(const FString& Killer, const FString& Victim)
 {
@@ -34,50 +36,13 @@ void ATFPlayerController::ClientAddKillFeedMessage_Implementation(const FString&
 }
 void ATFPlayerController::AddKillFeedMessage(const FString& Killer, const FString& Victim)
 {
-	/*
-	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud;
-	if (!TfHud) return;
-
-	//  Overlay가 없다면 즉시 생성 시도
-	if (!TfHud->CharacterOverlay)
-	{
-		TfHud->AddCharacterOverlay();
-	}
-
-	if (!TfHud->CharacterOverlay) return; // 그래도 없으면 포기
-
-	UScrollBox* KillFeedBox = TfHud->CharacterOverlay->KillFeedBox;
-	if (!KillFeedBox) return;
-
-	UWidgetTree* WT = TfHud->CharacterOverlay->WidgetTree;
-	if (!WT) return;
-
-	UTextBlock* NewMessage = WT->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
-	const FString Msg = FString::Printf(TEXT("%s killed %s"), *Killer, *Victim);
-	NewMessage->SetText(FText::FromString(Msg));
-	KillFeedBox->AddChild(NewMessage);
-
-	//  타이머 핸들을 멤버로 승격해서 중복 타이머/핸들 유실 방지
-	GetWorld()->GetTimerManager().ClearTimer(KillFeedClearTimer);
-	GetWorld()->GetTimerManager().SetTimer(
-		KillFeedClearTimer,
-		[KillFeedBox]() { KillFeedBox->ClearChildren(); },
-		3.f, false
-	);
-
-	if (KillFeedBox->GetChildrenCount() > 5)
-	{
-		KillFeedBox->RemoveChildAt(0);
-	}
-	*/
-	//수정후 코드
 	// InProgress 상태에서만 표시
 	if (MatchState != MatchState::InProgress) return;
 
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud;
 	if (!TfHud) return;
 
-	// Overlay가 없으면 '생성하지 말고' 리턴 (겹침 방지)
+	// Overlay가 없으면 생성하지 않고 리턴 (겹침 방지)
 	if (!TfHud->CharacterOverlay) return;
 
 	UScrollBox* KillFeedBox = TfHud->CharacterOverlay->KillFeedBox;
@@ -91,14 +56,19 @@ void ATFPlayerController::AddKillFeedMessage(const FString& Killer, const FStrin
 	NewMessage->SetText(FText::FromString(Msg));
 	KillFeedBox->AddChild(NewMessage);
 
+
+	TWeakObjectPtr<UScrollBox> WeakBox = KillFeedBox;
 	GetWorld()->GetTimerManager().ClearTimer(KillFeedClearTimer);
 	GetWorld()->GetTimerManager().SetTimer(
 		KillFeedClearTimer,
-		[KillFeedBox]()
+		[WeakBox]()
 		{
-			if (KillFeedBox) KillFeedBox->ClearChildren();
+			if (WeakBox.IsValid())
+			{
+				WeakBox.Get()->ClearChildren();
+			}
 		},
-		3.f, false
+		5.f, false
 	);
 
 	if (KillFeedBox->GetChildrenCount() > 5)
@@ -117,13 +87,18 @@ void ATFPlayerController::SetupInputComponent()
 }
 void ATFPlayerController::ShowScoreboard()
 {
-	if (ScoreboardWidget == nullptr && ScoreboardClass)
+	if (!ScoreboardClass) return;
+
+	// 재시작/트래블 후: 포인터는 살아있어도 위젯이 죽었거나 뷰포트에서 빠져있을 수 있음
+	if (!IsValid(ScoreboardWidget))
 	{
 		ScoreboardWidget = CreateWidget<UUserWidget>(this, ScoreboardClass);
-		if (ScoreboardWidget)
-		{
-			ScoreboardWidget->AddToViewport(50);
-		}
+		if (ScoreboardWidget) { ScoreboardWidget->AddToViewport(50); }
+	}
+	else if (!ScoreboardWidget->IsInViewport())
+	{
+		// 뷰포트에 없으면 다시 얹기
+		ScoreboardWidget->AddToViewport(50);
 	}
 
 	if (ScoreboardWidget)
@@ -160,13 +135,6 @@ void ATFPlayerController::ShowReturnToMainMenu()
 void ATFPlayerController::ClientShowKilledWidget_Implementation()
 {
 	if (KilledWidgetClass == nullptr) return;
-
-	//if (KilledWidgetInstance)
-	//{
-	//	KilledWidgetInstance->RemoveFromParent();
-//		KilledWidgetInstance = nullptr;
-//	}
-
 	KilledWidgetInstance = CreateWidget<UUserWidget>(this, KilledWidgetClass);
 	if (KilledWidgetInstance)
 	{
@@ -182,13 +150,6 @@ void ATFPlayerController::ClientShowKilledWidget_Implementation()
 void ATFPlayerController::ClientShowKillWidget_Implementation()
 {
 	if (KillWidgetClass == nullptr) return;
-
-	//if (KillWidgetInstance)
-	//{
-//		KillWidgetInstance->RemoveFromParent();
-//		KillWidgetInstance = nullptr;
-//	}
-
 	KillWidgetInstance = CreateWidget<UUserWidget>(this, KillWidgetClass);
 	if (KillWidgetInstance)
 	{
@@ -349,7 +310,7 @@ void ATFPlayerController::OnPossess(APawn* InPawn)
 	bShowMouseCursor = false;
 	FInputModeGameOnly InputMode;
 	SetInputMode(InputMode);
-	
+	StartUIKeepAlive();
 }
 
 void ATFPlayerController::SetHUDTime()
@@ -380,47 +341,11 @@ void ATFPlayerController::SetHUDTime()
 		SetHUDAlertCountDown(TimeLeft);
 	else if (MatchState == MatchState::InProgress)
 		SetHUDMatchCountdown(TimeLeft);
-	/*
-	float TimeLeft = 0.f;
-	if (MatchState == MatchState::WaitingToStart)
-		TimeLeft = WarmupTime - GetServerTime() + LevelStartingTime;
-	else if (MatchState == MatchState::InProgress)
-		TimeLeft = WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
-	else if (MatchState == MatchState::CoolDown)
-		TimeLeft = CoolDownTime + WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
 
-	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
-
-	if (HasAuthority())
+	if (MatchState == MatchState::InProgress)
 	{
-		TFGameMode = TFGameMode == nullptr ? Cast<ATFGameMode>(UGameplayStatics::GetGameMode(this)) : TFGameMode;
-		if (TFGameMode)
-		{
-			
-			//SecondsLeft = FMath::CeilToInt(TFGameMode->GetCountdownTime());
-			TimeLeft = TFGameMode->GetCountdownTime(); //버그후 수정 코드
-		}
+		HideAlertIfAny();
 	}
-	//버그후 수정코드
-	if (MatchState == MatchState::WaitingToStart || MatchState == MatchState::CoolDown)
-	{
-		SetHUDAlertCountDown(TimeLeft);
-	}
-	else if (MatchState == MatchState::InProgress)
-	{
-		SetHUDMatchCountdown(TimeLeft);
-	}
-	*/
-	/*
-	if (CountdownInt != SecondsLeft)
-	{
-		if (MatchState == MatchState::WaitingToStart || MatchState == MatchState::CoolDown)
-			SetHUDAlertCountDown(TimeLeft);
-		if (MatchState == MatchState::InProgress)
-			SetHUDMatchCountdown(TimeLeft);
-	}
-	CountdownInt = SecondsLeft;
-	*/
 }
 void ATFPlayerController::CheckTimeSync(float DeltaTime)
 {
@@ -472,224 +397,163 @@ void ATFPlayerController::OnRep_MatchState() {
 	OnMatchStateSet(MatchState);
 }
 void ATFPlayerController::OnMatchStateSet(FName State) {
-
-	MatchState = State;
-
-	if (MatchState == MatchState::InProgress)
-	{
-		HandleMatchHasStarted();
-	}
-	else if (MatchState == MatchState::CoolDown)
-	{
-		HandleCoolDown();
-	}
-	else if (MatchState == MatchState::WaitingToStart)
-	{
-		// 웜업 경고창 필요시 추가
-		TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud;
-		if (TfHud && !TfHud->Alert)
-		{
-			TfHud->AddAlert();
-		}
-	}
+	MatchState = State;          // 상태만 반영
+	ApplyMatchStateUI_Local(MatchState);  // 로컬 UI 전환
 }
 void ATFPlayerController::HandleMatchHasStarted() {
+	if (HasAuthority()) Client_HideAlert(); else HideAlertIfAny(); 
+	EnsureOverlayAndSync();
+}
+void ATFPlayerController::OnUnPossess()
+{
+	Super::OnUnPossess();
+
 	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud;
-	if (!TfHud)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("HandleMatchHasStarted: TfHud is null!"));
-		return;
-	}
 
-	if (TfHud->CharacterOverlay == nullptr)
-	{
-		TfHud->AddCharacterOverlay();
-	}
+	
+	GetWorldTimerManager().ClearTimer(KillFeedClearTimer);
 
-	if (IsLocalController())
+	if (MatchState == MatchState::CoolDown)
 	{
-		if (TfHud->Alert)
+		if (TfHud && TfHud->CharacterOverlay)
 		{
-			// 강제 제거
-			TfHud->Alert->RemoveFromParent();
-			TfHud->Alert = nullptr;
-			UE_LOG(LogTemp, Warning, TEXT("HandleMatchHasStarted: Alert removed from parent"));
+			TfHud->CharacterOverlay->RemoveFromParent();
+			TfHud->CharacterOverlay = nullptr; // ★ 쿨다운에서만 제거
 		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("HandleMatchHasStarted: Alert is null, nothing to remove"));
-		}
+		// 쿨다운에선 Alert 필요(승자 정보 등)
+		EnsureAlert();
 	}
 }
 void ATFPlayerController::HandleCoolDown()
 {
-	/*
-	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud;
-	if (!TfHud) return;
+TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud;
+if (!TfHud) return;
 
-	if (TfHud->CharacterOverlay)
+// 킬피드 타이머 정리(뒤늦은 콜백으로 파괴된 위젯 접근 방지)
+GetWorldTimerManager().ClearTimer(KillFeedClearTimer);
+
+// 오버레이는 쿨다운 동안 숨김 (겹침 방지)
+if (TfHud->CharacterOverlay)
+{
+	TfHud->CharacterOverlay->RemoveFromParent();
+	TfHud->CharacterOverlay = nullptr;
+}
+
+EnsureAlert(); // Alert 위젯 보장
+
+if (TfHud->Alert)
+{
+	TfHud->Alert->SetVisibility(ESlateVisibility::Visible);
+	TfHud->Alert->AlertText->SetText(FText::FromString(TEXT("New Match Starting In:")));
+
+	if (ATFGameState* GS = Cast<ATFGameState>(UGameplayStatics::GetGameState(this)))
 	{
-		TfHud->CharacterOverlay->RemoveFromParent();
-		TfHud->CharacterOverlay = nullptr;
-	}
+		// 1) 원래 의도: GameState가 관리하는 TopScorePlayers 사용
+		TArray<ATFPlayerState*> TopPlayers = GS->TopScorePlayers;
 
-	if (!TfHud->Alert)
-	{
-		TfHud->AddAlert();
-	}
-
-	if (TfHud->Alert)
-	{
-		TfHud->Alert->SetVisibility(ESlateVisibility::Visible);
-		TfHud->Alert->AlertText->SetText(FText::FromString(TEXT("New Match Starting In:")));
-
-		if (ATFGameState* GS = Cast<ATFGameState>(UGameplayStatics::GetGameState(this)))
+		// 2) 폴백: 혹시 TopScorePlayers가 비었으면 직접 PlayerArray 스캔해서 동점자 계산
+		if (TopPlayers.Num() == 0)
 		{
-			if (ATFPlayerState* PS = GetPlayerState<ATFPlayerState>())
+			float TopScore = TNumericLimits<float>::Lowest();
+			for (APlayerState* APS : GS->PlayerArray)
 			{
-				const TArray<ATFPlayerState*>& TopPlayers = GS->TopScorePlayers;
-				FString Info;
-				if (TopPlayers.Num() == 0)
+				if (ATFPlayerState* TPS = Cast<ATFPlayerState>(APS))
 				{
-					Info = TEXT("No Winner");
-				}
-				else if (TopPlayers.Num() == 1 && TopPlayers[0] == PS)
-				{
-					Info = TEXT("You are the Winner");
-				}
-				else if (TopPlayers.Num() == 1)
-				{
-					Info = FString::Printf(TEXT("Winner: %s"), *TopPlayers[0]->GetPlayerName());
-				}
-				else
-				{
-					Info = TEXT("Players tied for the win:\n");
-					for (ATFPlayerState* P : TopPlayers)
+					if (TPS->GetScore() > TopScore)
 					{
-						Info.Append(P->GetPlayerName());
-						Info.Append(TEXT("\n"));
+						TopScore = TPS->GetScore();
 					}
 				}
-				TfHud->Alert->InfoText->SetText(FText::FromString(Info));
 			}
-		}
-	}
-
-	if (ATimeFractureCharacter* MyChar = Cast<ATimeFractureCharacter>(GetPawn()))
-	{
-		if (MyChar->GetCombatComponent())
-		{
-			MyChar->bDisableGameplay = true;
-			MyChar->GetCombatComponent()->FireButtonPressed(false);
-		}
-	}
-	*/
-	//수정후 코드
-	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud;
-	if (!TfHud) return;
-
-	// 킬피드 타이머 정리
-	GetWorldTimerManager().ClearTimer(KillFeedClearTimer);
-
-	if (TfHud->CharacterOverlay)
-	{
-		TfHud->CharacterOverlay->RemoveFromParent();
-		TfHud->CharacterOverlay = nullptr;
-	}
-
-	if (!TfHud->Alert)
-	{
-		TfHud->AddAlert();
-	}
-
-	if (TfHud->Alert)
-	{
-		TfHud->Alert->SetVisibility(ESlateVisibility::Visible);
-		TfHud->Alert->AlertText->SetText(FText::FromString(TEXT("New Match Starting In:")));
-
-		if (ATFGameState* GS = Cast<ATFGameState>(UGameplayStatics::GetGameState(this)))
-		{
-			if (ATFPlayerState* PS = GetPlayerState<ATFPlayerState>())
+			for (APlayerState* APS : GS->PlayerArray)
 			{
-				const TArray<ATFPlayerState*>& TopPlayers = GS->TopScorePlayers;
-				FString Info;
-				if (TopPlayers.Num() == 0)
+				if (ATFPlayerState* TPS = Cast<ATFPlayerState>(APS))
 				{
-					Info = TEXT("No Winner");
-				}
-				else if (TopPlayers.Num() == 1 && TopPlayers[0] == PS)
-				{
-					Info = TEXT("You are the Winner");
-				}
-				else if (TopPlayers.Num() == 1)
-				{
-					Info = FString::Printf(TEXT("Winner: %s"), *TopPlayers[0]->GetPlayerName());
-				}
-				else
-				{
-					Info = TEXT("Players tied for the win:\n");
-					for (ATFPlayerState* P : TopPlayers)
+					if (FMath::IsNearlyEqual(TPS->GetScore(), TopScore))
 					{
-						Info.Append(P->GetPlayerName());
-						Info.Append(TEXT("\n"));
+						TopPlayers.Add(TPS);
 					}
 				}
-				TfHud->Alert->InfoText->SetText(FText::FromString(Info));
 			}
 		}
-	}
 
-	if (ATimeFractureCharacter* MyChar = Cast<ATimeFractureCharacter>(GetPawn()))
-	{
-		if (MyChar->GetCombatComponent())
+		// 3) 나에게 보여줄 문구 구성
+		if (ATFPlayerState* PS = GetPlayerState<ATFPlayerState>())
 		{
-			MyChar->bDisableGameplay = true;
-			MyChar->GetCombatComponent()->FireButtonPressed(false);
+			FString Info;
+			if (TopPlayers.Num() == 0)
+			{
+				Info = TEXT("No Winner");
+			}
+			else if (TopPlayers.Num() == 1 && TopPlayers[0] == PS)
+			{
+				Info = TEXT("You are the Winner");
+			}
+			else if (TopPlayers.Num() == 1)
+			{
+				Info = FString::Printf(TEXT("Winner: %s"), *TopPlayers[0]->GetPlayerName());
+			}
+			else
+			{
+				Info = TEXT("Players tied for the win:\n");
+				for (ATFPlayerState* P : TopPlayers)
+				{
+					Info.Append(P->GetPlayerName()).Append(TEXT("\n"));
+				}
+			}
+			TfHud->Alert->InfoText->SetText(FText::FromString(Info));
 		}
 	}
 }
+
+// 쿨다운 동안 조작 비활성화(오발/상태 꼬임 방지)
+if (ATimeFractureCharacter* MyChar = Cast<ATimeFractureCharacter>(GetPawn()))
+{
+	if (MyChar->GetCombatComponent())
+	{
+		MyChar->bDisableGameplay = true;
+		MyChar->GetCombatComponent()->FireButtonPressed(false);
+	}
+}
+}
 void ATFPlayerController::ClientJoinMatch_Implementation(FName StateOfMatch, float Warmup, float Match, float StartingTime, float CoolDown)
 {
-	/*
-	MatchState = StateOfMatch;// 매치 상태를 설정한다.
-	WarmupTime = Warmup;// 웜업 시간을 설정한다.
-	MatchTime = Match;// 매치 시간을 설정한다.
-	LevelStartingTime = StartingTime; // 레벨 시작 시간을 설정한다.
-	CoolDownTime = CoolDown; // 쿨다운 시간을 설정한다.
-	OnMatchStateSet(MatchState); // 매치 상태가 변경되었을 때 호출되는 함수를 실행한다.
-	if (TfHud && MatchState == MatchState::WaitingToStart) {
-		TfHud->AddAlert();
-	}
-	
-	else {
-		FTimerHandle DelayHandle;
-		GetWorldTimerManager().SetTimer(DelayHandle, [this]() {
-			if (TfHud && MatchState == MatchState::WaitingToStart) {
-				TfHud->AddAlert();
-			}
-			}, 0.2f, false);
-	}
-	*/
 	MatchState = StateOfMatch;
 	WarmupTime = Warmup;
 	MatchTime = Match;
 	LevelStartingTime = StartingTime;
 	CoolDownTime = CoolDown;
+	ApplyMatchStateUI_Local(MatchState);
+}
+void ATFPlayerController::ApplyMatchStateUI_Local(FName State)
+{
+	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud;
 
-	OnMatchStateSet(MatchState);  // 복제보다 먼저 호출
-
-	if (TfHud && MatchState == MatchState::WaitingToStart)
+	if (State == MatchState::WaitingToStart)
 	{
-		TfHud->AddAlert();
+		EnsureAlert();
+		if (TfHud && TfHud->Alert)
+		{
+			TfHud->Alert->SetVisibility(ESlateVisibility::Visible);
+			TfHud->Alert->AlertText->SetText(FText::FromString(TEXT("Match Starting In:")));
+		}
 	}
-	else
+	else if (State == MatchState::InProgress)
 	{
-		FTimerHandle DelayHandle;
-		GetWorldTimerManager().SetTimer(DelayHandle, [this]() {
-			if (TfHud && MatchState == MatchState::WaitingToStart) {
-				TfHud->AddAlert();
-			}
-			}, 0.2f, false);
+		// 인게임 시작: Alert 완전 제거 + Overlay 보장 + Combat에서 HUD 한방 동기화
+		HideAlertIfAny();
+		EnsureOverlayAndSync();
+
+		// (서버·레이스 방지) 0.1초 후 한 번 더 Alert 싹 정리
+		FTimerHandle Th;
+		GetWorldTimerManager().SetTimer(Th, [this]()
+			{
+				HideAlertIfAny();
+			}, 0.1f, false);
+	}
+	else if (State == MatchState::CoolDown)
+	{
+		HandleCoolDown(); // 내부에서 오버레이 제거 + Alert 보장 + 승자표시 수행
 	}
 }
 void ATFPlayerController::ServerCheckMatchState_Implementation()
@@ -871,49 +735,6 @@ void ATFPlayerController::UpdateScoreboard()
 			}
 		}
 	}
-/*
-void ATFPlayerController::UpdateScoreboard()
-{
-	if (!ScoreboardWidget) return;
-
-	UScrollBox* PlayerListBox = Cast<UScrollBox>(ScoreboardWidget->GetWidgetFromName(TEXT("PlayerListBox")));
-	if (!PlayerListBox) return;
-
-	PlayerListBox->ClearChildren();
-
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	{
-		ATFPlayerController* PC = Cast<ATFPlayerController>(*It);
-		if (!PC || !PC->PlayerState) continue;
-
-		ATFPlayerState* PS = Cast<ATFPlayerState>(PC->PlayerState);
-		if (!PS) continue;
-		if (!ScoreboardRowClass) continue;
-		UUserWidget* Row = CreateWidget<UUserWidget>(this, ScoreboardRowClass);
-		if (!Row) continue;
-
-		UTextBlock* NameText = Cast<UTextBlock>(Row->GetWidgetFromName(TEXT("NameText")));
-		UTextBlock* KillsText = Cast<UTextBlock>(Row->GetWidgetFromName(TEXT("KillsText")));
-		UTextBlock* DeathsText = Cast<UTextBlock>(Row->GetWidgetFromName(TEXT("DeathsText")));
-
-		if (NameText) {
-			FString DisplayString = PS->GetPlayerName() + TEXT(" / ");
-			NameText->SetText(FText::FromString(DisplayString));
-		}
-		if (KillsText) {
-			FString DisplayString = FString::FromInt(FMath::FloorToInt(PS->GetScore())) + TEXT(" / ");
-			KillsText->SetText(FText::FromString(DisplayString));
-		}
-		if (DeathsText)
-		{
-			DeathsText->SetText(FText::AsNumber(PS->GetDefeats()));
-		}
-
-		PlayerListBox->AddChild(Row);
-	}
-	}
-	*/
-// CharacterHUD 헤더파일을 포함시킨다.
 void ATFPlayerController::BeginPlay()
 {
 	Super::BeginPlay(); // 부모 클래스의 BeginPlay 호출
@@ -939,19 +760,108 @@ void ATFPlayerController::BeginPlay()
 
 	// HUD 초기화 보장
 	GetWorldTimerManager().SetTimer(PollInitTimerHandle, this, &ATFPlayerController::PollInit, 0.2f, true);
+	StartUIKeepAlive();
 }
 void ATFPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime); // 부모 클래스의 Tick 호출
 	SetHUDTime(); // HUD의 시간을 설정한다.
 	CheckTimeSync(DeltaTime); // 시간 동기화를 확인한다.
-	if (!CharacterOverlay)
+	if (!CharacterOverlay && MatchState == MatchState::InProgress)
 	{
 		PollInit();
+		EnsureOverlayAndSync();
 	}
+
 }
 void ATFPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps); // 부모 클래스의 GetLifetimeReplicatedProps 호출
 	DOREPLIFETIME(ATFPlayerController, MatchState); // MatchState 변수를 복제한다.
+}
+void ATFPlayerController::StartUIKeepAlive()
+{
+	GetWorldTimerManager().SetTimer(UIKeepAliveTimerHandle, this, &ATFPlayerController::UIKeepAliveTick, 1.5f, true);
+}
+void ATFPlayerController::UIKeepAliveTick()
+{
+	if (MatchState == MatchState::InProgress)
+	{
+		EnsureOverlayAndSync();  // 없으면 생성, 있으면 Combat에서 HUD값 강제 푸시
+		HideAlertIfAny();        // 진행 중에는 Alert 잔존 방지
+	}
+}
+void ATFPlayerController::EnsureOverlayAndSync()
+{
+	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud;
+	if (!TfHud) return;
+
+	if (!TfHud->CharacterOverlay)
+	{
+		TfHud->AddCharacterOverlay();
+	}
+
+	CharacterOverlay = TfHud->CharacterOverlay;
+
+	if (APawn* P = GetPawn())
+	{
+		if (ATimeFractureCharacter* C = Cast<ATimeFractureCharacter>(P))
+		{
+			if (UCBComponent* CB = C->GetCombatComponent())
+			{
+				CB->PushAllHUDFromCombat();
+			}
+		}
+	}
+}
+void ATFPlayerController::EnsureAlert()
+{
+	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud;
+	if (TfHud && !TfHud->Alert)
+	{
+		TfHud->AddAlert();
+	}
+}
+void ATFPlayerController::HideAlertIfAny()
+{
+	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud;
+	if (!TfHud) return;
+
+	bool bRemoved = false;
+
+	// 1) 우리가 추적하던 포인터 제거
+	if (TfHud->Alert)
+	{
+		TfHud->Alert->SetVisibility(ESlateVisibility::Hidden);
+		TfHud->Alert->RemoveFromParent();
+		TfHud->Alert = nullptr;
+		bRemoved = true;
+	}
+
+		if (TfHud->AlertClass)
+		{
+			TArray<UUserWidget*> Existing;
+			UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, Existing, TfHud->AlertClass, /*TopLevelOnly=*/false);
+			for (UUserWidget* W : Existing)
+			{
+				if (W) { W->RemoveFromParent(); }
+			}
+		}
+}
+void ATFPlayerController::Client_ShowAlert_Implementation(const FString& Title)
+{
+	TfHud = TfHud == nullptr ? Cast<ATFHUD>(GetHUD()) : TfHud;
+	if (!TfHud) return;
+
+	if (!TfHud->Alert) TfHud->AddAlert();
+	if (TfHud->Alert)
+	{
+		TfHud->Alert->SetVisibility(ESlateVisibility::Visible);
+		TfHud->Alert->AlertText->SetText(FText::FromString(Title));
+	}
+}
+
+void ATFPlayerController::Client_HideAlert_Implementation()
+{
+	HideAlertIfAny();
 }

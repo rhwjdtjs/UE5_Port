@@ -127,13 +127,14 @@ private:
 
 	UFUNCTION()
 	void HideScoreboard();
-
+	void ApplyMatchStateUI_Local(FName State);
 protected:
 	virtual void BeginPlay() override; // 플레이어 컨트롤러가 시작될 때 호출되는 함수
 	void SetHUDTime(); // HUD의 시간을 설정하는 함수
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;	//복제하는 항목을 정의하는 함수
 	void PollInit(); // 허드와 같은 함수 초기화
 	void HandleMatchHasStarted(); // 매치가 시작되었을 때 호출되는 함수
+	virtual void OnUnPossess() override;
 	//
 	//클라이언트와 서버 시간 맞추기
 	UFUNCTION(Server, Reliable)
@@ -148,5 +149,22 @@ protected:
 	float TimeSyncFrequency = 5.f; // 시간 동기화 주기 (초 단위)
 	float TimeSyncRunningTime = 0.f; // 시간 동기화가 얼마나 진행되었는지 저장하는 변수
 	float ClientServerDelta = 0.f; // 클라이언트와 서버 간의 시간 차이를 저장하는 변수
-	/** 새로 소유한 폰/컴뽀넌트 참조 캐싱 + 현재 값 즉시 HUD 반영(오버레이 없으면 캐시에 저장) */
+	// === 새로 추가: 오버레이/Alert 보정 & 한 방 동기화 ===
+	void EnsureOverlayAndSync(); // Overlay 보장 + Combat에서 전체 HUD 강제 푸시
+	void EnsureAlert();          // Alert 보장
+	void HideAlertIfAny();       // Alert 강제 숨김/제거
+
+	// === 새로 추가: 주기 점검 ===
+	void StartUIKeepAlive();
+	void UIKeepAliveTick(); // 오버레이 사라졌으면 재생성+동기화
+	public:
+		// Alert 위젯을 클라에서 명시적으로 토글하기 위한 RPC
+		UFUNCTION(Client, Reliable)
+		void Client_ShowAlert(const FString& Title);
+
+		UFUNCTION(Client, Reliable)
+		void Client_HideAlert();
+private:
+	// 주기 보정 타이머
+	FTimerHandle UIKeepAliveTimerHandle;
 };

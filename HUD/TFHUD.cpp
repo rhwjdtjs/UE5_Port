@@ -8,6 +8,7 @@
 #include "ChatWidget.h"
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h"
 #include "UnrealProject_7A/TFComponents/CBComponent.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
 void ATFHUD::DrawHUD()
 {
 	Super::DrawHUD(); //drawhud의 베이스 함수를 불러옴
@@ -41,11 +42,29 @@ void ATFHUD::DrawHUD()
 
 void ATFHUD::AddAlert()
 {
-	APlayerController* PlayerController = GetOwningPlayerController(); //현재 플레이어 컨트롤러를 가져옴
-	if (PlayerController && AlertClass) //플레이어 컨트롤러가 유효하고 캐릭터 오버레이 클래스가 설정되어 있다면
+	APlayerController* PC = GetOwningPlayerController();
+	if (!PC || !AlertClass) return;
+
+	// 0) 뷰포트에 같은 클래스의 Alert가 있으면 전부 제거(중복 AddToViewport 방지)
+	TArray<UUserWidget*> Existing;
+	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(PC, Existing, AlertClass, false);
+	for (UUserWidget* W : Existing)
 	{
-		Alert = CreateWidget<UAlert>(PlayerController, AlertClass); //캐릭터 오버레이 위젯을 생성
-		Alert->AddToViewport(); //위젯을 화면에 추가
+		if (W) W->RemoveFromParent();
+	}
+
+	// 1) 우리가 추적하던 포인터도 정리
+	if (Alert)
+	{
+		Alert->RemoveFromParent();
+		Alert = nullptr;
+	}
+
+	// 2) 새로 생성 + 상단 레이어에 추가
+	Alert = CreateWidget<UAlert>(PC, AlertClass);
+	if (Alert)
+	{
+		Alert->AddToViewport(5);
 	}
 }
 
@@ -69,31 +88,38 @@ void ATFHUD::BeginPlay()
 
 void ATFHUD::AddCharacterOverlay()
 {
-	/*
-	APlayerController* PlayerController=GetOwningPlayerController(); //현재 플레이어 컨트롤러를 가져옴
-	if (PlayerController && CharacterOverlayClass) //플레이어 컨트롤러가 유효하고 캐릭터 오버레이 클래스가 설정되어 있다면
-	{
-		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharacterOverlayClass); //캐릭터 오버레이 위젯을 생성
-		CharacterOverlay->AddToViewport(); //위젯을 화면에 추가
-	}
-	*/
-	APlayerController* PlayerController = GetOwningPlayerController();
-	if (PlayerController && CharacterOverlayClass)
-	{
-		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharacterOverlayClass);
-		if (CharacterOverlay)
-		{
-			CharacterOverlay->AddToViewport();
+	APlayerController* PC = GetOwningPlayerController();
+	if (!PC || !CharacterOverlayClass) return;
 
-			// ★★★ 오버레이가 방금 생겼으니 현재값을 즉시 HUD로 밀어넣는다.
-			if (APawn* P = PlayerController->GetPawn())
+	// 0) 혹시 뷰포트에 같은 클래스의 위젯이 남아 있으면 전부 제거(블프/코드 중복 추가 케이스 방지)
+	TArray<UUserWidget*> Existing;
+	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(PC, Existing, CharacterOverlayClass, false);
+	for (UUserWidget* W : Existing)
+	{
+		if (W) W->RemoveFromParent();
+	}
+
+	// 1) 우리가 추적하던 포인터도 정리
+	if (CharacterOverlay)
+	{
+		CharacterOverlay->RemoveFromParent();
+		CharacterOverlay = nullptr;
+	}
+
+	// 2) 새로 생성 + 뷰포트에 추가
+	CharacterOverlay = CreateWidget<UCharacterOverlay>(PC, CharacterOverlayClass);
+	if (CharacterOverlay)
+	{
+		CharacterOverlay->AddToViewport(1);
+
+		// 3) 생성 직후 Combat → HUD 값 즉시 동기화 (리스폰/복구 직후 빈 화면 방지)
+		if (APawn* P = PC->GetPawn())
+		{
+			if (ATimeFractureCharacter* C = Cast<ATimeFractureCharacter>(P))
 			{
-				if (ATimeFractureCharacter* C = Cast<ATimeFractureCharacter>(P))
+				if (UCBComponent* CB = C->GetCombatComponent())
 				{
-					if (UCBComponent* CB = C->GetCombatComponent())
-					{
-						CB->PushAllHUDFromCombat();
-					}
+					CB->PushAllHUDFromCombat();
 				}
 			}
 		}
