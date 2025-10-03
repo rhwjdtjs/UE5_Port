@@ -104,13 +104,13 @@ private:
 	UPROPERTY(EditAnywhere)
 	int32 StartingPistolAmmo = 60; //시작 보유 탄약 수
 	UPROPERTY(EditAnywhere)
-	int32 StartingSMGAmmo = 100; //시작 보유 탄약 수
+	int32 StartingSMGAmmo = 165; //시작 보유 탄약 수
 	UPROPERTY(EditAnywhere)
-	int32 StartingShotgunAmmo = 14; //시작 보유 탄약 수
+	int32 StartingShotgunAmmo = 20; //시작 보유 탄약 수
 	UPROPERTY(EditAnywhere)
-	int32 StartingSniperAmmo = 10; //시작 보유 탄약 수
+	int32 StartingSniperAmmo = 15; //시작 보유 탄약 수
 	UPROPERTY(EditAnywhere)
-	int32 StartingGrenadeAmmo = 10; //시작 보유 탄약 수
+	int32 StartingGrenadeAmmo = 15; //시작 보유 탄약 수
 	UPROPERTY(ReplicatedUsing=OnRep_Grenades)
 	int32 Grenades = 3; //수류탄 개수
 	UPROPERTY(EditAnywhere)

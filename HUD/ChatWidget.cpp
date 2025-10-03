@@ -41,7 +41,7 @@ void UChatWidget::AddChatMessage(const FString& PlayerName, const FString& Messa
     {
         World->GetTimerManager().ClearTimer(AutoCloseTimer);
         World->GetTimerManager().SetTimer(
-            AutoCloseTimer, this, &UChatWidget::ClearChatMessages, 3.f, false
+            AutoCloseTimer, this, &UChatWidget::ClearChatMessages, 17.f, false
         );
     }
 }

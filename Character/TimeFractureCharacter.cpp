@@ -953,7 +953,7 @@ void ATimeFractureCharacter::Tick(float DeltaTime)
 	if (bIsDodging)
 	{
 		FVector ForwardDir = GetActorForwardVector();
-		AddMovementInput(ForwardDir, 3.0f);
+		AddMovementInput(ForwardDir,1.f);
 	}
 	float TargetArmLength = IsAiming() ? AimCameraOffset : normalAimCameraOffset; // 앉으면 더 가까이
 	float NewArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArmLength, DeltaTime, CameraInterpSpeed);
