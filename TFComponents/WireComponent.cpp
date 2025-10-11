@@ -27,18 +27,36 @@ UWireComponent::UWireComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 	SetIsReplicatedByDefault(true);
 }
+// ============================================================
+// [초기화] BeginPlay()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 소유 캐릭터(ATimeFractureCharacter) 캐스팅.
+// ============================================================
 void UWireComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	Character = Cast<ATimeFractureCharacter>(GetOwner());
 
 }
+// ============================================================
+// [복제 항목 등록] GetLifetimeReplicatedProps()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - bIsAttached, WireTarget 네트워크 복제 등록.
+// ============================================================
 void UWireComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UWireComponent, bIsAttached);
 	DOREPLIFETIME(UWireComponent, WireTarget);
 }
+// ============================================================
+// [클라이언트 벽 충돌 처리] ClientWallFail()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 와이어 상태에서 벽과의 거리 감지 후 너무 가깝거나 너무 멀면 해제.
+// ============================================================
 void UWireComponent::ClientWallFail_Implementation()
 {
 	if (bIsAttached && Character)
@@ -73,6 +91,12 @@ void UWireComponent::ClientWallFail_Implementation()
 		}
 	}
 }
+// ============================================================
+// [와이어 성공 멀티캐스트] MulticastWireSuccess()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 와이어 성공 시 쿨다운 시작 및 HUD 표시.
+// ============================================================
 void UWireComponent::MulticastWireSuccess_Implementation()
 {
 	bCanFireWire = false;
@@ -115,6 +139,11 @@ void UWireComponent::MulticastWireSuccess_Implementation()
 			CooldownUITimerHandle, this, &UWireComponent::TickWireCooldownUI, 1.0f, true);
 	}
 }
+// ============================================================
+// [와이어 실패 클라이언트 처리] ClientWireFail()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 타겟 미존재 시 "No Target" 메시지를 HUD에 표시하고 1초 후 자동 숨김.
 void UWireComponent::ClientWireFail_Implementation()
 {
 	if (Character && Character->IsLocallyControlled())
@@ -159,6 +188,12 @@ void UWireComponent::ClientWireFail_Implementation()
 		}
 	}
 }
+// ============================================================
+// [지퍼 사운드 재생] MulticastStartZipperSound()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 와이어 이동 중 루프 사운드를 캐릭터에 부착하여 재생.
+// ============================================================
 void UWireComponent::MulticastStartZipperSound_Implementation()
 {
 	if (Character && ZipperLoopSound)
@@ -177,6 +212,12 @@ void UWireComponent::MulticastStartZipperSound_Implementation()
 		}
 	}
 }
+// ============================================================
+// [와이어 발사 사운드 재생] MulticastPlayWireSound()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 와이어 발사 순간 사운드 재생.
+// ============================================================
 void UWireComponent::MulticastPlayWireSound_Implementation()
 {
 	if (WireFireSound && Character)
@@ -188,6 +229,12 @@ void UWireComponent::MulticastPlayWireSound_Implementation()
 		);
 	}
 }
+// ============================================================
+// [쿨타임 UI 갱신] UpdateWireCooldownUI()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 남은 쿨타임 시간에 따라 HUD 텍스트를 실시간 갱신.
+// ============================================================
 void UWireComponent::UpdateWireCooldownUI()
 {
 	if (!WireCooldownText) return;
@@ -214,6 +261,12 @@ void UWireComponent::UpdateWireCooldownUI()
 		WireCooldownText->SetText(FText::GetEmpty()); // 텍스트 숨김
 	}
 }
+// ============================================================
+// [쿨타임 UI 타이머 틱] TickWireCooldownUI()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 매초 남은 쿨타임을 줄이고, 0초 시 UI 숨김 처리.
+// ============================================================
 void UWireComponent::TickWireCooldownUI()
 {
 	if (WireCooldownText)
@@ -236,6 +289,12 @@ void UWireComponent::TickWireCooldownUI()
 		}
 	}
 }
+// ============================================================
+// [쿨타임 초기화] ResetWireCooldown()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 쿨다운 종료 후 bCanFireWire 플래그를 true로 복귀.
+// ============================================================
 void UWireComponent::ResetWireCooldown()
 {
 	bCanFireWire = true;
@@ -243,6 +302,12 @@ void UWireComponent::ResetWireCooldown()
 void UWireComponent::OnRep_CanFireWire()
 {
 }
+// ============================================================
+// [와이어 시각화] MulticastDrawWire()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 캐릭터 앞에서 타겟까지 디버그 라인으로 와이어 표시.
+// ============================================================
 void UWireComponent::MulticastDrawWire_Implementation(const FVector& Start, const FVector& End)
 {
 	FVector FaceStart = Start;
@@ -263,6 +328,13 @@ void UWireComponent::MulticastDrawWire_Implementation(const FVector& Start, cons
 		1.0f       
 	);
 }
+// ============================================================
+// [와이어 비주얼 이펙트] MulticastPlayWireEffects()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - Niagara 시스템을 사용하여 팔다리에서 와이어 이펙트 생성.
+//   - Impact 지점에서 파티클 폭발 효과 재생.
+// ============================================================
 void UWireComponent::MulticastPlayWireEffects_Implementation(const FVector& Start, const FVector& Target)
 {
 	if (Character && WireTravelEffect)
@@ -327,6 +399,13 @@ void UWireComponent::MulticastPlayWireEffects_Implementation(const FVector& Star
 		);
 	}
 }
+// ============================================================
+// [와이어 상태 복제 응답] OnRep_WireState()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 애님인스턴스 변수(bIsWireAttached) 동기화.
+//   - 해제 시 이펙트 정리.
+// ============================================================
 void UWireComponent::OnRep_WireState()
 {
 	if (!Character) Character = Cast<ATimeFractureCharacter>(GetOwner());
@@ -346,6 +425,12 @@ void UWireComponent::OnRep_WireState()
 		MulticastStopWireEffects(); // 로컬에도 안전하게 정리
 	}
 }
+// ============================================================
+// [이펙트 중단] MulticastStopWireEffects()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 오디오 및 Niagara 이펙트 모두 중단 및 포인터 정리.
+// ============================================================
 void UWireComponent::MulticastStopWireEffects_Implementation()
 {
 	if (ZipperAudioComponent && ZipperAudioComponent->IsPlaying())
@@ -358,6 +443,12 @@ void UWireComponent::MulticastStopWireEffects_Implementation()
 	if (ActiveTravelEffectLeftFront) { ActiveTravelEffectLeftFront->Deactivate(); ActiveTravelEffectLeftFront = nullptr; }
 	if (ActiveTravelEffectRightFront) { ActiveTravelEffectRightFront->Deactivate(); ActiveTravelEffectRightFront = nullptr; }
 }
+// ============================================================
+// [서버 해제 처리] ServerReleaseWire()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 서버에서 와이어 상태를 해제하고 이동 모드를 낙하로 변경.
+// ============================================================
 void UWireComponent::ServerReleaseWire_Implementation()
 {
 	bIsAttached = false;
@@ -390,6 +481,13 @@ void UWireComponent::ServerReleaseWire_Implementation()
 		Character->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling); //걷기모드로 변경
 	}
 }
+// ============================================================
+// [서버 와이어 발사] ServerFireWire()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 시야 방향으로 라인트레이스 후 타겟에 닿으면 와이어 연결.
+//   - 실패 시 클라이언트 피드백 표시.
+// ============================================================
 void UWireComponent::ServerFireWire_Implementation()
 {
 	if (Character->bIsCrouched) return;
@@ -434,6 +532,12 @@ void UWireComponent::ServerFireWire_Implementation()
 	MulticastWireSuccess();
 	
 }
+// ============================================================
+// [와이어 발사 요청] FireWire()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 클라이언트 → 서버 RPC 호출로 와이어 발사 요청.
+// ============================================================
 void UWireComponent::FireWire()
 {
 	if (!bCanFireWire) return;
@@ -446,7 +550,12 @@ void UWireComponent::FireWire()
 		ServerFireWire();
 	}
 }
-
+// ============================================================
+// [와이어 해제 요청] ReleaseWire()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 로컬 및 서버 권한 여부에 따라 RPC로 해제 처리.
+// ============================================================
 void UWireComponent::ReleaseWire()
 {
 	if (Character && !Character->HasAuthority())
@@ -481,7 +590,15 @@ void UWireComponent::ReleaseWire()
 	ServerReleaseWire();
 }
 
-
+// ============================================================
+// [Tick 처리] TickComponent()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 매 프레임마다 와이어 당김 이동, 벽 감지 및 자동 해제 수행.
+// 알고리즘 설명 : 
+//   1. 서버 : 실제 물리 이동 처리.
+//   2. 클라이언트 : 로컬 보정 및 자동 해제 요청.
+// ============================================================
 void UWireComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);

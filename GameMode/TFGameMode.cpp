@@ -1,117 +1,193 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
-#include "TFGameMode.h"
+ï»¿#include "TFGameMode.h"
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h"
 #include "UnrealProject_7A/PlayerController/TFPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerStart.h"
 #include "UnrealProject_7A/PlayerState/TFPlayerState.h"
 #include "UnrealProject_7A/GameState/TFGameState.h"
+#include "UnrealProject_7A/System/TFGameInstance.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
-#include "UnrealProject_7A/System/TFGameInstance.h"
+
 namespace MatchState {
-	const FName CoolDown = FName(TEXT("CoolDown")); //°æ±â ½Ã°£ÀÌ ³¡³ª°í ½ÂÀÚ¸¦ °áÁ¤ÇÏ´Â »óÅÂ
-}
-ATFGameMode::ATFGameMode()
-{
-	bDelayedStart = true; //°ÔÀÓ ½ÃÀÛÀ» Áö¿¬½ÃÅ²´Ù.
-	bUseSeamlessTravel = true; // ²À È°¼ºÈ­
+	const FName CoolDown = FName(TEXT("CoolDown")); // ê²½ê¸° ì¢…ë£Œ í›„ ìŠ¹ì ê²°ì • ìƒíƒœ
 }
 
+/////////////////////////////////////////////////////////////
+// ê¸°ëŠ¥:
+//   ê²Œì„ëª¨ë“œ ìƒì„±ì. ê¸°ë³¸ ì„¤ì •ì„ ì´ˆê¸°í™”í•œë‹¤.
+//
+// ì•Œê³ ë¦¬ì¦˜:
+//   - bDelayedStart = true : BeginPlay í›„ ìë™ìœ¼ë¡œ ê²Œì„ì´ ì‹œì‘ë˜ì§€ ì•Šë„ë¡ ì„¤ì •.
+//   - bUseSeamlessTravel = true : ë§µ ì´ë™ ì‹œ í”Œë ˆì´ì–´ ì—°ê²°ì´ ëŠê¸°ì§€ ì•Šê²Œ í•œë‹¤.
+/////////////////////////////////////////////////////////////
+ATFGameMode::ATFGameMode()
+{
+	bDelayedStart = true;
+	bUseSeamlessTravel = true;
+}
+
+/////////////////////////////////////////////////////////////
+// ê¸°ëŠ¥:
+//   ë§¤ í”„ë ˆì„ë§ˆë‹¤ í˜¸ì¶œë˜ì–´ ê²½ê¸° ìƒíƒœë¥¼ ê´€ë¦¬í•œë‹¤.
+//
+// ì•Œê³ ë¦¬ì¦˜:
+//   - DeltaTimeì€ í”„ë ˆì„ ê°„ ì‹œê°„ ê°„ê²©.
+//   - WarmupToStartMatch()ë¥¼ í˜¸ì¶œí•˜ì—¬ ì‹œê°„ ê¸°ë°˜ ìƒíƒœ ì „í™˜ì„ ìˆ˜í–‰í•œë‹¤.
+/////////////////////////////////////////////////////////////
 void ATFGameMode::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime); //ºÎ¸ğ Å¬·¡½ºÀÇ Tick ÇÔ¼ö¸¦ È£ÃâÇÑ´Ù.
+	Super::Tick(DeltaTime);
 	WarmupToStartMatch();
 }
 
+/////////////////////////////////////////////////////////////
+// ê¸°ëŠ¥:
+//   ê²Œì„ì´ ì‹œì‘ë  ë•Œ í•œ ë²ˆ í˜¸ì¶œëœë‹¤.
+//   ë ˆë²¨ ì‹œì‘ ì‹œê°„ì„ ê¸°ì¤€ìœ¼ë¡œ íƒ€ì´ë¨¸ë¥¼ ì´ˆê¸°í™”í•œë‹¤.
+//
+// ì•Œê³ ë¦¬ì¦˜:
+//   - GetWorld()->GetTimeSeconds()ë¡œ í˜„ì¬ ì›”ë“œì˜ ê²½ê³¼ ì‹œê°„ì„ ê°€ì ¸ì™€
+//     LevelStartingTimeì— ì €ì¥í•œë‹¤.
+/////////////////////////////////////////////////////////////
 void ATFGameMode::BeginPlay()
 {
-	Super::BeginPlay(); //ºÎ¸ğ Å¬·¡½ºÀÇ BeginPlay ÇÔ¼ö¸¦ È£ÃâÇÑ´Ù.
-	LevelStartingTime = GetWorld()->GetTimeSeconds(); //·¹º§ ½ÃÀÛ ½Ã°£À» ÇöÀç ¿ùµå ½Ã°£À¸·Î ¼³Á¤ÇÑ´Ù.
+	Super::BeginPlay();
+	LevelStartingTime = GetWorld()->GetTimeSeconds();
 }
+
+/////////////////////////////////////////////////////////////
+// ê¸°ëŠ¥:
+//   ë§¤ì¹˜ ìƒíƒœê°€ ë³€ê²½ë  ë•Œ í˜¸ì¶œëœë‹¤.
+//   ìƒíƒœì— ë§ê²Œ ì‹œì‘ ì‹œì ì„ ì´ˆê¸°í™”í•˜ê³  ëª¨ë“  í´ë¼ì´ì–¸íŠ¸ì— ìƒíƒœë¥¼ ë™ê¸°í™”í•œë‹¤.
+//
+// ì•Œê³ ë¦¬ì¦˜:
+//   - MatchStateê°€ InProgress ë˜ëŠ” CoolDownì¼ ë•Œë§ˆë‹¤ LevelStartingTimeì„ ê°±ì‹ í•œë‹¤.
+//   - ëª¨ë“  PlayerControllerë¥¼ ìˆœíšŒí•˜ë©° ClientJoinMatch() RPCë¥¼ í˜¸ì¶œí•´
+//     í´ë¼ì´ì–¸íŠ¸ì˜ HUD/UIì— ìƒˆë¡œìš´ ìƒíƒœì™€ ì‹œê°„ì„ ì „ë‹¬í•œë‹¤.
+/////////////////////////////////////////////////////////////
 void ATFGameMode::OnMatchStateSet()
 {
-	Super::OnMatchStateSet(); //ºÎ¸ğ Å¬·¡½ºÀÇ OnMatchStateSet ÇÔ¼ö¸¦ È£ÃâÇÑ´Ù.
-	// »óÅÂ ÀüÈ¯µÉ ¶§ '±× »óÅÂÀÇ ½ÃÀÛ ½ÃÁ¡'À¸·Î ¸®¼Â
+	Super::OnMatchStateSet();
+
 	if (MatchState == MatchState::InProgress)
 	{
-		LevelStartingTime = GetWorld()->GetTimeSeconds(); // ¸ÅÄ¡ ½ÃÀÛ ½ÃÁ¡
+		LevelStartingTime = GetWorld()->GetTimeSeconds();
 	}
 	else if (MatchState == MatchState::CoolDown)
 	{
-		LevelStartingTime = GetWorld()->GetTimeSeconds(); // Äğ´Ù¿î ½ÃÀÛ ½ÃÁ¡
+		LevelStartingTime = GetWorld()->GetTimeSeconds();
 	}
+
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (ATFPlayerController* PC = Cast<ATFPlayerController>(*It))
 		{
-			// »óÅÂ/½Ã°£°ª¸¸ Çª½Ã (RPC ÇÑ ¹ø¸¸!)
 			PC->ClientJoinMatch(MatchState, WarmupTime, MatchTime, LevelStartingTime, CoolDownTime);
-
-			
 		}
 	}
 }
+
+/////////////////////////////////////////////////////////////
+// ê¸°ëŠ¥:
+//   ê²½ê¸°ì˜ íë¦„ì„ ê´€ë¦¬í•œë‹¤. (ëŒ€ê¸° â†’ ê²½ê¸° â†’ ì¿¨ë‹¤ìš´)
+//
+// ì•Œê³ ë¦¬ì¦˜:
+//   1. WaitingToStart (ì›œì—… ë‹¨ê³„)
+//      - CountdownTime = WarmupTime - (í˜„ì¬ì‹œê°„ - ì‹œì‘ì‹œê°„)
+//      - ì‹œê°„ì´ 0 ì´í•˜ê°€ ë˜ë©´ ì²« ë²ˆì§¸ ì›œì—…ì€ RestartGame() í˜¸ì¶œ,
+//        ê·¸ ì´í›„ëŠ” StartMatch() í˜¸ì¶œ.
+//   2. InProgress (ì§„í–‰ ì¤‘)
+//      - CountdownTime = MatchTime - (í˜„ì¬ì‹œê°„ - ì‹œì‘ì‹œê°„)
+//      - ì‹œê°„ì´ 0 ì´í•˜ê°€ ë˜ë©´ CoolDown ìƒíƒœë¡œ ì „í™˜.
+//   3. CoolDown (ì¢…ë£Œ í›„ ëŒ€ê¸°)
+//      - CountdownTime = CoolDownTime - (í˜„ì¬ì‹œê°„ - ì‹œì‘ì‹œê°„)
+//      - ì‹œê°„ì´ 0 ì´í•˜ê°€ ë˜ë©´ RestartGame() í˜¸ì¶œ.
+//
+//   UTFGameInstanceì˜ bFirstWarmupDoneì„ í†µí•´ ì²« ì›œì—…ë§Œ ë¦¬ì…‹ë˜ë„ë¡ ì œì–´í•œë‹¤.
+/////////////////////////////////////////////////////////////
 void ATFGameMode::WarmupToStartMatch()
 {
-	if (MatchState == MatchState::WaitingToStart) {
-		//CountdownTime = WarmupTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+	if (MatchState == MatchState::WaitingToStart)
+	{
 		CountdownTime = WarmupTime - (GetWorld()->GetTimeSeconds() - LevelStartingTime);
-		if (CountdownTime <= 0.f) {
+		if (CountdownTime <= 0.f)
+		{
 			UTFGameInstance* GI = GetGameInstance<UTFGameInstance>();
-			if (GI && !GI->bFirstWarmupDone) {
+			if (GI && !GI->bFirstWarmupDone)
+			{
 				GI->bFirstWarmupDone = true;
-				RestartGame();  // Ã³À½ ¿ú¾÷ ³¡³ª¸é µü 1¹ø¸¸ ¸®¼Â
+				RestartGame(); // ì²« ì›œì—…ë§Œ ë¦¬ì…‹
 			}
-			else {
-				StartMatch(); // ´ë±â ½Ã°£ÀÌ ³¡³ª¸é °ÔÀÓÀ» ½ÃÀÛÇÑ´Ù.
+			else
+			{
+				StartMatch(); // ì‹¤ì œ ê²½ê¸° ì‹œì‘
 			}
 		}
 	}
-	else if (MatchState == MatchState::InProgress) {
-		//CountdownTime = WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+	else if (MatchState == MatchState::InProgress)
+	{
 		CountdownTime = MatchTime - (GetWorld()->GetTimeSeconds() - LevelStartingTime);
-		if (CountdownTime <= 0.f) {
+		if (CountdownTime <= 0.f)
+		{
 			SetMatchState(MatchState::CoolDown);
-			//LevelStartingTime = GetWorld()->GetTimeSeconds();
 		}
 	}
-	else if (MatchState == MatchState::CoolDown) {
-		//CountdownTime = CoolDownTime + WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+	else if (MatchState == MatchState::CoolDown)
+	{
 		CountdownTime = CoolDownTime - (GetWorld()->GetTimeSeconds() - LevelStartingTime);
-		if (CountdownTime <= 0.f) {
-			RestartGame(); // Äğ´Ù¿î ³¡³¯ ¶§´Â Ç×»ó ¸®¼Â
+		if (CountdownTime <= 0.f)
+		{
+			RestartGame(); // ê²½ê¸° ì¢…ë£Œ í›„ í•­ìƒ ë¦¬ì…‹
 		}
 	}
 }
+
+/////////////////////////////////////////////////////////////
+// ê¸°ëŠ¥:
+//   í”Œë ˆì´ì–´ê°€ ì œê±°ë˜ì—ˆì„ ë•Œ(ì‚¬ë§ ì‹œ) í˜¸ì¶œëœë‹¤.
+//   ì ìˆ˜ ì²˜ë¦¬, HUD ì•Œë¦¼, í‚¬ í”¼ë“œ í‘œì‹œ ë“±ì„ ìˆ˜í–‰í•œë‹¤.
+//
+// ì•Œê³ ë¦¬ì¦˜:
+//   - ê³µê²©ìì™€ í¬ìƒìì˜ PlayerStateë¥¼ ê°€ì ¸ì˜¨ë‹¤.
+//   - ê³µê²©ìëŠ” ì ìˆ˜ +1, í¬ìƒìëŠ” ì‚¬ë§ ìˆ˜ +1.
+//   - TFGameState::UpdateTopScorePlayers()ë¡œ ìµœê³  ì ìˆ˜ì ê°±ì‹ .
+//   - ìºë¦­í„°ì˜ Elim() í•¨ìˆ˜ í˜¸ì¶œë¡œ ì‚¬ë§ ì• ë‹ˆë©”ì´ì…˜ ë“± ì‹¤í–‰.
+//   - ê° í´ë¼ì´ì–¸íŠ¸ì— RPC í˜¸ì¶œ:
+//       â€¢ ê³µê²©ì : ClientShowKillWidget()
+//       â€¢ í¬ìƒì : ClientShowKilledWidget()
+//       â€¢ ì „ì²´ : ClientAddKillFeedMessage() ë¡œ í‚¬ë¡œê·¸ í‘œì‹œ
+/////////////////////////////////////////////////////////////
 void ATFGameMode::PlayerEliminated(ATimeFractureCharacter* ElimmedCharacter, ATFPlayerController* VictimController, ATFPlayerController* AttackerController)
 {
-	ATFPlayerState* AttackerPlayerState = AttackerController ? Cast<ATFPlayerState>(AttackerController->PlayerState) : nullptr; //°ø°İÀÚ ÇÃ·¹ÀÌ¾î »óÅÂ¸¦ ÃÊ±âÈ­ÇÑ´Ù.
-	ATFPlayerState* VictimPlayerState = VictimController ? Cast<ATFPlayerState>(VictimController->PlayerState) : nullptr; //ÇÇÇØÀÚ ÇÃ·¹ÀÌ¾î »óÅÂ¸¦ ÃÊ±âÈ­ÇÑ´Ù.
-	ATFGameState* TFGameState = GetGameState<ATFGameState>(); //°ÔÀÓ »óÅÂ¸¦ °¡Á®¿Â´Ù.
-	if (AttackerPlayerState && AttackerPlayerState != VictimPlayerState && TFGameState) {
-		AttackerPlayerState->AddToScore(1.f); //°ø°İÀÚ ÇÃ·¹ÀÌ¾î »óÅÂ¿¡ Á¡¼ö¸¦ Ãß°¡ÇÑ´Ù.
-		TFGameState->UpdateTopScorePlayers(AttackerPlayerState); //ÃÖ°í Á¡¼ö¸¦ °¡Áø ÇÃ·¹ÀÌ¾îµéÀ» ¾÷µ¥ÀÌÆ®ÇÑ´Ù.
+	ATFPlayerState* AttackerPlayerState = AttackerController ? Cast<ATFPlayerState>(AttackerController->PlayerState) : nullptr;
+	ATFPlayerState* VictimPlayerState = VictimController ? Cast<ATFPlayerState>(VictimController->PlayerState) : nullptr;
+	ATFGameState* TFGameState = GetGameState<ATFGameState>();
+
+	if (AttackerPlayerState && AttackerPlayerState != VictimPlayerState && TFGameState)
+	{
+		AttackerPlayerState->AddToScore(1.f);
+		TFGameState->UpdateTopScorePlayers(AttackerPlayerState);
 	}
-	if (ElimmedCharacter) {
-		ElimmedCharacter->Elim(); //Á¦°ÅµÈ Ä³¸¯ÅÍÀÇ Elim ÇÔ¼ö¸¦ È£ÃâÇÑ´Ù.
+
+	if (ElimmedCharacter)
+	{
+		ElimmedCharacter->Elim();
 	}
-	if (VictimPlayerState) {
-		VictimPlayerState->AddToDefeats(1); //ÇÇÇØÀÚ ÇÃ·¹ÀÌ¾î »óÅÂ¿¡ Ã³Ä¡ ¼ö¸¦ Ãß°¡ÇÑ´Ù.
+
+	if (VictimPlayerState)
+	{
+		VictimPlayerState->AddToDefeats(1);
 	}
+
 	if (AttackerController && VictimController)
 	{
 		FString KillerName = AttackerController->PlayerState->GetPlayerName();
 		FString VictimName = VictimController->PlayerState->GetPlayerName();
-		// Å³ ÇÑ »ç¶÷ÇÑÅ×¸¸ WBP_Kill º¸¿©ÁÖ±â
-		AttackerController->ClientShowKillWidget();
 
-		// Á×Àº »ç¶÷ÇÑÅ×¸¸ WBP_Killed º¸¿©ÁÖ±â
+		AttackerController->ClientShowKillWidget();
 		VictimController->ClientShowKilledWidget();
 
-		// ¸ğµç Å¬¶óÀÌ¾ğÆ®¿¡ ºê·ÎµåÄ³½ºÆ®
 		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 		{
 			if (ATFPlayerController* KillerPC = Cast<ATFPlayerController>(*It))
@@ -120,19 +196,30 @@ void ATFGameMode::PlayerEliminated(ATimeFractureCharacter* ElimmedCharacter, ATF
 	}
 }
 
+/////////////////////////////////////////////////////////////
+// ê¸°ëŠ¥:
+//   ìºë¦­í„°ê°€ ì‚¬ë§ í›„ ë‹¤ì‹œ ë¦¬ìŠ¤í°ë˜ë„ë¡ ì²˜ë¦¬í•œë‹¤.
+//
+// ì•Œê³ ë¦¬ì¦˜:
+//   - ElimmedCharacter:
+//       â€¢ Reset() : ì²´ë ¥, ìƒíƒœ ë“± ì´ˆê¸°í™”.
+//       â€¢ Destroy() : ê¸°ì¡´ ì•¡í„° ì œê±°.
+//   - ElimmedController:
+//       â€¢ ëª¨ë“  APlayerStart ì•¡í„°ë¥¼ ê°€ì ¸ì™€ ëœë¤ ìœ„ì¹˜ ì„ íƒ.
+//       â€¢ RestartPlayerAtPlayerStart() í˜¸ì¶œë¡œ ìƒˆ ìºë¦­í„° ìƒì„±.
+/////////////////////////////////////////////////////////////
 void ATFGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)
 {
-	if (ElimmedCharacter) { // Á¦°ÅµÈ Ä³¸¯ÅÍ°¡ À¯È¿ÇÑÁö È®ÀÎÇÕ´Ï´Ù.
-        // Á¦°ÅµÈ Ä³¸¯ÅÍÀÇ »óÅÂ¸¦ ÃÊ±âÈ­ÇÕ´Ï´Ù. (¿¹: Ã¼·Â, À§Ä¡, Á¡¼ö µî °ÔÀÓ ³»¿¡¼­ Ä³¸¯ÅÍ°¡ °¡Á³´ø ¸ğµç »óÅÂ¸¦ ±âº»°ªÀ¸·Î µÇµ¹¸³´Ï´Ù)
-        ElimmedCharacter->Reset();
-        // Á¦°ÅµÈ Ä³¸¯ÅÍÀÇ ¾×ÅÍ¸¦ ¿ùµå¿¡¼­ ¿ÏÀüÈ÷ ÆÄ±«ÇÕ´Ï´Ù. (¸Ş¸ğ¸®¿¡¼­ Á¦°ÅµÇ¾î ´õ ÀÌ»ó °ÔÀÓ¿¡ Á¸ÀçÇÏÁö ¾Ê°Ô µË´Ï´Ù)
-        ElimmedCharacter->Destroy();
+	if (ElimmedCharacter)
+	{
+		ElimmedCharacter->Reset();
+		ElimmedCharacter->Destroy();
 	}
-	if (ElimmedController) {
-		TArray<AActor*> PlayerStarts; //¸ğµç ÇÃ·¹ÀÌ¾î ½ÃÀÛ ÁöÁ¡À» ÀúÀåÇÒ ¹è¿­À» »ı¼ºÇÕ´Ï´Ù.
-		UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts); //¸ğµç ÇÃ·¹ÀÌ¾î ½ÃÀÛ ÁöÁ¡À» °¡Á®¿É´Ï´Ù.
-		int32 Selection = FMath::RandRange(0, PlayerStarts.Num() - 1); //·£´ıÀ¸·Î ÇÃ·¹ÀÌ¾î ½ÃÀÛ ÁöÁ¡À» ¼±ÅÃÇÕ´Ï´Ù.
+	if (ElimmedController)
+	{
+		TArray<AActor*> PlayerStarts;
+		UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
+		int32 Selection = FMath::RandRange(0, PlayerStarts.Num() - 1);
 		RestartPlayerAtPlayerStart(ElimmedController, PlayerStarts[Selection]);
 	}
 }
-

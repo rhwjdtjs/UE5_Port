@@ -102,6 +102,16 @@ bool AWeapon::IsFull()
 {
 	return Ammo == MagCapacity; //탄약이 탄창 용량과 같은 경우 true 반환
 }
+// ============================================================
+// [발사 처리] Fire()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 발사 애니메이션 실행, 탄피 생성, 탄약 차감.
+// 알고리즘 설명 : 
+//   1. FireAnimation 재생
+//   2. CasingClass를 AmmoEject 소켓 위치에서 Spawn
+//   3. SpendRound() 호출하여 탄약 감소
+// ============================================================
 void AWeapon::Fire(const FVector& HitTarget)
 {
 	if (FireAnimation) {

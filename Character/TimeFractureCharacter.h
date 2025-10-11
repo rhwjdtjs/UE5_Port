@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
@@ -6,200 +6,263 @@
 #include "UnrealProject_7A/TFComponents/CombatStates.h"
 #include "TimeFractureCharacter.generated.h"
 
+/**
+ * ATimeFractureCharacter
+ * -------------------------------------------------------------
+ * í”Œë ˆì´ì–´ ìºë¦­í„°ì˜ ì´ë™, ì „íˆ¬, ìƒí˜¸ì‘ìš©, UI, ë„¤íŠ¸ì›Œí¬ ë³µì œ ë“±
+ * ì „ë°˜ì ì¸ ê¸°ëŠ¥ì„ ë‹´ë‹¹í•˜ëŠ” ë©”ì¸ í´ë˜ìŠ¤.
+ */
 UCLASS()
-class UNREALPROJECT_7A_API ATimeFractureCharacter : public ACharacter, public IInteractWithCrosshairInterface
+class UNREALPROJECT_7A_API ATimeFractureCharacter
+	: public ACharacter, public IInteractWithCrosshairInterface
 {
 	GENERATED_BODY()
 
 public:
-	ATimeFractureCharacter();
-	virtual void Tick(float DeltaTime) override;
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;	//º¹Á¦ÇÏ´Â Ç×¸ñÀ» Á¤ÀÇÇÏ´Â ÇÔ¼ö
-	virtual void PostInitializeComponents() override; //¼Ó¼º ÃÊ±âÈ­ ÇÔ¼ö
-	void Elim(); //ÇÃ·¹ÀÌ¾î Á¦°Å ÇÔ¼ö
-	void UpdateHUDHealth();
-	void UpdateHUDShield();
-	UFUNCTION(NetMulticast,Reliable)
-	void MulticastElim();
-	UPROPERTY(Replicated)
-	bool bDisableGameplay = false; //°ÔÀÓÇÃ·¹ÀÌ ºñÈ°¼ºÈ­ ¿©ºÎ
-	UFUNCTION(BlueprintImplementableEvent)
-	void ShowSniperScopeWidget(bool bShowScope); //½º³ªÀÌÆÛ ½ºÄÚÇÁ À§Á¬ Ç¥½Ã ÇÔ¼ö
-	bool bisElimmed = false; //ÇÃ·¹ÀÌ¾î°¡ Á¦°ÅµÇ¾ú´ÂÁö ¿©ºÎ
-	void PlayThrowGrendadeMontage(); //¼ö·ùÅº ÅõÃ´ ¾Ö´Ï¸ŞÀÌ¼Ç ¸ùÅ¸ÁÖ Àç»ı ÇÔ¼ö
-	void HandleChatKey();
-	void HandleChatCancel();
-	void HandleChatSubmit();
-	UFUNCTION(BlueprintImplementableEvent)
-	void BloodScreen(); //0914 ÇÇ°İÀÌÆåÆ®
-	UFUNCTION(Client, Reliable)
-	void ClientShowBloodScreen();
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "Wire", meta = (AllowPrivateAccess = "true"))
-	class UWireComponent* WireComponent;
-protected:
-	virtual void Jump() override;
-	virtual void Destroyed() override; //Ä³¸¯ÅÍ°¡ ÆÄ±«µÉ ¶§ È£ÃâµÇ´Â ÇÔ¼ö
-	virtual void BeginPlay() override;
-	void SwapButtonPressed(); //¹«±â ±³Ã¼ ¹öÆ° ÇÔ¼ö
-	virtual void PossessedBy(AController* NewController) override;	
-	UFUNCTION(Server, Reliable)
-	void ServerSwapButtonPressed(); //¼­¹ö¿¡¼­ ¹«±â ±³Ã¼ ¹öÆ° ÇÔ¼ö
-	//
-	void Dive();
-	UFUNCTION(Server, Reliable)
-	void ServerDivePressed();   
+	/* ============================ */
+	/*   ê¸°ë³¸ ì‹œìŠ¤í…œ í•¨ìˆ˜ ì„¹ì…˜    */
+	/* ============================ */
+	ATimeFractureCharacter();											 // ìƒì„±ì - ì»´í¬ë„ŒíŠ¸ ì´ˆê¸°í™”
+	virtual void Tick(float DeltaTime) override;						 // ë§¤ í”„ë ˆì„ ì—…ë°ì´íŠ¸
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override; // ì…ë ¥ ë°”ì¸ë”© ì„¤ì •
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override; // ë„¤íŠ¸ì›Œí¬ ë³µì œ ë“±ë¡
+	virtual void PostInitializeComponents() override;					 // ì»´í¬ë„ŒíŠ¸ ì´ˆê¸°í™” ì´í›„ ì„¸íŒ…
 
+	void Elim();														 // ìºë¦­í„° ì œê±° ì²˜ë¦¬
+	void UpdateHUDHealth();											     // HUD ì²´ë ¥ ê°±ì‹ 
+	void UpdateHUDShield();											     // HUD ì‹¤ë“œ ê°±ì‹ 
+
+	/* ============================ */
+	/*   ë©€í‹°ìºìŠ¤íŠ¸ ë° ì´ë²¤íŠ¸     */
+	/* ============================ */
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastDive();       
+	void MulticastElim();												 // ì‚¬ë§ ì—°ì¶œì„ ëª¨ë“  í´ë¼ì— ì „íŒŒ
+
+	UPROPERTY(Replicated)
+	bool bDisableGameplay = false;										 // ì¡°ì‘ ë¹„í™œì„±í™” ì—¬ë¶€
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowSniperScopeWidget(bool bShowScope);						 // ìŠ¤ë‚˜ì´í¼ ì¡°ì¤€ê²½ í‘œì‹œ/ìˆ¨ê¹€ BP ì´ë²¤íŠ¸
+
+	bool bisElimmed = false;											 // ìºë¦­í„°ê°€ ì œê±°ëœ ìƒíƒœì¸ì§€ ì—¬ë¶€
+
+	void PlayThrowGrendadeMontage();									 // ìˆ˜ë¥˜íƒ„ íˆ¬ì²™ ì• ë‹ˆë©”ì´ì…˜ ì¬ìƒ
+	void HandleChatKey();												 // ì±„íŒ…ì°½ ì—´ê¸°
+	void HandleChatCancel();											 // ì±„íŒ… ì…ë ¥ ì·¨ì†Œ
+	void HandleChatSubmit();											 // ì±„íŒ… ì „ì†¡
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void BloodScreen();												     // í”¼ê²© ì‹œ í™”ë©´ ì´í™íŠ¸ BPì—ì„œ êµ¬í˜„
+
+	UFUNCTION(Client, Reliable)
+	void ClientShowBloodScreen();										 // í´ë¼ ì „ìš© ë¸”ëŸ¬ë“œ ì´í™íŠ¸ RPC
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "Wire", meta = (AllowPrivateAccess = "true"))
+	class UWireComponent* WireComponent;								 // ì™€ì´ì–´(ê·¸ë˜í”Œë§ í›… ë“±) ê¸°ëŠ¥ ì»´í¬ë„ŒíŠ¸
+
+
+protected:
+	/* ============================ */
+	/*   ìƒëª…ì£¼ê¸° ë° ì…ë ¥ ì²˜ë¦¬    */
+	/* ============================ */
+	virtual void Jump() override;										 // ì í”„ ì…ë ¥
+	virtual void Destroyed() override;									 // ì˜¤ë¸Œì íŠ¸ íŒŒê´´ ì‹œ ì²˜ë¦¬
+	virtual void BeginPlay() override;									 // ê²Œì„ ì‹œì‘ ì‹œ ì´ˆê¸°í™”
+	void SwapButtonPressed();											 // ë¬´ê¸° êµì²´ ì…ë ¥
+	virtual void PossessedBy(AController* NewController) override;		 // ì»¨íŠ¸ë¡¤ëŸ¬ê°€ ìºë¦­í„°ë¥¼ ì†Œìœ í•  ë•Œ í˜¸ì¶œ
+
+	UFUNCTION(Server, Reliable)
+	void ServerSwapButtonPressed();										 // ì„œë²„ ì¸¡ ë¬´ê¸° êµì²´ ì²˜ë¦¬
+
+	void Dive();														 // íšŒí”¼(êµ¬ë¥´ê¸°) ë™ì‘
+	UFUNCTION(Server, Reliable)
+	void ServerDivePressed();											 // ì„œë²„ë¡œ êµ¬ë¥´ê¸° ìš”ì²­
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastDive();												 // êµ¬ë¥´ê¸° ì• ë‹ˆë©”ì´ì…˜ ì „ì²´ ì „íŒŒ
+
+	// ì´ë™ ë° ì¹´ë©”ë¼ ì…ë ¥ ì²˜ë¦¬
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 	void Turn(float Value);
 	void LookUp(float Value);
-	void EquipButton();
-	void CrouchButton(); //Å©¶ó¿ìÄ¡ ¹öÆ° ÇÔ¼ö
-	void AimButton(); //Á¶ÁØ ¹öÆ° ÇÔ¼ö
-	void AimButtonRelease(); //Á¶ÁØ ¹öÆ° ÇØÁ¦ ÇÔ¼ö
-	void AimOffset(float DeltaTime); //Á¶ÁØ ¿ÀÇÁ¼Â ÇÔ¼ö
-	void FireButtonPressed();
-	void FireButtonReleased(); //¹ß»ç ¹öÆ° ÇØÁ¦ ÇÔ¼ö
-	void ReloadButtonPressed(); //ÀçÀåÀü ¹öÆ° ÇÔ¼ö
-	void GrenadeButtonPressed(); //¼ö·ùÅº ¹öÆ° ÇÔ¼ö
-	void WireButtonPressed(); //¿ÍÀÌ¾î ¹öÆ° ÇÔ¼ö
-	void WireButtonReleased(); //¿ÍÀÌ¾î ¹öÆ° ÇØÁ¦ ÇÔ¼ö
+
+	// í–‰ë™ ì…ë ¥
+	void EquipButton();												     // ë¬´ê¸° ì¥ì°©
+	void CrouchButton();												 // ì•‰ê¸°/í•´ì œ
+	void AimButton();													 // ì¡°ì¤€ ì‹œì‘
+	void AimButtonRelease();											 // ì¡°ì¤€ í•´ì œ
+	void AimOffset(float DeltaTime);									 // ì¡°ì¤€ ë³´ì • ê³„ì‚° (Yaw/Pitch)
+	void FireButtonPressed();											 // ë°œì‚¬ ì‹œì‘
+	void FireButtonReleased();											 // ë°œì‚¬ ì¤‘ì§€
+	void ReloadButtonPressed();											 // ì¬ì¥ì „
+	void GrenadeButtonPressed();										 // ìˆ˜ë¥˜íƒ„ íˆ¬ì²™
+	void WireButtonPressed();											 // ì™€ì´ì–´ ë°œì‚¬
+	void WireButtonReleased();											 // ì™€ì´ì–´ í•´ì œ
+
 	UFUNCTION()
-	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController,
-		AActor* DamageCursor); //ÇÇÇØ¸¦ ¹Ş¾ÒÀ» ¶§ È£ÃâµÇ´Â ÇÔ¼ö
-	//¿òÁ÷ÀÓ ÇÔ¼ö
-	void PollInit(); //Çãµå¿Í °°Àº ÇÔ¼ö ÃÊ±âÈ­
-	virtual void OnRep_PlayerState() override; //ÇÃ·¹ÀÌ¾î »óÅÂ°¡ º¯°æµÇ¾úÀ» ¶§ È£ÃâµÇ´Â ÇÔ¼ö
+	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
+		class AController* InstigatorController, AActor* DamageCursor);	 // ë°ë¯¸ì§€ ì²˜ë¦¬
+
+	void PollInit();													 // PlayerState/HUD ì´ˆê¸°í™” ì²´í¬
+	virtual void OnRep_PlayerState() override;							 // PlayerState ë³µì œ í›„ ì²˜ë¦¬
+
 
 private:
-
-
+	/* ============================ */
+	/*   ë‚´ë¶€ ë¡œì§ ë° ë³€ìˆ˜ ì„¹ì…˜  */
+	/* ============================ */
 	UFUNCTION(Server, Reliable)
-	void ServerSetActorRotation(const FRotator& NewRotation);
-	float AO_YAW; //Á¶ÁØ È¸Àü Yaw °ª, ¼­¹ö¿¡¼­ Å¬¶óÀÌ¾ğÆ®·Î º¹Á¦µÇ´Â º¯¼ö
-	float AO_PITCH; //Á¶ÁØ È¸Àü Yaw, Pitch °ª
-	FRotator BaseAimRotation; //±âº» Á¶ÁØ È¸Àü
+	void ServerSetActorRotation(const FRotator& NewRotation);			 // ì„œë²„ íšŒì „ ë™ê¸°í™”
+
+	// --- ì¡°ì¤€ ê´€ë ¨ ---
+	float AO_YAW;														 // í˜„ì¬ ì¡°ì¤€ Yaw
+	float AO_PITCH;													     // í˜„ì¬ ì¡°ì¤€ Pitch
+	FRotator BaseAimRotation;											 // ê¸°ì¤€ ì¡°ì¤€ íšŒì „ê°’
+
+	// --- ì¹´ë©”ë¼ ê´€ë ¨ ---
 	UPROPERTY(VisibleAnywhere, Category = "camera")
-	class USpringArmComponent* CameraBoom; //Ä«¸Ş¶ó ºÕ ÄÄÆ÷³ÍÆ®, Ä«¸Ş¶ó¿Í Ä³¸¯ÅÍ »çÀÌÀÇ °Å¸® Á¶Àı
-	UPROPERTY(VisibleAnywhere, Category="camera")
-	class UCameraComponent* FollowCamera; //ÃÔ¿µÇÏ´Â Ä«¸Ş¶ó
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess="true"))
-	class UWidgetComponent* OverheadWidget; //¿À¹öÇìµå À§Á¬
+	class USpringArmComponent* CameraBoom;								 // ì¹´ë©”ë¼ ë¶ (ê±°ë¦¬ ì¡°ì ˆìš©)
+	UPROPERTY(VisibleAnywhere, Category = "camera")
+	class UCameraComponent* FollowCamera;								 // ì‹¤ì œ ì‹œì  ì¹´ë©”ë¼
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UWidgetComponent* OverheadWidget;								 // ìºë¦­í„° ë¨¸ë¦¬ ìœ„ ìœ„ì ¯ (ë‹‰ë„¤ì„ ë“±)
+
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
-	class AWeapon* OverlappingWeapon; //°ãÄ¡´Â ¹«±â	
+	class AWeapon* OverlappingWeapon;									 // í˜„ì¬ ì¶©ëŒ ì¤‘ì¸ ë¬´ê¸°
+
+	// --- ì¹´ë©”ë¼ ì˜¤í”„ì…‹ ---
 	UPROPERTY(EditAnywhere, Category = "camera")
-	FVector CrouchingCameraOffset; //Å©¶ó¿ìÄ¡ »óÅÂÀÏ ¶§ Ä«¸Ş¶óÀÇ »ó´ë À§Ä¡
+	FVector CrouchingCameraOffset;										 // ì•‰ì€ ìƒíƒœ ì¹´ë©”ë¼ ìœ„ì¹˜
 	UPROPERTY(EditAnywhere, Category = "camera")
-	FVector NormalOffset; //ÀÏ¹İ »óÅÂÀÏ ¶§ Ä«¸Ş¶óÀÇ »ó´ë À§Ä¡
+	FVector NormalOffset;												 // ê¸°ë³¸ ì¹´ë©”ë¼ ìœ„ì¹˜
 	UPROPERTY(EditAnywhere, Category = "camera")
-	float AimCameraOffset; //Á¶ÁØ »óÅÂÀÏ ¶§ Ä«¸Ş¶óÀÇ »ó´ë À§Ä¡
+	float AimCameraOffset;												 // ì¡°ì¤€ ì‹œ ê±°ë¦¬
 	UPROPERTY(EditAnywhere, Category = "camera")
-	float normalAimCameraOffset; //Á¶ÁØ »óÅÂÀÏ ¶§ Ä«¸Ş¶óÀÇ »ó´ë À§Ä¡
+	float normalAimCameraOffset;										 // ì¼ë°˜ ì¡°ì¤€ ê±°ë¦¬
 	UPROPERTY(EditAnywhere, Category = "camera")
-	float CameraInterpSpeed = 15.f; //Ä«¸Ş¶ó º¸°£ ¼Óµµ
+	float CameraInterpSpeed = 15.f;										 // ì¹´ë©”ë¼ ë³´ê°„ ì†ë„
+
 	UFUNCTION()
-	void OnRep_OverlappingWeapon(AWeapon* LastWeapon); //°ãÄ¡´Â ¹«±â°¡ ¹Ù²ğ ¶§ È£ÃâµÇ´Â ÇÔ¼ö
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta=(AllowPrivateAccess="true"))
-	class UCBComponent* CombatComponent; //ÀüÅõ ÄÄÆ÷³ÍÆ®
+	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);					 // ë¬´ê¸° ê²¹ì¹¨ ë³€ê²½ ì‹œ ì²˜ë¦¬
+
+	// --- ì „íˆ¬ ê´€ë ¨ ì»´í¬ë„ŒíŠ¸ ---
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	class UCBComponent* CombatComponent;								 // ì „íˆ¬ ì»´í¬ë„ŒíŠ¸
 	UPROPERTY(VisibleAnyWhere)
-	class UBuffComponent* BuffComponent; //¹öÇÁ ÄÄÆ÷³ÍÆ®
+	class UBuffComponent* BuffComponent;								 // ë²„í”„ ë° ìŠ¤íƒ¯ ë³´ì • ì»´í¬ë„ŒíŠ¸
+
 	UFUNCTION(Server, Reliable)
-	void ServerEquipButton(); //¼­¹ö¿¡¼­ ÀåÂø ¹öÆ°À» ´©¸¦ ¶§ È£ÃâµÇ´Â ÇÔ¼ö
-	//¼ö·ùÅº
+	void ServerEquipButton();											 // ì„œë²„ ì¸¡ ì¥ì°© ì²˜ë¦¬
+
+	// --- ìˆ˜ë¥˜íƒ„ ---
 	UPROPERTY(EditAnywhere)
-	USkeletalMeshComponent* AttachedGrenade; //ÀåÂøµÈ ¼ö·ùÅº ¸Ş½¬ ÄÄÆ÷³ÍÆ®
-	//
-	//¾Ö´Ï¸ŞÀÌ¼Ç ¸ùÅ¸ÁÖ
-	//
+	USkeletalMeshComponent* AttachedGrenade;							 // ìºë¦­í„°ì— ë¶€ì°©ëœ ìˆ˜ë¥˜íƒ„ ë©”ì‰¬
+
+	// --- ì „íˆ¬ ì• ë‹ˆë©”ì´ì…˜ ëª½íƒ€ì£¼ ---
 	UPROPERTY(EditAnywhere, Category = Combat)
-	class UAnimMontage* ThrowGrenadeMontage; //¼ö·ùÅº ÅõÃ´ ¾Ö´Ï¸ŞÀÌ¼Ç ¸ùÅ¸ÁÖ
-	UPROPERTY(EditAnywhere,Category=Combat)
-	class UAnimMontage* FireWeaponMontage;
+	class UAnimMontage* ThrowGrenadeMontage;							 // ìˆ˜ë¥˜íƒ„ ë˜ì§€ê¸°
 	UPROPERTY(EditAnywhere, Category = Combat)
-	class UAnimMontage* HitReactMontage;
+	class UAnimMontage* FireWeaponMontage;								 // ë°œì‚¬
 	UPROPERTY(EditAnywhere, Category = Combat)
-	class UAnimMontage* ElimMontage; //ÇÇ°İ ¾Ö´Ï¸ŞÀÌ¼Ç ¸ùÅ¸ÁÖ
+	class UAnimMontage* HitReactMontage;								 // í”¼ê²© ë°˜ì‘
 	UPROPERTY(EditAnywhere, Category = Combat)
-	class UAnimMontage* ReloadMontage; //ÀçÀåÀü ¾Ö´Ï¸ŞÀÌ¼Ç ¸ùÅ¸ÁÖ
+	class UAnimMontage* ElimMontage;									 // ì‚¬ë§
 	UPROPERTY(EditAnywhere, Category = Combat)
-	class UAnimMontage* DiveMontage;
+	class UAnimMontage* ReloadMontage;									 // ì¬ì¥ì „
+	UPROPERTY(EditAnywhere, Category = Combat)
+	class UAnimMontage* DiveMontage;									 // êµ¬ë¥´ê¸°
 
 	UPROPERTY(EditAnywhere)
-	float CameraThreshold = 200.f; //Ä«¸Ş¶ó°¡ Ä³¸¯ÅÍ¿Í ¾ó¸¶³ª °¡±îÀÌ ÀÖÀ» ¶§ Ä«¸Ş¶ó¸¦ ¼û±æÁö °áÁ¤ÇÏ´Â ÀÓ°è°ª
-	void HideCameraIfCharacterClose(); //Ä³¸¯ÅÍ°¡ °¡±îÀÌ ÀÖÀ» ¶§ Ä«¸Ş¶ó¸¦ ¼û±â´Â ÇÔ¼ö
+	float CameraThreshold = 200.f;										 // ê·¼ì ‘ ì‹œ ë©”ì‰¬ ìˆ¨ê¹€ ê±°ë¦¬
+	void HideCameraIfCharacterClose();									 // ì¹´ë©”ë¼ ê·¼ì ‘ ì‹œ ìˆ¨ê¸°ê¸°
 
-	//ÇÃ·¹ÀÌ¾î Ã¼·Â
-	UPROPERTY(EditAnywhere, Category="Player State")
-	float MaxHealth = 100.f; //ÃÖ´ë Ã¼·Â
-	UPROPERTY(ReplicatedUsing=OnRep_Health, VisibleAnywhere, Category = "Player State")
-	float Health=100.f; //ÇöÀç Ã¼·Â
+	// --- ì²´ë ¥ ë° ì‹¤ë“œ ---
 	UPROPERTY(EditAnywhere, Category = "Player State")
-	float MaxShield = 100.f; //ÃÖ´ë Ã¼·Â
+	float MaxHealth = 100.f;											 // ìµœëŒ€ ì²´ë ¥
+	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleAnywhere, Category = "Player State")
+	float Health = 100.f;												     // í˜„ì¬ ì²´ë ¥
+	UPROPERTY(EditAnywhere, Category = "Player State")
+	float MaxShield = 100.f;											 // ìµœëŒ€ ì‹¤ë“œ
 	UPROPERTY(ReplicatedUsing = OnRep_Shield, VisibleAnywhere, Category = "Player State")
-	float Shield = 0.f; //ÇöÀç Ã¼·Â
-	UFUNCTION()
-	void OnRep_Shield(float LastShield); //½Çµå°¡ ¹Ù²ğ ¶§ È£ÃâµÇ´Â ÇÔ¼ö
-	UPROPERTY(Replicated)
-	FRotator MoveRotation; //Ä³¸¯ÅÍÀÇ ÀÌµ¿ È¸Àü
-	UPROPERTY(EditAnywhere)
-	float RollDistance = 200.f;
-	FTimerHandle ElimTimer; //ÇÃ·¹ÀÌ¾î Á¦°Å Å¸ÀÌ¸Ó ÇÚµé
-	UPROPERTY(EditDefaultsOnly)
-	float ElimDelay = 3.f; //ÇÃ·¹ÀÌ¾î Á¦°Å Áö¿¬ ½Ã°£
-	void ElimTimerFinished(); //ÇÃ·¹ÀÌ¾î Á¦°Å Å¸ÀÌ¸Ó°¡ ³¡³µÀ» ¶§ È£ÃâµÇ´Â ÇÔ¼ö
-	UFUNCTION()
-	void OnRep_Health(float LastHealth); //Ã¼·ÂÀÌ ¹Ù²ğ ¶§ È£ÃâµÇ´Â ÇÔ¼ö
-	class ATFPlayerController* TfPlayerController; //ÇÃ·¹ÀÌ¾î ÄÁÆ®·Ñ·¯
-	UPROPERTY()
-	class ATFPlayerState* TfPlayerState; //ÇÃ·¹ÀÌ¾î »óÅÂ
+	float Shield = 0.f;												     // í˜„ì¬ ì‹¤ë“œ
 
-	//±âº» ¹«±â ¼³Á¤
+	UFUNCTION()
+	void OnRep_Shield(float LastShield);								 // ì‹¤ë“œ ë³€ê²½ ì‹œ í˜¸ì¶œ
+	UPROPERTY(Replicated)
+	FRotator MoveRotation;												 // ì´ë™ íšŒì „ê°’ ë³µì œ
+
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<AWeapon> DefaultWeaponClass; //±âº» ¹«±â Å¬·¡½º
-	
+	float RollDistance = 200.f;										     // êµ¬ë¥´ê¸° ì´ë™ ê±°ë¦¬
+
+	FTimerHandle ElimTimer;												 // ì‚¬ë§ í›„ ë¦¬ìŠ¤í° íƒ€ì´ë¨¸ í•¸ë“¤
+	UPROPERTY(EditDefaultsOnly)
+	float ElimDelay = 3.f;												 // ë¦¬ìŠ¤í° ëŒ€ê¸° ì‹œê°„
+	void ElimTimerFinished();											 // íƒ€ì´ë¨¸ ì¢…ë£Œ ì‹œ í˜¸ì¶œ
+
+	UFUNCTION()
+	void OnRep_Health(float LastHealth);								 // ì²´ë ¥ ë³€ê²½ ì‹œ í˜¸ì¶œ
+
+	class ATFPlayerController* TfPlayerController;						 // í”Œë ˆì´ì–´ ì»¨íŠ¸ë¡¤ëŸ¬ ì°¸ì¡°
+	UPROPERTY()
+	class ATFPlayerState* TfPlayerState;								 // í”Œë ˆì´ì–´ ìƒíƒœ ì°¸ì¡°
+
+	// --- ê¸°ë³¸ ë¬´ê¸° ---
 	UPROPERTY(EditAnywhere)
-	class USoundCue* HitCharacterSound;
+	TSubclassOf<AWeapon> DefaultWeaponClass;							 // ì‹œì‘ ì‹œ ì§€ê¸‰ ë¬´ê¸° í´ë˜ìŠ¤
+
 	UPROPERTY(EditAnywhere)
-	USoundCue* HitConfirmSound;
-	//0914 ÇÇ°İ ui
+	class USoundCue* HitCharacterSound;								 // í”¼ê²© ì‹œ ì‚¬ìš´ë“œ
+	UPROPERTY(EditAnywhere)
+	USoundCue* HitConfirmSound;										     // ê³µê²© ëª…ì¤‘ ì‚¬ìš´ë“œ
+
 	UFUNCTION(NetMulticast, UnReliable)
-	void MulticastHitCharacterSound();
+	void MulticastHitCharacterSound();									 // í”¼ê²© ì‚¬ìš´ë“œ ì „íŒŒ
+
+
 public:
-	bool bIsDodging;
-	void EnsureOverheadWidgetLocal();
-	void RefreshOverheadName();
-	void SpawnDefaultWeapon(); //±âº» ¹«±â¸¦ »ı¼ºÇÏ´Â ÇÔ¼ö
-	void UpdateHUDAmmo(); //HUDÀÇ Åº¾àÀ» ¾÷µ¥ÀÌÆ®ÇÏ´Â ÇÔ¼ö
-	void SetOverlappingWeapon(AWeapon* Weapon); //°ãÄ¡´Â ¹«±â¸¦ ¼³Á¤ÇÏ´Â ÇÔ¼ö
-	bool IsWeaponEquipped(); //¹«±â°¡ ÀåÂøµÇ¾î ÀÖ´ÂÁö È®ÀÎÇÏ´Â ÇÔ¼ö
-	bool IsAiming();
-	FORCEINLINE float GETAO_YAW() const { return AO_YAW; }
-	FORCEINLINE float GETAO_PITCH() const { return AO_PITCH; }
-	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; } //ÆÈ·Î¿ì Ä«¸Ş¶ó¸¦ ¹İÈ¯ÇÏ´Â ÇÔ¼ö
-	FORCEINLINE bool IsElimmed() const { return bisElimmed; } //ÇÃ·¹ÀÌ¾î°¡ Á¦°ÅµÇ¾ú´ÂÁö ¿©ºÎ¸¦ ¹İÈ¯ÇÏ´Â ÇÔ¼ö
-	FORCEINLINE float GetHealth() const { return Health; } //ÇöÀç Ã¼·ÂÀ» ¹İÈ¯ÇÏ´Â ÇÔ¼ö
-	FORCEINLINE float GetMaxHealth() const { return MaxHealth; } //ÇöÀç Ã¼·ÂÀ» ¹İÈ¯ÇÏ´Â ÇÔ¼ö
-	FORCEINLINE UCBComponent* GetCombatComponent() const { return CombatComponent; } //ÀüÅõ ÄÄÆ÷³ÍÆ®¸¦ ¹İÈ¯ÇÏ´Â ÇÔ¼ö
-	FORCEINLINE UAnimMontage* GetReloadMontage() const { return ReloadMontage; } //ÀçÀåÀü ¾Ö´Ï¸ŞÀÌ¼Ç ¸ùÅ¸ÁÖ¸¦ ¹İÈ¯ÇÏ´Â ÇÔ¼ö
-	FORCEINLINE USkeletalMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; } //ÀåÂøµÈ ¼ö·ùÅº ¸Ş½¬ ÄÄÆ÷³ÍÆ®¸¦ ¹İÈ¯ÇÏ´Â ÇÔ¼ö
-	FORCEINLINE UBuffComponent* GetBuffComponent() const { return BuffComponent; } //¹öÇÁ ÄÄÆ÷³ÍÆ®¸¦ ¹İÈ¯ÇÏ´Â ÇÔ¼ö
-	FORCEINLINE void SetHealth(float Amount) { Health = Amount; } //Ã¼·ÂÀ» ¼³Á¤ÇÏ´Â ÇÔ¼ö
-	FORCEINLINE void SetShield(float Amount) { Shield = Amount; } //½Çµå¸¦ ¼³Á¤ÇÏ´Â ÇÔ¼ö
-	FORCEINLINE float GetShield() const { return Shield; } //½Çµå¸¦ ¼³Á¤ÇÏ´Â ÇÔ¼ö
-	FORCEINLINE float GetMaxShield() const { return MaxShield; } //ÃÖ´ë ½Çµå¸¦ ¹İÈ¯ÇÏ´Â ÇÔ¼ö
-	class UOverheadWidget* GetOverheadWidget() const;
-	ECombatState GetCombatState() const; //ÀüÅõ »óÅÂ¸¦ ¹İÈ¯ÇÏ´Â ÇÔ¼ö 
-	AWeapon* GetEquippedWeapon();
-	void PlayFireMontage(bool bAiming); //¹«±â ¹ß»ç ¸ğ¼Ç Àç»ı ÇÔ¼ö
-	void PlayElimMontage(); //ÇÇ°İ ¾Ö´Ï¸ŞÀÌ¼Ç ¸ùÅ¸ÁÖ Àç»ı ÇÔ¼ö
-	void PlayHitReactMontage(); //È÷Æ® ¸®¾×Æ® ¸ùÅ¸ÁÖ Àç»ı ÇÔ¼ö
-	void PlayReloadMontage(); //ÀçÀåÀü ¾Ö´Ï¸ŞÀÌ¼Ç ¸ùÅ¸ÁÖ Àç»ı ÇÔ¼ö
+	/* ============================ */
+	/*  ğŸŒ ìƒíƒœ ë° ì ‘ê·¼ì í•¨ìˆ˜ ì„¹ì…˜ */
+	/* ============================ */
+	bool bIsDodging;													 // íšŒí”¼ ì¤‘ ì—¬ë¶€
+
+	void EnsureOverheadWidgetLocal();									 // ì˜¤ë²„í—¤ë“œ ìœ„ì ¯ ì´ˆê¸°í™”
+	void RefreshOverheadName();										     // ë¨¸ë¦¬ ìœ„ ë‹‰ë„¤ì„ ìƒˆë¡œê³ ì¹¨
+
+	void SpawnDefaultWeapon();											 // ê¸°ë³¸ ë¬´ê¸° ìƒì„±
+	void UpdateHUDAmmo();												 // HUD íƒ„ì•½ ê°±ì‹ 
+	void SetOverlappingWeapon(AWeapon* Weapon);							 // ë¬´ê¸° ê²¹ì¹¨ ì„¤ì •
+
+	bool IsWeaponEquipped();											 // ë¬´ê¸° ì¥ì°© ì—¬ë¶€
+	bool IsAiming();													 // ì¡°ì¤€ ì—¬ë¶€
+
+	// --- ì¸ë¼ì¸ ì ‘ê·¼ì ---
+	FORCEINLINE float GETAO_YAW() const { return AO_YAW; }				 // í˜„ì¬ ì¡°ì¤€ Yaw
+	FORCEINLINE float GETAO_PITCH() const { return AO_PITCH; }			 // í˜„ì¬ ì¡°ì¤€ Pitch
+	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	FORCEINLINE bool IsElimmed() const { return bisElimmed; }
+	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
+	FORCEINLINE UCBComponent* GetCombatComponent() const { return CombatComponent; }
+	FORCEINLINE UAnimMontage* GetReloadMontage() const { return ReloadMontage; }
+	FORCEINLINE USkeletalMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; }
+	FORCEINLINE UBuffComponent* GetBuffComponent() const { return BuffComponent; }
+	FORCEINLINE void SetHealth(float Amount) { Health = Amount; }
+	FORCEINLINE void SetShield(float Amount) { Shield = Amount; }
+	FORCEINLINE float GetShield() const { return Shield; }
+	FORCEINLINE float GetMaxShield() const { return MaxShield; }
+
+	// --- ê¸°ëŠ¥ì„± ë°˜í™˜ í•¨ìˆ˜ ---
+	class UOverheadWidget* GetOverheadWidget() const;					 // ì˜¤ë²„í—¤ë“œ ìœ„ì ¯ ë°˜í™˜
+	ECombatState GetCombatState() const;								 // ì „íˆ¬ ìƒíƒœ ë°˜í™˜
+	AWeapon* GetEquippedWeapon();										 // ì¥ì°© ë¬´ê¸° ë°˜í™˜
+
+	void PlayFireMontage(bool bAiming);								 // ë°œì‚¬ ì• ë‹ˆë©”ì´ì…˜ ì¬ìƒ
+	void PlayElimMontage();											     // ì‚¬ë§ ì• ë‹ˆë©”ì´ì…˜ ì¬ìƒ
+	void PlayHitReactMontage();										     // í”¼ê²© ë°˜ì‘ ì¬ìƒ
+	void PlayReloadMontage();											 // ì¬ì¥ì „ ì• ë‹ˆë©”ì´ì…˜ ì¬ìƒ
+
 	UFUNCTION(NetMulticast, UnReliable)
-	void MultiCastHit(); //È÷Æ® ÀÌº¥Æ®¸¦ ¸ÖÆ¼Ä³½ºÆ®·Î È£ÃâÇÏ´Â ÇÔ¼ö
-	
-	FVector GetHitTarget() const; //È÷Æ® Å¸°ÙÀ» ¹İÈ¯ÇÏ´Â ÇÔ¼ö
-	
+	void MultiCastHit();												 // í”¼ê²© ì• ë‹ˆ ì „íŒŒ
+
+	FVector GetHitTarget() const;										 // ì¡°ì¤€ ëŒ€ìƒ ìœ„ì¹˜ ë°˜í™˜
 };

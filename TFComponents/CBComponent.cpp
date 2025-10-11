@@ -25,12 +25,21 @@
 
 UCBComponent::UCBComponent()
 {
-
 	PrimaryComponentTick.bCanEverTick = true;
-//	//baseWalkSpeed = 600.f; //기본 걷는 속도를 설정한다.
-//	AimingWalkSpeed = 300.f; //조준 상태의 걷는 속도를 설정한다.
 }
-
+// ============================================================
+// [무기 장착] EquipWeapon()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 캐릭터가 새로운 무기를 장착한다.
+//   - 주 무기 / 보조 무기를 구분하여 올바른 슬롯에 장착.
+// 알고리즘 설명 : 
+//   1. 캐릭터 또는 무기가 없으면 리턴
+//   2. 현재 전투 상태가 비어있지 않으면 장착 불가
+//   3. 장착된 무기가 있다면 보조무기 슬롯으로 이동
+//   4. 없다면 주무기로 장착
+//   5. 캐릭터의 Yaw 회전 제어 활성화
+// ============================================================
 void UCBComponent::EquipWeapon(AWeapon* WeaponEquip)
 {
 	if (Character == nullptr || WeaponEquip == nullptr) return;
@@ -47,6 +56,18 @@ void UCBComponent::EquipWeapon(AWeapon* WeaponEquip)
 	Character->bUseControllerRotationYaw = true; //캐릭터가 컨트롤러의 Yaw 회전을 사용하도록 설정한다.
 	
 }
+// ============================================================
+// [무기 교체] SwapWeapons()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 주무기와 보조무기의 슬롯을 서로 교체한다.
+//   - HUD 탄약 정보 갱신 및 사운드 재생 포함.
+// 알고리즘 설명 : 
+//   1. 리로드 중이면 교체 불가
+//   2. EquippedWeapon, SecondaryWeapon을 서로 교환
+//   3. 주무기는 오른손으로, 보조무기는 등으로 이동
+//   4. HUD 및 탄약 수, 사운드 업데이트
+// ============================================================
 void UCBComponent::SwapWeapons()
 {
 	if (CombatState == ECombatState::ECS_Reloading) return;
@@ -64,6 +85,18 @@ void UCBComponent::SwapWeapons()
 	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
 	AttachActorToBack(SecondaryWeapon); //장착된 무기를 등에 부착한다.
 }
+// ============================================================
+// [주무기 장착] EquipPrimaryWeapon()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 새로운 무기를 주무기 슬롯에 장착한다.
+// 알고리즘 설명 : 
+//   1. 기존 무기가 있다면 Drop 처리
+//   2. 무기 상태를 “Equipped”로 변경
+//   3. 오른손 소켓에 부착
+//   4. 소유자 및 HUD 갱신
+//   5. 장착 사운드 재생 및 무기 충돌 비활성화
+// ============================================================
 void UCBComponent::EquipPrimaryWeapon(AWeapon* WeaponToEquip)
 {
 	if (WeaponToEquip == nullptr) return;
@@ -80,6 +113,16 @@ void UCBComponent::EquipPrimaryWeapon(AWeapon* WeaponToEquip)
 	EquippedWeapon->GetAreaSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ReloadEmptyWeapon();
 }
+// ============================================================
+// [보조무기 장착] EquipSecondaryWeapon()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 무기를 보조무기 슬롯에 장착한다.
+// 알고리즘 설명 : 
+//   1. 무기 상태를 “EquippedSecondary”로 설정
+//   2. 등(back socket)에 부착
+//   3. 사운드 재생 및 소유자 설정
+// ============================================================
 void UCBComponent::EquipSecondaryWeapon(AWeapon* WeaponToEquip)
 {
 	if (WeaponToEquip == nullptr) return;
@@ -89,6 +132,16 @@ void UCBComponent::EquipSecondaryWeapon(AWeapon* WeaponToEquip)
 	PlayEquipSound(WeaponToEquip);
 	SecondaryWeapon->SetOwner(Character);
 }
+// ============================================================
+// [장착 무기 복제 응답] OnRep_EquippedWeapon()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 클라이언트에서 장착 무기 정보가 복제되었을 때,
+//     시각적/사운드/탄약 데이터를 반영한다.
+// 사용 기술 : 
+//   - 언리얼 네트워크 복제 (RepNotify)
+//   - AttachToComponent() / HUD 연동
+// ============================================================
 void UCBComponent::OnRep_EquippedWeapon()
 {
 	if (EquippedWeapon) {
@@ -99,6 +152,13 @@ void UCBComponent::OnRep_EquippedWeapon()
 	}
 	PlayEquipSound(EquippedWeapon);
 }
+// ============================================================
+// [보조무기 복제 응답] OnRep_SecondaryWeapon()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 클라이언트에서 보조무기 정보가 갱신될 때 호출된다.
+//   - 무기를 등(back socket)에 부착하고 장착 사운드 재생.
+// ============================================================
 void UCBComponent::OnRep_SecondaryWeapon()
 {
 	if (SecondaryWeapon && Character) {
@@ -108,12 +168,28 @@ void UCBComponent::OnRep_SecondaryWeapon()
 
 	}
 }
+// ============================================================
+// [무기 드롭] DropEquippedWeapon()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 현재 장착 중인 무기를 바닥에 떨어뜨린다.
+//   - 무기 드롭은 물리/충돌이 다시 활성화된다.
+// ============================================================
 void UCBComponent::DropEquippedWeapon()
 {
 	if (EquippedWeapon) {
 		EquippedWeapon->DropWeapon(); //이미 장착된 무기가 있으면 드롭한다.
 	}
 }
+// ============================================================
+// [무기 오른손 부착] AttachActorToRightHand()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 무기를 캐릭터의 오른손 소켓("RightHandSocket")에 부착한다.
+// 알고리즘 설명 : 
+//   1. 캐릭터, 메시, 액터 유효성 검사
+//   2. FAttachmentTransformRules::SnapToTargetNotIncludingScale 사용
+// ============================================================
 void UCBComponent::AttachActorToRightHand(AActor* ActorToAttach)
 {
 	if (Character == nullptr|| Character->GetMesh()==nullptr || ActorToAttach == nullptr) return;
@@ -123,6 +199,13 @@ void UCBComponent::AttachActorToRightHand(AActor* ActorToAttach)
 		FName("RightHandSocket")
 	);
 }
+// ============================================================
+// [무기 왼손 부착] AttachActorToLeftHand()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 무기를 캐릭터의 왼손 소켓("LeftHandSocket")에 부착한다.
+//   - 리로드나 수류탄 투척 시 임시 위치 변경용으로 사용.
+// ============================================================
 void UCBComponent::AttachActorToLeftHand(AActor* ActorToAttach)
 {
 	if (Character == nullptr || Character->GetMesh() == nullptr || ActorToAttach == nullptr) return;
@@ -132,6 +215,13 @@ void UCBComponent::AttachActorToLeftHand(AActor* ActorToAttach)
 		FName("LeftHandSocket")
 	);
 }
+// ============================================================
+// [무기 등 부착] AttachActorToBack()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 무기를 캐릭터의 등 소켓("BackWeaponSocket")에 부착한다.
+//   - 스나이퍼 소총의 경우 회전/위치 오프셋 추가 적용.
+// ============================================================
 void UCBComponent::AttachActorToBack(AActor* ActorToAttach)
 {
 	if (Character == nullptr || Character->GetMesh() == nullptr || ActorToAttach == nullptr) return;
@@ -147,6 +237,15 @@ void UCBComponent::AttachActorToBack(AActor* ActorToAttach)
 		}
 	}
 }
+// ============================================================
+// [보유 탄약 갱신] UpdateCarriedAmmo()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 장착된 무기의 타입에 따라 보유 탄약 수를 HUD에 반영한다.
+// 알고리즘 설명 : 
+//   1. 장착된 무기 확인 후 CarriedAmmoMap에서 해당 타입 검색
+//   2. 현재 탄약 수를 Controller HUD에 전달
+// ============================================================
 void UCBComponent::UpdateCarriedAmmo()
 {
 	if (EquippedWeapon == nullptr)return;
@@ -170,6 +269,16 @@ void UCBComponent::ReloadEmptyWeapon()
 		Reload(); //장착된 무기가 비어있으면 리로드를 시도한다.
 	}
 }
+// ============================================================
+// [무기 위치 수정] EquippedWeaponPositionModify()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 무기 종류(EWeaponType)에 따라 손에 들었을 때의 위치/회전 보정.
+// 알고리즘 설명 : 
+//   - 샷건: 위치를 약간 위로
+//   - 권총: 약간 아래로
+//   - 스나이퍼 라이플: 회전 + 위치 오프셋 적용
+// ============================================================
 void UCBComponent::EquippedWeaponPositionModify()
 {
 	if (EquippedWeapon->GetWeaponType() == EWeaponType::EWT_ShotGun)
@@ -188,7 +297,15 @@ void UCBComponent::EquippedWeaponPositionModify()
 		EquippedWeapon->GetRootComponent()->SetRelativeLocation(FOffset); //무기의 루트 컴포넌트 위치를 조정한다.
 	}
 }
-
+// ============================================================
+// [네트워크 복제 등록] GetLifetimeReplicatedProps()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 언리얼의 DOREPLIFETIME 매크로로 네트워크 복제 변수를 지정한다.
+// 복제 항목 : 
+//   - EquippedWeapon, SecondaryWeapon, bisAiming, CombatState, Grenades
+//   - CarriedAmmo (소유자 전용 복제)
+// ============================================================
 void UCBComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -200,7 +317,16 @@ void UCBComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME_CONDITION(UCBComponent, CarriedAmmo, COND_OwnerOnly); // 소유자만 탄약을 복제한다.
 	//DOREPLIFETIME_CONDITION(UCBComponent, EquippedWeapon, COND_OwnerOnly); //장착된 무기를 복제하는데, 조건은 소유자만 복제한다는 뜻이다.
 }
-
+// ============================================================
+// [전투 상태 복제 응답] OnRep_CombatState()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 서버에서 전투 상태가 변경되면 클라이언트 측에서 상태를 동기화한다.
+// 알고리즘 설명 : 
+//   - Reloading → 리로드 처리
+//   - ThrowingGrenade → 수류탄 투척 모션 및 왼손 무기 이동
+//   - Unoccupied → 발사 버튼 유지 시 자동 발사
+// ============================================================
 void UCBComponent::OnRep_CombatState()
 {
 	switch (CombatState)
@@ -238,6 +364,13 @@ void UCBComponent::HandleReload()
 		Character->PlayReloadMontage(); //캐릭터의 리로드 몽타주를 재생한다.
 	}
 }
+// ============================================================
+// [리로드 양 계산] AmountToReload()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 탄창 여유 공간(RoomInMag)과 보유 탄약 중 최소값 계산.
+//   - 리로드 가능한 실제 탄약 수 반환.
+// ============================================================
 int32 UCBComponent::AmountToReload()
 {
 	if (EquippedWeapon == nullptr) return 0; //장착된 무기가 없으면 0을 반환한다.
@@ -249,6 +382,13 @@ int32 UCBComponent::AmountToReload()
 	}
 	return 0;
 }
+// ============================================================
+// [탄약 수 업데이트] UpdateAmmoValues()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 리로드 시 보유 탄약을 차감하고, 탄창에 추가한다.
+//   - HUD 탄약 표시를 갱신한다.
+// ============================================================
 void UCBComponent::UpdateAmmoValues()
 {
 	if (Character == nullptr || EquippedWeapon == nullptr) return; //캐릭터가 없으면 함수를 종료한다.
@@ -301,14 +441,31 @@ void UCBComponent::JumpToShotgunEnd()
 		AnimInstance->Montage_JumpToSection(FName("ShotgunEnd"));
 	}
 }
-
+// ============================================================
+// [수류탄 던지기 종료] ThrowGrenadeFinished()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 수류탄 투척 후 무기 및 상태를 복구한다.
+// 알고리즘 설명 : 
+//   1. CombatState를 Unoccupied로 복귀
+//   2. 무기를 다시 오른손에 부착
+//   3. 위치 오프셋 수정
+// ============================================================
 void UCBComponent::ThrowGrenadeFinished()
 {
 	CombatState = ECombatState::ECS_Unoccupied; //전투 상태를 비어있는 상태로 설정한다.
 	AttachActorToRightHand(EquippedWeapon); //장착된 무기를 오른손에 부착한다.
 	EquippedWeaponPositionModify(); //장착된 무기의 위치를 수정한다.
 }
-
+// ============================================================
+// [수류탄 발사] LaunchGrenade()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 로컬 플레이어가 서버로 수류탄 발사 요청을 보낸다.
+// 알고리즘 설명 : 
+//   1. 캐릭터의 부착 수류탄 숨김
+//   2. IsLocallyControlled일 경우 ServerLaunchGrenade() 호출
+// ============================================================
 void UCBComponent::LaunchGrenade()
 {
 	ShowAttachedGrenade(false); //캐릭터의 부착된 수류탄을 숨긴다.
@@ -316,7 +473,15 @@ void UCBComponent::LaunchGrenade()
 		ServerLaunchGrenade(HitTarget); //서버에 수류탄 발사 요청을 보낸다.
 	}
 }
-
+// ============================================================
+// [서버 수류탄 발사 처리] ServerLaunchGrenade()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 서버에서 실제 수류탄(Projectile)을 생성 및 발사한다.
+// 알고리즘 설명 : 
+//   1. 부착 수류탄 위치에서 SpawnActor 호출
+//   2. 충돌 방지를 위해 캐릭터 무시 설정
+// ============================================================
 void UCBComponent::ServerLaunchGrenade_Implementation(const FVector_NetQuantize& Target)
 {
 	if (Character && GrenadeClass && Character->GetAttachedGrenade()) {
@@ -336,12 +501,27 @@ void UCBComponent::ServerLaunchGrenade_Implementation(const FVector_NetQuantize&
 		}
 	}
 }
-
+// ============================================================
+// [서버 리로드 처리] ServerReload()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - CombatState를 Reloading으로 변경 후 HandleReload() 호출.
+// ============================================================
 void UCBComponent::ServerReload_Implementation()
 {
 	CombatState = ECombatState::ECS_Reloading;//전투 상태를 리로드 상태로 설정한다
 	HandleReload();//리로드를 처리한다.
 }
+// ============================================================
+// [리로드 완료 처리] FinishReload()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 리로드 애니메이션 종료 시 호출.
+// 알고리즘 설명 : 
+//   1. 서버: 탄약 수 갱신 및 상태 복귀
+//   2. 클라이언트: ServerFinishReload() RPC 요청
+//   3. 발사 버튼 유지 시 자동 발사 재시작
+// ============================================================
 void UCBComponent::FinishReload()
 {
 	if (Character == nullptr) return;
@@ -359,7 +539,17 @@ void UCBComponent::FinishReload()
 		Fire(); //발사 버튼이 눌렸으면 발사한다.
 	}
 }
-
+// ============================================================
+// [HUD 전체 동기화] PushAllHUDFromCombat()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - HUD의 체력, 실드, 탄약, 수류탄, 스코어 데이터를 한 번에 갱신.
+// 사용 알고리즘 : 
+//   1. Controller를 가져와 각 HUD 항목 직접 갱신
+//   2. 캐릭터 → Health/Shield
+//   3. 무기 → Ammo
+//   4. PlayerState → Score/Defeats
+// ============================================================
 void UCBComponent::PushAllHUDFromCombat()
 {
 	Controller = Controller == nullptr ? Cast<ATFPlayerController>(Character ? Character->Controller : nullptr) : Controller;
@@ -531,7 +721,13 @@ void UCBComponent::ServerSetAiming_Implementation(bool bAiming)
 	}
 }
 
-
+// ============================================================
+// [발사 멀티캐스트] MulticastFire()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 서버에서 모든 클라이언트에게 발사 애니메이션과 효과 전파.
+//   - 샷건 예외 처리 포함 (리로드 중 발사 허용).
+// ============================================================
 void UCBComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTargert)
 {
 	if (EquippedWeapon == nullptr) return;
@@ -546,7 +742,19 @@ void UCBComponent::MulticastFire_Implementation(const FVector_NetQuantize& Trace
 		EquippedWeapon->Fire(TraceHitTargert); //무기를 발사한다.
 	}
 }
-
+// ============================================================
+// [조준선 추적] TraceUnderCrosshairs()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 화면 중앙 크로스헤어 기준으로 라인트레이스 수행.
+//   - 조준 대상의 충돌 정보(FHitResult)를 반환한다.
+// 알고리즘 설명 : 
+//   1. 뷰포트 중앙 좌표 계산
+//   2. DeprojectScreenToWorld()로 월드 방향 벡터 변환
+//   3. 라인트레이스(Visibility 채널) 수행
+//   4. 충돌 시 ImpactPoint 저장, 없으면 허공 좌표로 설정
+//   5. 조준 대상이 Crosshair 인터페이스 구현 시 색상 변경
+// ============================================================
 void UCBComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 {
 	FVector2D ViewportSize;
@@ -601,7 +809,19 @@ void UCBComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 		}
 	}
 }
-
+// ============================================================
+// [조준선 추적] TraceUnderCrosshairs()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 화면 중앙 크로스헤어 기준으로 라인트레이스 수행.
+//   - 조준 대상의 충돌 정보(FHitResult)를 반환한다.
+// 알고리즘 설명 : 
+//   1. 뷰포트 중앙 좌표 계산
+//   2. DeprojectScreenToWorld()로 월드 방향 벡터 변환
+//   3. 라인트레이스(Visibility 채널) 수행
+//   4. 충돌 시 ImpactPoint 저장, 없으면 허공 좌표로 설정
+//   5. 조준 대상이 Crosshair 인터페이스 구현 시 색상 변경
+// ============================================================
 void UCBComponent::SetHUDCrossharis(float DeltaTime)
 {
 	if (Character == nullptr || Character->Controller == nullptr) return;
@@ -644,7 +864,18 @@ void UCBComponent::SetHUDCrossharis(float DeltaTime)
 		}
 	}
 }
-
+// ============================================================
+// [수류탄 투척] ThrowGrenade()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 수류탄 투척 상태로 전환하고 애니메이션 및 HUD 갱신.
+// 알고리즘 설명 : 
+//   1. 리로드/비무장 상태 확인
+//   2. CombatState를 ThrowingGrenade로 설정
+//   3. 수류탄 애니메이션 재생 및 왼손 부착
+//   4. 서버 권한 여부에 따라 RPC 처리
+//   5. HUD의 수류탄 개수 감소
+// ============================================================
 void UCBComponent::ThrowGrenade()
 {
 	if (CombatState == ECombatState::ECS_Reloading) return; //리로드 상태에서는 수류탄을 던지지 않는다.

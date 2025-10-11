@@ -1,70 +1,133 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "TFPlayerState.h"
 #include "UnrealProject_7A/Character/TimeFractureCharacter.h"
 #include "UnrealProject_7A/PlayerController/TFPlayerController.h"
 #include "UnrealProject_7A/HUD/OverheadWidget.h"
-#include "Net/UnrealNetwork.h" //³×Æ®¿öÅ© °ü·Ã Çì´õ ÆÄÀÏÀ» Æ÷ÇÔ½ÃÅ²´Ù.
+#include "Net/UnrealNetwork.h" //ë„¤íŠ¸ì›Œí¬ ê´€ë ¨ í—¤ë” íŒŒì¼ì„ í¬í•¨ì‹œí‚¨ë‹¤.
 
+// ============================================================
+//  TFPlayerState.cpp â€” ê¸°ëŠ¥ ë° ì•Œê³ ë¦¬ì¦˜ ì„¤ëª… ë¬¸ì„œí™” ë²„ì „
+// ============================================================
+
+
+// ============================================================
+// [ë„¤íŠ¸ì›Œí¬ ë³µì œ ë“±ë¡] GetLifetimeReplicatedProps()
+// ------------------------------------------------------------
+// ê¸°ëŠ¥ ìš”ì•½ : 
+//   - Defeats(ì²˜ì¹˜ ìˆ˜) ë³€ìˆ˜ë¥¼ ë„¤íŠ¸ì›Œí¬ ë³µì œ ëŒ€ìƒìœ¼ë¡œ ë“±ë¡í•œë‹¤.
+// ì‚¬ìš© ì•Œê³ ë¦¬ì¦˜ : 
+//   1. ë¶€ëª¨ í´ë˜ìŠ¤ì˜ ë³µì œ ì„¤ì • ìƒì†
+//   2. DOREPLIFETIME ë§¤í¬ë¡œë¥¼ ì´ìš©í•´ Defeatsë¥¼ í´ë¼ì´ì–¸íŠ¸ì— ë³µì œ
+// ============================================================
 void ATFPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps); //ºÎ¸ğ Å¬·¡½ºÀÇ GetLifetimeReplicatedProps ÇÔ¼ö¸¦ È£ÃâÇÑ´Ù.
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps); //ë¶€ëª¨ í´ë˜ìŠ¤ì˜ GetLifetimeReplicatedProps í•¨ìˆ˜ë¥¼ í˜¸ì¶œí•œë‹¤.
 
-	DOREPLIFETIME(ATFPlayerState, Defeats); //Defeats º¯¼ö¸¦ ³×Æ®¿öÅ©·Î º¹Á¦ÇÒ ¼ö ÀÖµµ·Ï ¼³Á¤ÇÑ´Ù.
+	DOREPLIFETIME(ATFPlayerState, Defeats); //Defeats ë³€ìˆ˜ë¥¼ ë„¤íŠ¸ì›Œí¬ë¡œ ë³µì œí•  ìˆ˜ ìˆë„ë¡ ì„¤ì •í•œë‹¤.
 }
+// ============================================================
+// [ì ìˆ˜ ë³µì œ ì‘ë‹µ] OnRep_Score()
+// ------------------------------------------------------------
+// ê¸°ëŠ¥ ìš”ì•½ : 
+//   - ì„œë²„ì—ì„œ ì ìˆ˜ê°€ ë³€ê²½ë˜ì–´ í´ë¼ì´ì–¸íŠ¸ë¡œ ë³µì œë  ë•Œ ìë™ í˜¸ì¶œëœë‹¤.
+//   - HUD ì ìˆ˜ì™€ ìŠ¤ì½”ì–´ë³´ë“œë¥¼ ì‹¤ì‹œê°„ ê°±ì‹ í•œë‹¤.
+// ì‚¬ìš© ì•Œê³ ë¦¬ì¦˜ : 
+//   1. GetPawn()ìœ¼ë¡œ ìºë¦­í„° ì°¸ì¡° í™•ë³´
+//   2. ìºë¦­í„°ë¥¼ í†µí•´ PlayerController ìºì‹±
+//   3. Controllerì˜ SetHUDScore() í˜¸ì¶œ â†’ HUD ë°˜ì˜
+//   4. UpdateScoreboard() í˜¸ì¶œ â†’ UI ê°±ì‹ 
+// ============================================================
 void ATFPlayerState::OnRep_Score()
 {
-	Super::OnRep_Score(); //ºÎ¸ğ Å¬·¡½ºÀÇ OnRep_Score ÇÔ¼ö¸¦ È£ÃâÇÑ´Ù.
+	Super::OnRep_Score(); //ë¶€ëª¨ í´ë˜ìŠ¤ì˜ OnRep_Score í•¨ìˆ˜ë¥¼ í˜¸ì¶œí•œë‹¤.
 
-	TFCharacter = TFCharacter == nullptr ? Cast<ATimeFractureCharacter>(GetPawn()) : TFCharacter; //Ä³¸¯ÅÍÀÇ Æ÷ÀÎÅÍ¸¦ ÀúÀåÇÑ´Ù.
+	TFCharacter = TFCharacter == nullptr ? Cast<ATimeFractureCharacter>(GetPawn()) : TFCharacter; //ìºë¦­í„°ì˜ í¬ì¸í„°ë¥¼ ì €ì¥í•œë‹¤.
 	if (TFCharacter) {
-		TFPlayerController = TFPlayerController == nullptr ? Cast<ATFPlayerController>(TFCharacter->Controller) : TFPlayerController; //ÇÃ·¹ÀÌ¾î ÄÁÆ®·Ñ·¯ÀÇ Æ÷ÀÎÅÍ¸¦ ÀúÀåÇÑ´Ù.
+		TFPlayerController = TFPlayerController == nullptr ? Cast<ATFPlayerController>(TFCharacter->Controller) : TFPlayerController; //í”Œë ˆì´ì–´ ì»¨íŠ¸ë¡¤ëŸ¬ì˜ í¬ì¸í„°ë¥¼ ì €ì¥í•œë‹¤.
 		if(TFPlayerController) {
-			TFPlayerController->SetHUDScore(GetScore()); //ÇÃ·¹ÀÌ¾î ÄÁÆ®·Ñ·¯ÀÇ SetHUDScore ÇÔ¼ö¸¦ È£ÃâÇÏ¿© HUD¿¡ Á¡¼ö¸¦ ¼³Á¤ÇÑ´Ù.
+			TFPlayerController->SetHUDScore(GetScore()); //í”Œë ˆì´ì–´ ì»¨íŠ¸ë¡¤ëŸ¬ì˜ SetHUDScore í•¨ìˆ˜ë¥¼ í˜¸ì¶œí•˜ì—¬ HUDì— ì ìˆ˜ë¥¼ ì„¤ì •í•œë‹¤.
 			TFPlayerController->UpdateScoreboard();
 		}
 	}
 }
-
-
-
+// ============================================================
+// [ì ìˆ˜ ì¶”ê°€] AddToScore()
+// ------------------------------------------------------------
+// ê¸°ëŠ¥ ìš”ì•½ : 
+//   - ì„œë²„ì—ì„œ ì ìˆ˜ë¥¼ ëˆ„ì ì‹œí‚¤ê³  HUD ê°±ì‹ ì„ ì§ì ‘ íŠ¸ë¦¬ê±°í•œë‹¤.
+// ì‚¬ìš© ì•Œê³ ë¦¬ì¦˜ : 
+//   1. HasAuthority() ê²€ì‚¬ë¡œ ì„œë²„ì¸ì§€ í™•ì¸
+//   2. ì ìˆ˜ ëˆ„ì  (SetScore())
+//   3. OnRep_Score() ìˆ˜ë™ í˜¸ì¶œ (HUD ì—…ë°ì´íŠ¸ ë³´ì¥)
+// ============================================================
 void ATFPlayerState::AddToScore(float ScoreAmount)
 {
 	if (HasAuthority())
 	{
 		SetScore(GetScore() + ScoreAmount);
-		// ¼­¹ö¿¡¼­´Â OnRep_Score°¡ ÀÚµ¿À¸·Î È£ÃâµÇÁö ¾ÊÀ¸¹Ç·Î, Á÷Á¢ È£ÃâÇÏ¿© HUD¸¦ ¾÷µ¥ÀÌÆ®ÇÕ´Ï´Ù.
-		// Å¬¶óÀÌ¾ğÆ®¿¡¼­´Â Á¡¼ö°¡ º¹Á¦µÈ ÈÄ ÀÚµ¿À¸·Î OnRep_Score°¡ È£ÃâµË´Ï´Ù.
+		// ì„œë²„ì—ì„œëŠ” OnRep_Scoreê°€ ìë™ìœ¼ë¡œ í˜¸ì¶œë˜ì§€ ì•Šìœ¼ë¯€ë¡œ, ì§ì ‘ í˜¸ì¶œí•˜ì—¬ HUDë¥¼ ì—…ë°ì´íŠ¸í•©ë‹ˆë‹¤.
+		// í´ë¼ì´ì–¸íŠ¸ì—ì„œëŠ” ì ìˆ˜ê°€ ë³µì œëœ í›„ ìë™ìœ¼ë¡œ OnRep_Scoreê°€ í˜¸ì¶œë©ë‹ˆë‹¤.
 		OnRep_Score();
 	}
 	
 }
-
+// ============================================================
+// [ì²˜ì¹˜ ìˆ˜ ë³µì œ ì‘ë‹µ] OnRep_Defeats()
+// ------------------------------------------------------------
+// ê¸°ëŠ¥ ìš”ì•½ : 
+//   - ì„œë²„ì—ì„œ Defeats ê°’ì´ ê°±ì‹ ë˜ì–´ í´ë¼ì´ì–¸íŠ¸ë¡œ ë³µì œë  ë•Œ í˜¸ì¶œëœë‹¤.
+//   - HUD ì²˜ì¹˜ ìˆ˜ ë° ìŠ¤ì½”ì–´ë³´ë“œ ê°±ì‹ .
+// ì‚¬ìš© ì•Œê³ ë¦¬ì¦˜ : 
+//   1. ìºë¦­í„° ì°¸ì¡° í™•ë³´ â†’ PlayerController ì°¸ì¡° ê°±ì‹ 
+//   2. HUDì˜ SetHUDDefeats() í˜¸ì¶œ
+//   3. UpdateScoreboard()ë¡œ UI ê°±ì‹ 
+// ============================================================
 void ATFPlayerState::OnRep_Defeats()
 {
-	TFCharacter = TFCharacter == nullptr ? Cast<ATimeFractureCharacter>(GetPawn()) : TFCharacter; //Ä³¸¯ÅÍÀÇ Æ÷ÀÎÅÍ¸¦ ÀúÀåÇÑ´Ù.
+	TFCharacter = TFCharacter == nullptr ? Cast<ATimeFractureCharacter>(GetPawn()) : TFCharacter; //ìºë¦­í„°ì˜ í¬ì¸í„°ë¥¼ ì €ì¥í•œë‹¤.
 	if (TFCharacter) {
-		TFPlayerController = TFPlayerController == nullptr ? Cast<ATFPlayerController>(TFCharacter->Controller) : TFPlayerController; //ÇÃ·¹ÀÌ¾î ÄÁÆ®·Ñ·¯ÀÇ Æ÷ÀÎÅÍ¸¦ ÀúÀåÇÑ´Ù.
+		TFPlayerController = TFPlayerController == nullptr ? Cast<ATFPlayerController>(TFCharacter->Controller) : TFPlayerController; //í”Œë ˆì´ì–´ ì»¨íŠ¸ë¡¤ëŸ¬ì˜ í¬ì¸í„°ë¥¼ ì €ì¥í•œë‹¤.
 		if (TFPlayerController) {
-			TFPlayerController->SetHUDDefeats(Defeats); //ÇÃ·¹ÀÌ¾î ÄÁÆ®·Ñ·¯ÀÇ SetHUDDefeats ÇÔ¼ö¸¦ È£ÃâÇÏ¿© HUD¿¡ Ã³Ä¡ ¼ö¸¦ ¼³Á¤ÇÑ´Ù.
+			TFPlayerController->SetHUDDefeats(Defeats); //í”Œë ˆì´ì–´ ì»¨íŠ¸ë¡¤ëŸ¬ì˜ SetHUDDefeats í•¨ìˆ˜ë¥¼ í˜¸ì¶œí•˜ì—¬ HUDì— ì²˜ì¹˜ ìˆ˜ë¥¼ ì„¤ì •í•œë‹¤.
 			TFPlayerController->UpdateScoreboard();
 		}
 	}
 }
-
+// ============================================================
+// [ì²˜ì¹˜ ìˆ˜ ì¶”ê°€] AddToDefeats()
+// ------------------------------------------------------------
+// ê¸°ëŠ¥ ìš”ì•½ : 
+//   - ì„œë²„ì—ì„œ Defeats(ì²˜ì¹˜ ìˆ˜)ë¥¼ ëˆ„ì í•˜ê³  HUDì— ë°˜ì˜í•œë‹¤.
+// ì‚¬ìš© ì•Œê³ ë¦¬ì¦˜ : 
+//   1. Defeats ê°’ ì¦ê°€
+//   2. ìºë¦­í„° ë° Controller ì°¸ì¡° í™•ë³´
+//   3. HUDì˜ SetHUDDefeats() í˜¸ì¶œ â†’ ì‹¤ì‹œê°„ ê°±ì‹ 
+// ============================================================
 void ATFPlayerState::AddToDefeats(int32 DefeatAmount)
 {
-	Defeats += DefeatAmount; //Defeats º¯¼ö¸¦ Áõ°¡½ÃÅ²´Ù.
-	TFCharacter = TFCharacter == nullptr ? Cast<ATimeFractureCharacter>(GetPawn()) : TFCharacter; //Ä³¸¯ÅÍÀÇ Æ÷ÀÎÅÍ¸¦ ÀúÀåÇÑ´Ù.
+	Defeats += DefeatAmount; //Defeats ë³€ìˆ˜ë¥¼ ì¦ê°€ì‹œí‚¨ë‹¤.
+	TFCharacter = TFCharacter == nullptr ? Cast<ATimeFractureCharacter>(GetPawn()) : TFCharacter; //ìºë¦­í„°ì˜ í¬ì¸í„°ë¥¼ ì €ì¥í•œë‹¤.
 	if (TFCharacter) {
-		TFPlayerController = TFPlayerController == nullptr ? Cast<ATFPlayerController>(TFCharacter->Controller) : TFPlayerController; //ÇÃ·¹ÀÌ¾î ÄÁÆ®·Ñ·¯ÀÇ Æ÷ÀÎÅÍ¸¦ ÀúÀåÇÑ´Ù.
+		TFPlayerController = TFPlayerController == nullptr ? Cast<ATFPlayerController>(TFCharacter->Controller) : TFPlayerController; //í”Œë ˆì´ì–´ ì»¨íŠ¸ë¡¤ëŸ¬ì˜ í¬ì¸í„°ë¥¼ ì €ì¥í•œë‹¤.
 		if (TFPlayerController) {
-			TFPlayerController->SetHUDDefeats(Defeats); //ÇÃ·¹ÀÌ¾î ÄÁÆ®·Ñ·¯ÀÇ SetHUDDefeats ÇÔ¼ö¸¦ È£ÃâÇÏ¿© HUD¿¡ Ã³Ä¡ ¼ö¸¦ ¼³Á¤ÇÑ´Ù.
+			TFPlayerController->SetHUDDefeats(Defeats); //í”Œë ˆì´ì–´ ì»¨íŠ¸ë¡¤ëŸ¬ì˜ SetHUDDefeats í•¨ìˆ˜ë¥¼ í˜¸ì¶œí•˜ì—¬ HUDì— ì²˜ì¹˜ ìˆ˜ë¥¼ ì„¤ì •í•œë‹¤.
 		}
 	}
 }
-
+// ============================================================
+// [í”Œë ˆì´ì–´ ì´ë¦„ ë³µì œ ì‘ë‹µ] OnRep_PlayerName()
+// ------------------------------------------------------------
+// ê¸°ëŠ¥ ìš”ì•½ : 
+//   - PlayerStateì˜ ì´ë¦„ì´ ì„œë²„ì—ì„œ ë³€ê²½ë˜ì–´ ë³µì œë  ë•Œ í˜¸ì¶œëœë‹¤.
+//   - OverheadWidget ë° ìŠ¤ì½”ì–´ë³´ë“œ ì´ë¦„ ê°±ì‹  ë‹´ë‹¹.
+// ì‚¬ìš© ì•Œê³ ë¦¬ì¦˜ : 
+//   1. GetPawn()ìœ¼ë¡œ ìºë¦­í„° í™•ì¸
+//   2. ìºë¦­í„°ì˜ OverheadWidget ê°€ì ¸ì˜¤ê¸°
+//   3. ShowPlayerNetRole()ë¡œ UI ë°˜ì˜
+//   4. PlayerControllerì˜ UpdateScoreboard() í˜¸ì¶œ
+// ============================================================
 void ATFPlayerState::OnRep_PlayerName()
 {
 	APawn* OwnerPawn = GetPawn();
@@ -76,7 +139,7 @@ void ATFPlayerState::OnRep_PlayerName()
 
 	if (ATFPlayerController* PC = Cast<ATFPlayerController>(GetWorld()->GetFirstPlayerController()))
 	{
-		PC->UpdateScoreboard(); // ÀÌ¸§ º¹Á¦ ¿Ï·áµÇ¸é ½ºÄÚ¾îº¸µå ´Ù½Ã °»½Å
+		PC->UpdateScoreboard(); // ì´ë¦„ ë³µì œ ì™„ë£Œë˜ë©´ ìŠ¤ì½”ì–´ë³´ë“œ ë‹¤ì‹œ ê°±ì‹ 
 	}
 }
 

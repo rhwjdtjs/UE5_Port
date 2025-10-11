@@ -5,6 +5,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
 #include "TFHUD.generated.h"
+
+/**
+ * FHUDPakage
+ *
+ * 크로스헤어 관련 정보(텍스처, 색상, 스프레드 등)를 저장하는 구조체.
+ */
 USTRUCT(BlueprintType)
 struct FHUDPakage {
 	GENERATED_BODY()
@@ -17,40 +23,53 @@ public:
 	float CrosshairSpread;
 	FLinearColor CrosshairColor;
 };
+
 /**
- * 
+ * ATFHUD
+ *
+ * - 화면에 HUD 요소를 표시하는 클래스.
+ * - 크로스헤어, 캐릭터 상태 오버레이, 알림, 채팅 UI를 관리한다.
  */
 UCLASS()
 class UNREALPROJECT_7A_API ATFHUD : public AHUD
 {
 	GENERATED_BODY()
 public:
-	virtual void DrawHUD() override; //HUD를 그리는 함수, 자식 클래스에서 구현할 수 있다.
-	FORCEINLINE void SetHUDPackage(const FHUDPakage& Package) { HUDPackage = Package; } //HUD 패키지를 설정하는 함수
-	UPROPERTY(EditAnywhere, Category="Player State")
-	TSubclassOf<UUserWidget> CharacterOverlayClass; //캐릭터 오버레이 위젯 클래스
+	virtual void DrawHUD() override; // HUD를 직접 그리는 함수
+	FORCEINLINE void SetHUDPackage(const FHUDPakage& Package) { HUDPackage = Package; }
+
+	// 캐릭터 오버레이 위젯
+	UPROPERTY(EditAnywhere, Category = "Player State")
+	TSubclassOf<UUserWidget> CharacterOverlayClass;
 	UPROPERTY()
-	class UCharacterOverlay* CharacterOverlay; //캐릭터 오버레이 위젯을 저장하는 변수
-	void AddCharacterOverlay(); //캐릭터 오버레이 위젯을 추가하는 함수
+	class UCharacterOverlay* CharacterOverlay;
+	void AddCharacterOverlay();
+
+	// 알림 위젯
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<UUserWidget> AlertClass; //알림 위젯 클래스
+	TSubclassOf<UUserWidget> AlertClass;
 	UPROPERTY()
-	class UAlert* Alert; //알림 위젯을 저장하는 변수
-	void AddAlert(); //알림 위젯을 추가하는 함수
+	class UAlert* Alert;
+	void AddAlert();
+
+	// 채팅 위젯
 	UPROPERTY(EditAnywhere, Category = "Chat")
 	TSubclassOf<UUserWidget> ChatWidgetClass;
-
 	UPROPERTY()
 	class UChatWidget* ChatWidget;
-
 	void AddChatWidget();
+
 protected:
-	virtual void BeginPlay() override; //게임 시작 시 호출되는 함수, 자식 클래스에서 구현할 수 있다.
-	
-	private:
-	FHUDPakage HUDPackage; //HUD 패키지 구조체를 사용하여 크로스헤어 텍스쳐를 저장
+	virtual void BeginPlay() override;
+
+private:
+	// HUD 렌더링용 구조체
+	FHUDPakage HUDPackage;
+
 	float ViewportDiv = 2.f;
 	UPROPERTY(EditAnywhere)
-	float CrosshairSpreadMax = 16.f; //크로스헤어 스프레드 최대값
+	float CrosshairSpreadMax = 16.f; // 크로스헤어 최대 확산 정도
+
+	// 크로스헤어를 화면에 직접 그리는 내부 함수
 	void DrawCrosshair(UTexture2D* Texture, FVector2D ViewportCenter, FVector2D Spread, FLinearColor CrosshairColor);
 };

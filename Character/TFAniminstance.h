@@ -6,8 +6,12 @@
 #include "Animation/AnimInstance.h"
 #include "TFAniminstance.generated.h"
 
-/**
- * 
+/*
+ * UTFAnimInstance
+ *
+ * 캐릭터의 애니메이션 상태를 매 프레임 갱신하는 클래스.
+ * 이동, 점프, 무기 장착, 조준 등의 상태를 계산하여
+ * 애니메이션 블루프린트에 전달한다.
  */
 UCLASS()
 class UNREALPROJECT_7A_API UTFAniminstance : public UAnimInstance
@@ -17,48 +21,76 @@ class UNREALPROJECT_7A_API UTFAniminstance : public UAnimInstance
 
 
 public:
-		virtual void NativeInitializeAnimation() override; //beginplay와 비슷하다
-		virtual void NativeUpdateAnimation(float DeltaTime) override; //tick과 비슷하다
-		UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-		bool bIsInAir; //캐릭터가 공중에 있는지 여부를 저장한다.
-		UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-		bool bIsCrouching; //캐릭터가 크라우치 상태인지 여부를 저장한다.
-		UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-		bool bIsWireAttached; //와이어가 걸려있는지 여부를 저장하는 변수
+	// 애니메이션 초기화 (BeginPlay 유사)
+	virtual void NativeInitializeAnimation() override;
+
+	// 애니메이션 상태 갱신 (Tick 유사)
+	virtual void NativeUpdateAnimation(float DeltaTime) override;
+
+
+	// 캐릭터 상태 관련
+	UPROPERTY(BlueprintReadOnly, Category = "Character", meta = (AllowPrivateAccess = "true"))
+	bool bIsInAir; // 점프 중인지 여부
+
+	UPROPERTY(BlueprintReadOnly, Category = "Character", meta = (AllowPrivateAccess = "true"))
+	bool bIsCrouching; // 크라우치 상태인지 여부
+
+	UPROPERTY(BlueprintReadOnly, Category = "Character", meta = (AllowPrivateAccess = "true"))
+	float Speed; // 이동 속도
+
+	UPROPERTY(BlueprintReadOnly, Category = "Character", meta = (AllowPrivateAccess = "true"))
+	bool bIsAccelerating; // 가속 중인지 여부
+
+	UPROPERTY(BlueprintReadOnly, Category = "Character", meta = (AllowPrivateAccess = "true"))
+	bool bLocallyControlled; // 로컬 플레이어인지 여부
+
+	UPROPERTY(BlueprintReadOnly, Category = "Character", meta = (AllowPrivateAccess = "true"))
+	bool bEliminated; // 캐릭터가 사망 상태인지 여부
+
+
+	// 전투 및 무기 관련
+	UPROPERTY(BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	bool bWeaponEquipped; // 무기 장착 여부
+
+	UPROPERTY(BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	bool bIsAiming; // 조준 중인지 여부
+
+	UPROPERTY(BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	bool bUseFABRIK; // FABRIK IK 사용 여부
+
+	UPROPERTY(BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	bool bIsWireAttached; // 와이어가 연결되어 있는지 여부
+
+
 private:
-	class AWeapon* EquippedWeapon; //장착된 무기를 저장하는 변수
-	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true")) //블루프린트에서 읽기전용으로 사용가능하다.
-	class ATimeFractureCharacter* TFCharacter; //캐릭터의 포인터를 저장한다.
-	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	float Speed; //캐릭터의 속도를 저장한다.
-	
-	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	bool bIsAccelerating; //캐릭터가 가속중인지 여부를 저장한다.
-	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	bool bWeaponEquipped;// 캐릭터가 무기를 장착했는지 여부를 저장한다.
-	
-	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	bool bIsAiming; //캐릭터가 조준 상태인지 여부를 저장한다.
-	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	float YawOffset; //캐릭터의 Yaw 오프셋을 저장한다.
+	// 참조 포인터
+	UPROPERTY(BlueprintReadOnly, Category = "References", meta = (AllowPrivateAccess = "true"))
+	class ATimeFractureCharacter* TFCharacter; // 캐릭터 참조
 
-	FRotator DeltaRotation; //회전 차이를 저장하는 변수
-	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	float AO_Yaw; //캐릭터의 조준 회전 Yaw 값을 저장한다.
-	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	float AO_Pitch; //캐릭터의 조준 회전 Pitch 값을 저장한다.
+	UPROPERTY(BlueprintReadOnly, Category = "References", meta = (AllowPrivateAccess = "true"))
+	class AWeapon* EquippedWeapon; // 장착된 무기 참조
 
-	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	FTransform LeftHandTransform; //왼손의 변환 정보를 저장한다.
-	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	FRotator RightHandRotation; //오른손의 회전을 저장하는 변수
-	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	FRotator LeftHandRotation; //오른손의 회전을 저장하는 변수
-	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	bool bLocallyControlled; //로컬 컨트롤러인지 여부를 저장하는 변수
-	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	bool bEliminated; //캐릭터가 제거되었는지 여부를 저장하는 변수
-	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	bool bUseFABRIK; //FABRIK 애니메이션을 사용할지 여부를 저장하는 변수
 
+	// 조준 회전 관련
+	UPROPERTY(BlueprintReadOnly, Category = "Aim", meta = (AllowPrivateAccess = "true"))
+	float YawOffset; // 이동 방향과 조준 방향의 차이
+
+	UPROPERTY(BlueprintReadOnly, Category = "Aim", meta = (AllowPrivateAccess = "true"))
+	float AO_Yaw; // 조준 오프셋 Yaw
+
+	UPROPERTY(BlueprintReadOnly, Category = "Aim", meta = (AllowPrivateAccess = "true"))
+	float AO_Pitch; // 조준 오프셋 Pitch
+
+	FRotator DeltaRotation; // 회전 보간용 변수
+
+
+	// IK 관련
+	UPROPERTY(BlueprintReadOnly, Category = "IK", meta = (AllowPrivateAccess = "true"))
+	FTransform LeftHandTransform; // 왼손 위치 보정값
+
+	UPROPERTY(BlueprintReadOnly, Category = "IK", meta = (AllowPrivateAccess = "true"))
+	FRotator RightHandRotation; // 오른손 회전 보정값
+
+	UPROPERTY(BlueprintReadOnly, Category = "IK", meta = (AllowPrivateAccess = "true"))
+	FRotator LeftHandRotation; // 왼손 회전 보정값
 };

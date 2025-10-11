@@ -34,6 +34,19 @@
 #include "TFAniminstance.h"
 #include "Sound/SoundCue.h"
 #include "UnrealProject_7A/TFComponents/WireComponent.h"
+// ============================================================
+// [생성자] ATimeFractureCharacter::ATimeFractureCharacter()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 캐릭터의 핵심 구성요소(카메라, 컴포넌트, 충돌, 입력 가능 설정 등)를 초기화
+//   - 전투, 버프, 와이어 시스템과 카메라 붐, 위젯 등의 부착 및 복제 설정
+// 사용 알고리즘 : 
+//   1. Tick 활성화 및 카메라 붐(SpringArm) 생성 → 메쉬에 부착
+//   2. FollowCamera 생성 후 SpringArm의 끝(Socket)에 부착
+//   3. 전투/버프 컴포넌트 생성 후 복제 활성화
+//   4. 크라우치, 충돌 채널, 메쉬 반응 설정
+//   5. 수류탄/와이어 등 부속 컴포넌트 초기화
+// ============================================================
 ATimeFractureCharacter::ATimeFractureCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -64,6 +77,17 @@ ATimeFractureCharacter::ATimeFractureCharacter()
 	// StandingCameraOffset = FVector(0.f, 30.f, 143.f);    //카메라의 상대 위치를 설정한다. 캐릭터의 머리 위에 카메라가 위치하도록 한다.
 	// CrouchingCameraOffset = FVector(0.f, 0.f, 90.f); // 더 낮은 위치
 }
+// ============================================================
+// [입력 초기화] ATimeFractureCharacter::SetupPlayerInputComponent()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 모든 조작 키, 마우스 입력, UI 인터랙션 등을 언리얼 입력 시스템에 등록
+// 사용 알고리즘 : 
+//   1. 축 입력 : MoveForward, MoveRight, Turn, LookUp
+//   2. 액션 입력 : Equip, Fire, Reload, Grenade, Dive 등
+//   3. UI 입력 : Chat, ChatSubmit, ChatCancel (채팅 인터페이스 조작)
+//   4. 특수 입력 : Wire (와이어 발사/해제), SwapWeapon
+// ============================================================
 void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -88,7 +112,16 @@ void ATimeFractureCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	PlayerInputComponent->BindAction("Wire", IE_Pressed, this, &ATimeFractureCharacter::WireButtonPressed); //와이어 액션 바인딩
 	//프로젝트 세팅에 저장된 키의 이름을 바인드한다. this ->이 함수의 있는 함수를 불러옴
 }
-
+// ============================================================
+// [채팅 열기] HandleChatKey()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 채팅 키 입력 시 채팅 위젯이 없으면 생성 후 열기
+// 사용 알고리즘 : 
+//   1. PlayerController → HUD → ChatWidget 접근
+//   2. 위젯 미생성 시 생성 후 Viewport에 추가
+//   3. 닫혀 있다면 OpenChat() 호출
+// ============================================================
 void ATimeFractureCharacter::HandleChatKey()//0913 채팅
 {
 	ATFPlayerController* PC = Cast<ATFPlayerController>(Controller);
@@ -113,7 +146,14 @@ void ATimeFractureCharacter::HandleChatKey()//0913 채팅
 		}
 	}
 }
-
+// ============================================================
+// [채팅 입력 전송] HandleChatSubmit()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 엔터키 입력 시 현재 채팅 내용을 서버로 전송하고 UI 닫기
+// 사용 알고리즘 : 
+//   1. HUD의 ChatWidget 확인 후 SubmitAndClose() 호출
+// ============================================================
 void ATimeFractureCharacter::HandleChatSubmit()//0913 채팅
 {
 	ATFPlayerController* PC = Cast<ATFPlayerController>(Controller);
@@ -126,6 +166,14 @@ void ATimeFractureCharacter::HandleChatSubmit()//0913 채팅
 		}
 	}
 }
+// ============================================================
+// [채팅 취소] HandleChatCancel()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 입력 중 채팅을 취소하고 입력 UI를 닫는다
+// 사용 알고리즘 : 
+//   1. HUD의 ChatWidget 확인 후 CancelAndClose() 호출
+// ============================================================
 void ATimeFractureCharacter::HandleChatCancel() // y → 취소0913 채팅
 {
 	ATFPlayerController* PC = Cast<ATFPlayerController>(Controller);
@@ -138,6 +186,16 @@ void ATimeFractureCharacter::HandleChatCancel() // y → 취소0913 채팅
 		}
 	}
 }
+// ============================================================
+// [구르기 입력 처리] Dive()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 플레이어가 회피(구르기) 입력 시 서버 RPC를 통해 모든 클라이언트에 반영
+// 사용 알고리즘 : 
+//   1. 재장전, 와이어, 중복 회피 여부 검사
+//   2. 로컬 클라 → ServerDivePressed() RPC 호출
+//   3. 서버 → MulticastDive()로 모든 클라에 실행
+// ============================================================
 void ATimeFractureCharacter::Dive() //0914 구르기
 {
 	if (CombatComponent->CombatState == ECombatState::ECS_Reloading) return;
@@ -157,6 +215,14 @@ void ATimeFractureCharacter::Dive() //0914 구르기
 	// 서버는 바로 실행
 	MulticastDive();
 }
+// ============================================================
+// [서버 RPC] ServerDivePressed()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 클라이언트의 Dive 입력을 서버가 수신하여 모든 클라이언트로 전파
+// 사용 알고리즘 : 
+//   - MulticastDive() 호출
+// ============================================================
 void ATimeFractureCharacter::ServerDivePressed_Implementation() //0914 구르기
 {
 	if (CombatComponent->CombatState == ECombatState::ECS_Reloading) return;
@@ -167,6 +233,15 @@ void ATimeFractureCharacter::ServerDivePressed_Implementation() //0914 구르기
 	}
 	MulticastDive(); // 서버가 모든 클라에 전달
 }
+// ============================================================
+// [멀티캐스트 RPC] MulticastDive()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 모든 클라이언트에서 구르기 애니메이션 실행 및 상태 제어
+// 사용 알고리즘 : 
+//   1. AnimInstance 가져와 DiveMontage 실행
+//   2. 애니메이션 종료 시 콜백으로 상태 복구
+// ============================================================
 void ATimeFractureCharacter::MulticastDive_Implementation() //0914 구르기
 {
 	if (CombatComponent->CombatState == ECombatState::ECS_Reloading) return;
@@ -192,6 +267,16 @@ void ATimeFractureCharacter::MulticastDive_Implementation() //0914 구르기
 		TFAnim->Montage_SetEndDelegate(EndDelegate, DiveMontage);
 	}
 }
+// ============================================================
+// [전진 이동] MoveForward()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 컨트롤러 방향을 기준으로 전후 이동
+// 사용 알고리즘 : 
+//   1. Yaw 회전값으로 FRotationMatrix 생성
+//   2. 전방 단위 벡터를 계산하여 AddMovementInput()
+//   3. 무기 미장착 시 회전 보간 처리 (RInterpTo)
+// ============================================================
 void ATimeFractureCharacter::MoveForward(float Value)
 {
 	if (bDisableGameplay) return;
@@ -235,7 +320,15 @@ void ATimeFractureCharacter::MoveForward(float Value)
 		AddMovementInput(Direction, 1.f);
 	}
 }
-
+// ============================================================
+// [좌우 이동] MoveRight()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 컨트롤러 방향을 기준으로 좌우 이동
+// 사용 알고리즘 : 
+//   1. 컨트롤러의 Yaw 회전으로 방향 벡터 생성
+//   2. AddMovementInput()으로 이동
+// ============================================================
 void ATimeFractureCharacter::MoveRight(float Value)
 {
 	if (bDisableGameplay) return;
@@ -272,6 +365,14 @@ void ATimeFractureCharacter::MoveRight(float Value)
 		AddMovementInput(Direction, 1.f);
 	}
 }
+// ============================================================
+// [카메라 회전 입력] Turn(), LookUp()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 마우스 혹은 패드의 회전 입력을 처리하여 카메라 방향 변경
+// 사용 알고리즘 : 
+//   1. AddControllerYawInput(), AddControllerPitchInput() 이용
+// ============================================================
 void ATimeFractureCharacter::Turn(float Value)
 {
 	AddControllerYawInput(Value); 
@@ -280,7 +381,15 @@ void ATimeFractureCharacter::LookUp(float Value)
 {
 	AddControllerPitchInput(Value);
 }
-
+// ============================================================
+// [무기 장착 입력] EquipButton()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - E키 입력 시 무기 장착 또는 교체 요청
+// 사용 알고리즘 : 
+//   1. 서버 권한일 경우 → 직접 EquipWeapon() 호출
+//   2. 클라이언트일 경우 → ServerEquipButton() RPC 요청
+// ============================================================
 void ATimeFractureCharacter::EquipButton()
 {
 	if (bDisableGameplay) return;
@@ -298,6 +407,14 @@ void ATimeFractureCharacter::EquipButton()
 		}
 	}
 }
+// ============================================================
+// [앉기 입력] CrouchButton()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - C키 입력 시 캐릭터의 크라우치 상태를 토글
+// 사용 알고리즘 : 
+//   - bIsCrouched 값 확인 후 Crouch() / UnCrouch() 호출
+// ============================================================
 void ATimeFractureCharacter::CrouchButton()
 {
 	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
@@ -306,6 +423,14 @@ void ATimeFractureCharacter::CrouchButton()
 	}
 	Crouch(); //크라우치 버튼을 누르면 크라우치한다.
 }
+// ============================================================
+// [조준 시작 / 해제 입력] AimButton(), AimButtonRelease()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 우클릭 누르면 조준 시작, 떼면 조준 해제
+// 사용 알고리즘 : 
+//   - CombatComponent->SetAiming(bool) 호출
+// ============================================================
 void ATimeFractureCharacter::AimButton()
 {
 	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
@@ -320,6 +445,15 @@ void ATimeFractureCharacter::AimButtonRelease()
 		CombatComponent->SetAiming(false); //전투 컴포넌트의 조준 여부를 false로 설정한다.
 	}
 }
+// ============================================================
+// [조준 오프셋 계산] AimOffset()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 현재 카메라 회전값을 기준으로 Pitch/Yaw 차이를 계산하여 애니메이션 보정에 사용
+// 사용 알고리즘 : 
+//   1. GetVelocity()로 이동 속도 확인
+//   2. 회전 보간 후 AO_PITCH, AO_YAW 계산
+// ============================================================
 void ATimeFractureCharacter::AimOffset(float DeltaTime)
 {
 	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
@@ -344,6 +478,14 @@ void ATimeFractureCharacter::AimOffset(float DeltaTime)
 		AO_PITCH = FMath::GetMappedRangeValueClamped(InRange, OutRange, AO_PITCH);
 	}
 }
+// ============================================================
+// [발사 입력 처리] FireButtonPressed(), FireButtonReleased()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 좌클릭으로 발사, 클릭 해제 시 중단
+// 사용 알고리즘 : 
+//   - CombatComponent->FireButtonPressed(bool) 호출
+// ============================================================
 void ATimeFractureCharacter::FireButtonPressed()
 {
 	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
@@ -358,6 +500,14 @@ void ATimeFractureCharacter::FireButtonReleased()
 		CombatComponent->FireButtonPressed(false); //전투 컴포넌트의 발사 버튼을 떼었다고 설정한다.
 	}
 }
+// ============================================================
+// [재장전 입력 처리] ReloadButtonPressed()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - R키 입력 시 재장전 명령 전달
+// 사용 알고리즘 : 
+//   - CombatComponent->Reload() 호출
+// ============================================================
 void ATimeFractureCharacter::ReloadButtonPressed()
 {
 	if (bDisableGameplay) return; //게임플레이가 비활성화된 경우 이동하지 않음
@@ -365,12 +515,28 @@ void ATimeFractureCharacter::ReloadButtonPressed()
 		CombatComponent->Reload(); //전투 컴포넌트의 재장전을 호출한다.
 	}
 }
+// ============================================================
+// [수류탄 투척 입력] GrenadeButtonPressed()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - G키 입력 시 수류탄 던지기 요청
+// 사용 알고리즘 : 
+//   - CombatComponent->ThrowGrenade() 호출
+// ============================================================
 void ATimeFractureCharacter::GrenadeButtonPressed()
 {
 	if (CombatComponent) {
 		CombatComponent->ThrowGrenade(); //전투 컴포넌트의 수류탄 투척을 호출한다.
 	}
 }
+// ============================================================
+// [와이어 발사 / 해제 입력] WireButtonPressed(), WireButtonReleased()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - WireComponent를 이용해 와이어 사출 및 해제 처리
+// 사용 알고리즘 : 
+//   - FireWire(), ReleaseWire() 호출
+// ============================================================
 void ATimeFractureCharacter::WireButtonPressed()
 {
 	if (WireComponent) {
@@ -383,6 +549,16 @@ void ATimeFractureCharacter::WireButtonReleased()
 		WireComponent->ReleaseWire();
 	}
 }
+// ============================================================
+// [피해 처리] ReceiveDamage()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 피격 시 체력/실드 감소, 사운드/이펙트 재생 및 사망 판정 수행
+// 사용 알고리즘 : 
+//   1. 실드 우선 차감 → 남은 피해를 체력에 반영
+//   2. HUD 갱신 및 피격 반응 애니메이션 재생
+//   3. 체력 0일 경우 GameMode에 PlayerEliminated() 요청
+// ============================================================
 void ATimeFractureCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCursor)
 {
 	if (bisElimmed) return;
@@ -435,6 +611,15 @@ void ATimeFractureCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, c
 	}
 	
 }
+// ============================================================
+// [플레이어 상태 초기화] PollInit()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - PlayerState가 복제 완료된 뒤 HUD 초기화 및 점수 동기화 수행
+// 사용 알고리즘 : 
+//   - 서버: Score/Defeats 초기화
+//   - 클라: HUD Score 수동 갱신
+// ============================================================
 void ATimeFractureCharacter::PollInit()
 {
 	if (TfPlayerState == nullptr)
@@ -461,6 +646,12 @@ void ATimeFractureCharacter::PollInit()
 		}
 	}
 }
+// ============================================================
+// [OnRep PlayerState] OnRep_PlayerState()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - PlayerState 복제 시 호출되어 오버헤드 이름, HUD 재설정
+// ============================================================
 void ATimeFractureCharacter::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState(); //부모 클래스의 OnRep_PlayerState 함수를 호출한다.
@@ -468,10 +659,24 @@ void ATimeFractureCharacter::OnRep_PlayerState()
 	RefreshOverheadName();
 	PollInit();
 }
+// ============================================================
+// [서버 RPC] ServerSetActorRotation()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 캐릭터의 회전 정보를 서버에 전달하여 동기화
+// ============================================================
 void ATimeFractureCharacter::ServerSetActorRotation_Implementation(const FRotator& NewRotation)
 {
 	SetActorRotation(NewRotation);
 }
+// ============================================================
+// [복제 변수 등록] GetLifetimeReplicatedProps()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 언리얼 복제 시스템에 캐릭터 관련 변수 등록
+// 사용 알고리즘 : 
+//   - DOREPLIFETIME / DOREPLIFETIME_CONDITION 매크로로 선언
+// ============================================================
 void ATimeFractureCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);//부모 클래스의 복제 속성을 가져온다.
@@ -482,6 +687,14 @@ void ATimeFractureCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ATimeFractureCharacter, MoveRotation);//bisElimmed를 복제한다.
 	DOREPLIFETIME(ATimeFractureCharacter, WireComponent);
 }
+// ============================================================
+// [컴포넌트 초기화 후 설정] PostInitializeComponents()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - CombatComponent 및 BuffComponent 초기값 세팅
+// 사용 알고리즘 : 
+//   - 이동속도, 점프력, 캐릭터 포인터 설정
+// ============================================================
 void ATimeFractureCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
@@ -501,6 +714,14 @@ void ATimeFractureCharacter::PostInitializeComponents()
 		BuffComponent->SetInitialJump(GetCharacterMovement()->JumpZVelocity); //캐릭터의 초기 점프 속도를 설정한다.
 	}
 }
+// ============================================================
+// [사망 동기화 RPC] MulticastElim()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 클라이언트 전역에 캐릭터 사망 연출 및 입력 비활성화 전파
+// 사용 알고리즘 : 
+//   - 이동/충돌 비활성화, 애니메이션 재생, 스코프 숨김 처리
+// ============================================================
 void ATimeFractureCharacter::Elim()
 {
 	if (CombatComponent && CombatComponent->EquippedWeapon) {
@@ -525,6 +746,14 @@ void ATimeFractureCharacter::Elim()
 	MulticastElim(); //서버에서 클라이언트로 제거를 알린다.
 	GetWorldTimerManager().SetTimer(ElimTimer, this, &ATimeFractureCharacter::ElimTimerFinished, ElimDelay);
 }
+// ============================================================
+// [사망 동기화 RPC] MulticastElim()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 클라이언트 전역에 캐릭터 사망 연출 및 입력 비활성화 전파
+// 사용 알고리즘 : 
+//   - 이동/충돌 비활성화, 애니메이션 재생, 스코프 숨김 처리
+// ============================================================
 void ATimeFractureCharacter::MulticastElim_Implementation()
 {
 	if (TfPlayerController) {
@@ -547,7 +776,12 @@ void ATimeFractureCharacter::MulticastElim_Implementation()
 		ShowSniperScopeWidget(false); //로컬에서 제어하는 경우 스나이퍼 스코프 위젯을 숨긴다.
 	}
 }
-
+// ============================================================
+// [리스폰 타이머 완료 처리] ElimTimerFinished()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 사망 후 일정 시간이 지나면 GameMode에 Respawn 요청
+// ============================================================
 void ATimeFractureCharacter::ElimTimerFinished()
 {
 	ATFGameMode* TFGameMode = GetWorld()->GetAuthGameMode<ATFGameMode>(); //현재 게임 모드를 ATFGameMode로 캐스팅한다.
@@ -555,6 +789,12 @@ void ATimeFractureCharacter::ElimTimerFinished()
 		TFGameMode->RequestRespawn(this, Controller); //게임 모드에 제거된 캐릭터의 재생성을 요청한다.
 	}
 }
+// ============================================================
+// [리스폰 타이머 완료 처리] ElimTimerFinished()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 사망 후 일정 시간이 지나면 GameMode에 Respawn 요청
+// ============================================================
 void ATimeFractureCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 {
 	if (OverlappingWeapon) //겹치는 무기가 존재하면
@@ -566,7 +806,14 @@ void ATimeFractureCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 		LastWeapon->ShowPickupWidget(false); //겹치는 무기 위젯을 숨긴다.
 	}
 }
-
+// ============================================================
+// [서버 RPC] ServerEquipButton()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 클라이언트가 장비 장착 요청 시 서버에서 처리
+// 사용 알고리즘 : 
+//   - OverlappingWeapon 존재 시 EquipWeapon() 호출
+// ============================================================
 void ATimeFractureCharacter::ServerEquipButton_Implementation()
 {
 	if (CombatComponent) {
@@ -579,7 +826,15 @@ void ATimeFractureCharacter::ServerEquipButton_Implementation()
 	//	}
 	}
 }
-
+// ============================================================
+// [카메라 근접 시 메쉬 숨김] HideCameraIfCharacterClose()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 1인칭 시점 시 카메라와 캐릭터가 가까워지면 메쉬 숨김
+// 사용 알고리즘 : 
+//   1. 카메라와 본체 거리 계산
+//   2. 특정 임계값 이하이면 메쉬와 무기 비가시화
+// ============================================================
 void ATimeFractureCharacter::HideCameraIfCharacterClose()
 {
 	if (!IsLocallyControlled()) return; //로컬에서 제어하지 않는 경우 함수를 종료한다.
@@ -596,6 +851,12 @@ void ATimeFractureCharacter::HideCameraIfCharacterClose()
 		}
 	}
 }
+// ============================================================
+// [실드 복제 응답] OnRep_Shield()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 실드 값 변동 시 HUD 갱신 및 피격 반응 재생
+// ============================================================
 void ATimeFractureCharacter::OnRep_Shield(float LastShield)
 {
 	UpdateHUDShield(); //HUD의 체력을 업데이트한다.
@@ -610,10 +871,25 @@ void ATimeFractureCharacter::OnRep_Health(float LastHealth)
 		PlayHitReactMontage(); //피격 애니메이션을 재생한다.
 	}
 }
+// ============================================================
+// [피격 사운드 전파] MulticastHitCharacterSound()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 피격 시 모든 클라이언트에서 피격 사운드 재생
+// ============================================================
 void ATimeFractureCharacter::MulticastHitCharacterSound_Implementation()
 {
 	UGameplayStatics::PlaySoundAtLocation(this, HitCharacterSound, GetActorLocation()); //장착 사운드를 재생한다.
 }
+// ============================================================
+// [오버헤드 위젯 로컬 보장] EnsureOverheadWidgetLocal()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 서버·클라 관계없이 오버헤드 이름표 위젯이 정상 생성되도록 강제 초기화
+// 사용 알고리즘 : 
+//   1. WidgetClass 확인 → 없으면 생성
+//   2. OwnerPlayer 설정 및 DrawAtDesiredSize 활성화
+// ============================================================
 void ATimeFractureCharacter::EnsureOverheadWidgetLocal()
 {
 	if (!OverheadWidget) return;
@@ -653,6 +929,14 @@ void ATimeFractureCharacter::EnsureOverheadWidgetLocal()
 	NewUW->SetVisibility(ESlateVisibility::HitTestInvisible);
 	UE_LOG(LogTemp, Warning, TEXT("NOT CLIENT"));
 }
+// ============================================================
+// [오버헤드 이름 갱신] RefreshOverheadName()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - PlayerState 이름을 오버헤드 위젯에 반영
+// 사용 알고리즘 : 
+//   - BP/CPP 위젯 모두 대응 (‘DisplayText’ 이름 탐색 후 텍스트 갱신)
+// ============================================================
 void ATimeFractureCharacter::RefreshOverheadName()
 {
 	 if (!OverheadWidget) return;
@@ -681,6 +965,15 @@ void ATimeFractureCharacter::RefreshOverheadName()
     }
 	UE_LOG(LogTemp, Warning, TEXT("NOT CLIENT"));
 }
+// ============================================================
+// [기본 무기 생성] SpawnDefaultWeapon()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 리스폰 또는 시작 시 기본 무기를 생성 후 장착
+// 사용 알고리즘 : 
+//   1. GameMode/World 참조 확인
+//   2. DefaultWeaponClass 스폰 → EquipWeapon()
+// ============================================================
 void ATimeFractureCharacter::SpawnDefaultWeapon()
 {
 	ATFGameMode* TFGameMode = Cast<ATFGameMode>(UGameplayStatics::GetGameMode(this)); //현재 게임 모드를 ATFGameMode로 캐스팅한다.
@@ -703,6 +996,12 @@ void ATimeFractureCharacter::UpdateHUDAmmo()
 		TfPlayerController->SetHUDWeaponAmmo(CombatComponent->EquippedWeapon->GetAmmo()); //HUD의 무기 탄약을 업데이트한다.
 	}
 }
+// ============================================================
+// [무기 겹침 설정] SetOverlappingWeapon()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 현재 플레이어가 닿은 무기 참조를 등록하고 위젯 표시
+// ============================================================
 void ATimeFractureCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
 	if (OverlappingWeapon) {
@@ -849,7 +1148,16 @@ void ATimeFractureCharacter::Jump()
 	if (bDisableGameplay) return;
 	Super::Jump();
 }
-
+// ============================================================
+// [초기화] BeginPlay()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 오버헤드 위젯 초기화, 기본 무기 스폰, HUD 설정, 데미지 델리게이트 바인딩
+// 사용 알고리즘 : 
+//   1. 위젯 OwnerPlayer 지정 (리스너 서버 대비)
+//   2. HUD Health/Shield 초기 갱신
+//   3. 서버면 OnTakeAnyDamage 바인딩
+// ============================================================
 void ATimeFractureCharacter::Destroyed()
 {
 	Super::Destroyed();
@@ -943,6 +1251,17 @@ void ATimeFractureCharacter::UpdateHUDShield()
 		TfPlayerController->SetHUDShield(Shield, MaxShield); //플레이어 컨트롤러의 HUD에 체력을 설정한다.
 	}
 }
+// ============================================================
+// [매 프레임 업데이트] Tick()
+// ------------------------------------------------------------
+// 기능 요약 : 
+//   - 각종 HUD, 조준 카메라, 회피 이동, 크로스헤어 오프셋, 무기 탄약 동기화 등
+// 사용 알고리즘 : 
+//   1. PollInit()으로 PlayerState 초기화 보장
+//   2. 회피 중이면 전방 이동 지속
+//   3. 카메라 거리·오프셋 보간 (FInterpTo, VInterpTo)
+//   4. AimOffset() 호출
+// ============================================================
 void ATimeFractureCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
