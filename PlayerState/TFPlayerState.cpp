@@ -69,9 +69,11 @@ void ATFPlayerState::AddToScore(float ScoreAmount)
 		SetScore(GetScore() + ScoreAmount);
 		// 서버에서는 OnRep_Score가 자동으로 호출되지 않으므로, 직접 호출하여 HUD를 업데이트합니다.
 		// 클라이언트에서는 점수가 복제된 후 자동으로 OnRep_Score가 호출됩니다.
+		//Client_PushKillsToPlayFab((int32)GetScore());
 		OnRep_Score();
 	}
 	
+		
 }
 // ============================================================
 // [처치 수 복제 응답] OnRep_Defeats()
@@ -141,6 +143,12 @@ void ATFPlayerState::OnRep_PlayerName()
 	{
 		PC->UpdateScoreboard(); // 이름 복제 완료되면 스코어보드 다시 갱신
 	}
+}
+
+void ATFPlayerState::Client_PushKillsToPlayFab_Implementation(int32 NewKills)
+{
+	//if (auto* PF = UPlayFabManager::Get(this))
+	//	PF->UpdateKills(NewKills);
 }
 
 

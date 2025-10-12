@@ -66,4 +66,6 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_Defeats)
 	int32 Defeats;
 	// 처치 수 (네트워크 복제 대상)
+	UFUNCTION(Client, Reliable)
+	void Client_PushKillsToPlayFab(int32 NewKills);
 };

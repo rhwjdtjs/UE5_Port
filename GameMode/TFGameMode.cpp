@@ -160,6 +160,7 @@ void ATFGameMode::WarmupToStartMatch()
 /////////////////////////////////////////////////////////////
 void ATFGameMode::PlayerEliminated(ATimeFractureCharacter* ElimmedCharacter, ATFPlayerController* VictimController, ATFPlayerController* AttackerController)
 {
+	UE_LOG(LogTemp, Warning, TEXT("[GM] PlayerEliminated() entered"));
 	ATFPlayerState* AttackerPlayerState = AttackerController ? Cast<ATFPlayerState>(AttackerController->PlayerState) : nullptr;
 	ATFPlayerState* VictimPlayerState = VictimController ? Cast<ATFPlayerState>(VictimController->PlayerState) : nullptr;
 	ATFGameState* TFGameState = GetGameState<ATFGameState>();
@@ -168,6 +169,26 @@ void ATFGameMode::PlayerEliminated(ATimeFractureCharacter* ElimmedCharacter, ATF
 	{
 		AttackerPlayerState->AddToScore(1.f);
 		TFGameState->UpdateTopScorePlayers(AttackerPlayerState);
+		if (HasAuthority())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[GM] HasAuthority() == true"));
+			if (UWorld* World = GetWorld())
+			{
+				if (UTFGameInstance* GI = World->GetGameInstance<UTFGameInstance>())
+				{
+					const FString KillerName = AttackerController && AttackerController->PlayerState
+						? AttackerController->PlayerState->GetPlayerName()
+						: TEXT("Unknown");
+					UE_LOG(LogTemp, Warning, TEXT("[GM] SendKillToFirebase(%s, %d)"),
+						*KillerName, FMath::FloorToInt(AttackerPlayerState->GetScore()));
+					GI->SendKillToFirebase(KillerName, FMath::FloorToInt(AttackerPlayerState->GetScore()));
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("[GM] GameInstance is NOT UTFGameInstance (null). Project Settings 확인!"));
+				}
+			}
+		}
 	}
 
 	if (ElimmedCharacter)
