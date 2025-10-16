@@ -24,7 +24,7 @@ https://youtu.be/35-OI47LQC0?si=lDMWS0harPD7ove8  (영상링크)
 4.3. 오디오/비주얼 기술  
 4.4. 외부 연동 기술  
      
-5. 구현 상세(Implementation Detail)  
+5. 구현 상세(Implementation Detail)(핵심만)
 5.1. 플레이어 캐릭터 시스템  
 5.2. 무기 및 전투 시스템  
     
@@ -163,7 +163,7 @@ UCharacterOverlay, UChatWidget, ULobbyWidget, UAlert, UOverheadWidget
 권위: HasAuthority()측(서버)이 판정/스코어/리스폰을 결정  
 소유: 각 Pawn/Controller의 Owner에게만 필요한 데이터는 OwnerOnly 복제  
   
-3.2.2 클래스별 복제/ RPC 계약  
+3.2.2 클래스별 RPC     
 UCBComponent (전투)  
 Server RPC: ServerFire, ServerReload, ServerSetAiming, ServerThrowGrenade, ServerLaunchGrenade, ServerFinishReload  
 Multicast: MulticastFire  
@@ -236,10 +236,10 @@ AActor
  │   ├─ ASpeedPickup  / AJumpPickup  
  │   └─ AAmmoPickup   / APickupSpawnPoint  
  ├─ AHUD → ATFHUD   
- ├─ APlayerController → ATFPlayerController  
- ├─ APlayerState → ATFPlayerState  
- ├─ AGameStateBase → ATFGameState  
- └─ AGameModeBase → ATFGameMode / ALBGameMode  
+ ├─ APlayerController -> ATFPlayerController  
+ ├─ APlayerState -> ATFPlayerState  
+ ├─ AGameStateBase -> ATFGameState  
+ └─ AGameModeBase -> ATFGameMode / ALBGameMode  
    
 3.5. 데이터 흐름  
 3.5.1 사격  
@@ -312,7 +312,7 @@ Steam Online Subsystem (OSS)+ Listen Server
 서버 권위(Authority): 피격/스코어/리스폰/버프 확정은 서버 전용  
 복제(Replication): DOREPLIFETIME/ReplicatedUsing=OnRep_…로 상태 동기화  
 예: EquippedWeapon, SecondaryWeapon, bisAiming, CombatState, Grenades  
-OwnerOnly 복제: 탄약 CarriedAmmo는 소유자 전용(CON D_OwnerOnly) -> 트래픽 절감  
+OwnerOnly 복제: 탄약 CarriedAmmo는 소유자 전용(COND_OwnerOnly) -> 트래픽 절감  
   
 RPC 패턴  
 UFUNCTION(Server,Reliable):클라입력->서버판정(예: ServerFire, ServerReload, ServerThrowGrenade, ServerFireWire)  
@@ -349,7 +349,7 @@ Firebase (랭킹/리더보드)
 매치중 실시간으로 닉네임/킬 수를 Firebase Realtime Database에 업로드  
 (프로젝트 내 TFGameInstance에서 요청 관리하도록 분리: 결과 전송/에러 전송/재시도)   
   
-5. 구현 상세  
+5. 구현 상세(핵심만)
 5.1. 플레이어 캐릭터 시스템  
 5.1.1 캐릭터 본체: ATimeFractureCharacter  
 역할: 이동/생존/애니메이션 루트, 전투·와이어·버프 컴포넌트의 소유자(Owner).  
