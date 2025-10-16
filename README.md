@@ -26,9 +26,10 @@ https://youtu.be/35-OI47LQC0?si=lDMWS0harPD7ove8  (영상링크)
 5. 구현 상세(Implementation Detail)(핵심만).   
 5.1. 플레이어 캐릭터 시스템  
 5.2. 무기 및 전투 시스템  
-5.3. UI 로직
-5.4. RPC 로직
-5.5. 데이터동기화(Firebase DB)  
+5.3. UI 로직.   
+5.4. RPC 로직.  
+5.5. 데이터동기화(Firebase DB)
+          
 7. 결과(Result)  
 6.1. 테스트 결과 요약  
 6.2. 테스트 후 유저 피드백
