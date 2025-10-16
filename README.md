@@ -56,7 +56,7 @@ https://youtu.be/35-OI47LQC0?si=lDMWS0harPD7ove8  (영상링크)
   
 2. 게임기획(Game Design)  
 2.1. 핵심 시스템 요약  
-VeloCore는 UnrealEnigne 5.5.4를 기반으로 개발된 하이퍼 TPS 멀티플레이 게임으로, 핵심은 모든 기능이 컴포넌트 단위로 설계되어 TimeFractureCharacter(VeloCore으로 이름 짓기전 이름)에 부착된 모듈들이 서로 독립적으로 작동하면서 유기적으로 연동되어, 캐릭터 이동, 전투, 상태, HUD등 모든 것들이 서버-클라이언트 간 통신하며 동작한다.  
+VeloCore는 UnrealEnigne 5.5.4를 기반으로 개발된 하이퍼 TPS 멀티플레이 게임으로, 핵심은 모든 기능이 컴포넌트 단위로 설계되어 TimeFractureCharacter(VeloCore으로 이름 짓기전 이름)에 부착된 모듈들이 서로 독립적으로 작동하면서 유기적으로 연동되어, 캐릭터 이동, 전투, 상태, HUD등 모든 것들이 서버-클라이언트 간 통신하며 동작한다.    
   
 2.1.1. 전투시스템  
 주요 클래스 ( CBComponent, Weapon, Projectile …)    
