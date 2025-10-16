@@ -26,8 +26,10 @@ https://youtu.be/35-OI47LQC0?si=lDMWS0harPD7ove8  (영상링크)
 5. 구현 상세(Implementation Detail)(핵심만)
 5.1. 플레이어 캐릭터 시스템  
 5.2. 무기 및 전투 시스템  
-    
-6. 결과(Result)  
+5.3. UI 로직
+5.4. RPC 로직
+5.5. 데이터동기화(Firebase DB)  
+7. 결과(Result)  
 6.1. 테스트 결과 요약  
 6.2. 테스트 후 유저 피드백
     
@@ -329,7 +331,7 @@ Firebase (랭킹/리더보드)
 매치중 실시간으로 닉네임/킬 수를 Firebase Realtime Database에 업로드  
 (프로젝트 내 TFGameInstance에서 요청 관리하도록 분리: 결과 전송/에러 전송/재시도)   
   
-5. 구현 상세(핵심만)
+5. 구현 상세(핵심만)  
 5.1. 플레이어 캐릭터 시스템  
 5.1.1 캐릭터 본체: ATimeFractureCharacter  
 역할: 이동/생존/애니메이션 루트, 전투·와이어·버프 컴포넌트의 소유자(Owner).  
@@ -405,10 +407,61 @@ ThrowGrenade()에서 ECS_ThrowingGrenade전환 -> 몽타주 시작, LeftHand 부
 Crosshair 라인트레이스: TraceUnderCrosshairs()  
 화면 중앙 스크린->월드 변환 후 멀티 히트 검사, 허공이면 Null반환  
 만약 적 탐지시 크로스헤어 색상(RED)변경  
+
+5.3. UI 로직  
+HUD 초기화:
+ATFPlayerController::BeginPlay()->TFHUD생성및CharacterOverlay,ChatWidget,KillFeed,Scoreboard등 추가  
+HUD 데이터 갱신 흐름:  
+Character가 체력, 실드, 탄약 등 변경 시 OnRep_Health()등 호출  
+PlayerController->SetHUDHealth()/ SetHUDShield()호출  
+UTFHUD가 내부 위젯(CharacterOverlay)에 전달  
+채팅 시스템:  
+UChatWidget::AddChatMessage() ->ScrollBox 갱신 + AutoClose 타이머  
+OnTextCommitted()으로 입력 후 서버 브로드캐스트    
   
-6. 결과(Result)  
-6.1. 테스트 결과 요약  
-첫 테스트 3인 기준 서버 완결 OK / 두 번째 테스트 10인 기준 호스트 게임 주최후 참가자들이 Join부분에서 문제가 생김. ( 한명씩 들어오는걸로 넘어감) -> 서버 최적화가 필요하다는걸 확인
+5.4. RPC 로직  
+VeloCore는 Listen Server 기반의 Steam Online Subsystem(OSS)을 사용하며,  
+서버가 게임의 모든 로직을 authority로서 판단하고,  
+클라이언트는 입력 요청과 HUD/UI 반영에만 집중하는 구조로 설계되어 있다.  
+즉,  
+서버(Server): 모든 상태의 진실(Truth)을 결정하는 권위자  
+클라이언트(Client): 서버의 판단을 시각적으로 반영하는 피어  
+이 구조는 Unreal Engine의 Replication(복제) 시스템과  
+Remote Procedure Call(RPC)을 기반으로 한다.  
+    
+실제 네트워크 흐름 예시  
+A. 사격 (Fire)  
+Client 입력 감지  
+InputAction Fire -> CombatComponent->FireButtonPressed(true)  
+Server RPC 요청  
+ServerFire()실행 -> 서버만 피격 판정 수행  
+서버 판정  
+라인트레이스(LineTrace) -> 타격 성공 시 대상 캐릭터에 데미지 적용  
+Multicast 전파  
+MulticastFire()호출 -> 모든 클라이언트에서 동일한 Muzzle Flash, 사운드 재생  
+결과 반영  
+피격 클라이언트에서 OnRep_Health() -> HUD 자동 갱신  
+  
+B. 와이어 시스템 (WireComponent)  
+Client Q 입력  
+WireComponent->FireWire() -> ServerFireWire()RPC 송신  
+Server 처리  
+라인트레이스로 충돌 대상 계산 -> 성공 시 bIsAttached = true  
+이동 모드: CharacterMovement->SetMovementMode(MOVE_Flying)  
+Multicast 이펙트 전파  
+MulticastWireSuccess() -> 모든 클라에 Niagara 이펙트, 사운드 재생  
+  
+5.5. 데이터 동기화 및 외부 연동 (Firebase)   
+Firebase 연동 구조  
+게임 종료 시 UTFGameInstance::SendKillToFirebase()호출  
+FJsonObject생성 → FHttpModule::CreateRequest()로 REST POST  
+URL 예: https://<DB_URL>/leaderboard/<PlayerName>.json  
+데이터 형식:  
+{ "name": "플레이어 스팀 닉네임", "kills": 15, "updatedAt": 123456.78 }   
+  
+6. 결과(Result)    
+6.1. 테스트 결과 요약    
+첫 테스트 3인 기준 서버 완결 OK / 두 번째 테스트 10인 기준 호스트 게임 주최후 참가자들이 Join부분에서 문제가 생김. ( 한명씩 들어오는걸로 넘어감) -> 서버 최적화가 필요하다는걸 확인  
   
 6.2. 테스트 후 유저 피드백  
 개발 미완성시에 기능 및 버그 확인을 위해 첫 테스트 (3인)  
