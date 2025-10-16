@@ -21,8 +21,7 @@ https://youtu.be/35-OI47LQC0?si=lDMWS0harPD7ove8  (영상링크)
 4. 개발 기술(Development Technology)  
 4.1 개발 엔진 및 언어  
 4.2. 네트워크 기술  
-4.3. 오디오/비주얼 기술  
-4.4. 외부 연동 기술  
+4.3. 외부 연동 기술  
      
 5. 구현 상세(Implementation Detail)(핵심만)
 5.1. 플레이어 캐릭터 시스템  
@@ -319,27 +318,8 @@ UFUNCTION(Server,Reliable):클라입력->서버판정(예: ServerFire, ServerRel
 UFUNCTION(Client, Reliable): 서버 -> 특정 클라 피드백 (예: ClientWireFail, ClientWallFail)  
 UFUNCTION(NetMulticast, Reliable): 서버->전 클라 공용 이벤트(이펙트/사운드) (예: MulticastFire, MulticastPlayWireEffects, MulticastWireSuccess)  
 OnRep_:변수 복제 시 HUD 자동 반용(예: OnRep_CarriedAmmo, OnRep_Grenades, Onrep_Equippedweapon)  
-    
-4.3 오디오/비주얼 기술  
-비주얼(이펙트)  
-Niagara  
-와이어 비행 이펙트: 팔/다리 소켓에 SpawnSystemAttached  
-이펙트 위치: 목표 지점 SpawnSystemAtLocation    
-이동 해제 시 MulticastStopWireEffects()로 해제  
-디버그 표시로 이펙트 대체  
-DrawDebugLine로 와이어 라인 표기  
   
-카메라/시점  
-FOV 보간: InterpFOV(DeltaTime)– 조준 시 줌, 해제 시 원래 시점 복귀    
-스나이퍼 조준 시 스코프 위젯    
-  
-오디오  
-SoundCue / AudioComponent  
-와이어: 발사음(MulticastPlayWireSound), 이동 루프(ZipperLoopSound), 해제 시 멈춤  
-무기: 장착/발사/리로드 사운드(장착 시 위치 재생, 발사 멀티캐스트)  
-멀티캐스트 동기화: 폭발/발사/와이어 효과음을 서버 트리거 -> 전 클라동기화  
-  
-4.4 외부 연동 기술  
+4.3 외부 연동 기술  
 Steam Online Subsystem  
 세션 생성/탐색/조인: 메인 메뉴에서 Create/Join  
 Listen Server로 호스트 전환, 클라들은 Steam 세션을 통해 접속  
