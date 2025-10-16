@@ -23,7 +23,7 @@ https://youtu.be/35-OI47LQC0?si=lDMWS0harPD7ove8  (영상링크)
 4.2. 네트워크 기술  
 4.3. 외부 연동 기술  
      
-5. 구현 상세(Implementation Detail)(핵심만)
+5. 구현 상세(Implementation Detail)(핵심만).   
 5.1. 플레이어 캐릭터 시스템  
 5.2. 무기 및 전투 시스템  
 5.3. UI 로직
