@@ -1,3 +1,4 @@
+11월달에 전체적으로 수정예정입니다. (클래스 계층도 및 이미지 비디오 삽입 예정)  
 언리얼엔진5를 이용한 하이퍼 TPS 멀티플레이 게임 VELOCORE 기술서  
 https://youtu.be/35-OI47LQC0?si=lDMWS0harPD7ove8  (영상링크)    
   
