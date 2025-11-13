@@ -1,7 +1,9 @@
 11월달에 전체적으로 수정예정입니다. (클래스 계층도 및 이미지 비디오 삽입 예정)  
 학술제 우수상 수여받았습니다 11월안에 정리하겠습니다  
+<iframe width="1840" height="1035" src="https://www.youtube.com/embed/35-OI47LQC0" title="언리얼엔진5 포트폴리오 하이퍼TPS 멀티플레이 (10인 플레이 시연)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>  
 <img width="2081" height="1281" alt="Image" src="https://github.com/user-attachments/assets/35d5a853-d978-4094-8c6e-8f9202fce0de" />   
-<<클래스 계층도>>  
+
+                                                                        <<클래스 계층도>>  
 언리얼엔진5를 이용한 하이퍼 TPS 멀티플레이 게임 VELOCORE 기술서  
 https://youtu.be/35-OI47LQC0?si=lDMWS0harPD7ove8  (영상링크)    
   
