@@ -1,12 +1,12 @@
-11월달에 전체적으로 수정예정입니다. (클래스 계층도 및 이미지 비디오 삽입 예정)  
-학술제 우수상 수여받았습니다 11월안에 정리하겠습니다  
-[![Video Link](https://github.com/user-attachments/assets/ab280274-c78b-4092-a872-b7bf37850517)](https://www.youtube.com/watch?v=35-OI47LQC0&t=56s)
-   
+🥂위 작품은 순천향대학교 11월 4~5일에 진행한 제2회 2025 SCHU AIºSW Festival 'SW프로젝트 경진대회'에서 본선 입선 및 우수상 수여받았습니다.🥂  
+작품 번호: SW-01 / 작품 주제: 언리얼엔진5로 만든 하이퍼 TPS 멀티플레이 게임  
+[![Video Link](https://github.com/user-attachments/assets/ab280274-c78b-4092-a872-b7bf37850517)](https://www.youtube.com/watch?v=35-OI47LQC0&t=1s)  
+                                                            <<이미지 클릭시 유튜브 링크로 연결됩니다.>>
+                                                            <<온라인스팀서비스 리슨 서버로 10인 플레이 시연 동영상입니다.>>  
+                                                            <<클래스 계층도>>  
 
-                                                                        <<클래스 계층도>>  
 언리얼엔진5를 이용한 하이퍼 TPS 멀티플레이 게임 VELOCORE 기술서  
-https://youtu.be/35-OI47LQC0?si=lDMWS0harPD7ove8  (영상링크)    
-  
+
 목차  
 1. 개요(Introduction)  
 1.1. 프로젝트명  
