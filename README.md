@@ -1,8 +1,7 @@
   🥂위 작품은 순천향대학교 11월 4~5일에 진행한 제2회 2025 SCHU AIºSW Festival 'SW프로젝트 경진대회'에서 본선 입선 및 우수상 수여받았습니다.🥂  
 
   🥂해당 작품 주제로 작성한 논문 "언리얼 엔진 5 리슨서버 기반 네트워크 동기화 시스템" 제출 제목: "UE5 리슨서버에서의 네트워크 동기화"가  
-                      한국데이터사이언스학회 동계종합학술대회 (12.18~19)에 심사 통과하여 참가하게되었습니다.🥂    
-    <img width="1697" height="1055" alt="Image" src="https://github.com/user-attachments/assets/c069070d-2554-4129-9b96-3c98d7901159" />  
+                      한국데이터사이언스학회 동계종합학술대회 (12.18~19)에 심사 통과하여 참가하게되었습니다.🥂     
                                      🥂작품 번호: SW-01 / 작품 주제: 언리얼엔진5로 만든 하이퍼 TPS 멀티플레이 게임🥂     
   
   
@@ -24,7 +23,12 @@
   <img width="636" height="948" alt="Image" src="https://github.com/user-attachments/assets/52ea2b9f-335a-4c28-bd91-362af8a8a1a9" />  
   
                                                                 <<제작 포스터>>   
+  <img width="1697" height="1055" alt="Image" src="https://github.com/user-attachments/assets/c069070d-2554-4129-9b96-3c98d7901159" />   
   
+                                                 <<한국데이터사이언스학회 동계종합학술대회 심사통과>>  
+<img width="1417" height="2087" alt="Image" src="https://github.com/user-attachments/assets/98e7070b-4629-4cad-ad1f-80ebce48bafb" />    
+  
+                                                              <<학술제 수상 상장>>  
 <img width="1705" height="960" alt="Image" src="https://github.com/user-attachments/assets/3954655f-f591-47c1-8c64-5b72043f7b5c" />  
   
 <img width="1706" height="957" alt="Image" src="https://github.com/user-attachments/assets/2def5895-448c-4313-9c42-0fc7d859fbc8" />  
