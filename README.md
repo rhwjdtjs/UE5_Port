@@ -66,6 +66,8 @@
 <img width="1695" height="887" alt="Image" src="https://github.com/user-attachments/assets/8b88bdf3-de44-4ba5-8a0d-fb2effcdfae0" />  
   
 <img width="1702" height="964" alt="Image" src="https://github.com/user-attachments/assets/60ec26da-c6f6-456e-bfeb-85f39674c25e" />  
+
+                                                                    <<학술제 제작 발표 PPT (일부)>>  
   
 언리얼엔진5를 이용한 하이퍼 TPS 멀티플레이 게임 VELOCORE 기술서    
   
