@@ -49,7 +49,12 @@ VeloCore는 캐릭터 루트(`ATimeFractureCharacter`)에 전투 / 버프 / 와�
 
 ---
 
-## Tech Stack
+## Tech Stack  
+![UE5](https://img.shields.io/badge/UE5-0E1128?style=flat&logo=unrealengine&logoColor=white)
+![C++](https://img.shields.io/badge/C%2B%2B-00599C?style=flat&logo=c%2B%2B&logoColor=white)
+![SteamOSS](https://img.shields.io/badge/Steam%20OSS-000000?style=flat&logo=steam&logoColor=white)
+![ListenServer](https://img.shields.io/badge/Listen%20Server-444444?style=flat)
+![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=flat&logo=firebase&logoColor=black)
 - **Engine**: Unreal Engine 5.5.4  
 - **Language**: C++ (핵심 로직) + Blueprint (UI/에셋 연결)  
 - **Network**: Listen Server, Steam OSS, Replication(OnRep), Server/Client/Multicast RPC  
