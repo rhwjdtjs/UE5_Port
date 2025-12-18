@@ -56,7 +56,20 @@ VeloCore는 캐릭터 루트(`ATimeFractureCharacter`)에 전투 / 버프 / 와�
   <summary><b>🏅 Awards / Poster / Certificates (펼치기)</b></summary>
 
 - (클래스 계층도 / 포스터 / 학회 심사통과 / 상장 이미지)  
+    
+  <img width="2081" height="1281" alt="Image" src="https://github.com/user-attachments/assets/5e1137fa-31e6-4e13-91b1-30eb59cecdca" />  
+                                                          
+                                                                <<클래스 계층도>>  
 
+  <img width="636" height="948" alt="Image" src="https://github.com/user-attachments/assets/52ea2b9f-335a-4c28-bd91-362af8a8a1a9" />  
+  
+                                                                <<제작 포스터>>   
+  <img width="1697" height="1055" alt="Image" src="https://github.com/user-attachments/assets/c069070d-2554-4129-9b96-3c98d7901159" />   
+  
+                                                 <<한국데이터사이언스학회 동계종합학술대회 심사통과>>  
+<img width="1417" height="2087" alt="Image" src="https://github.com/user-attachments/assets/98e7070b-4629-4cad-ad1f-80ebce48bafb" />    
+  
+                                                              <<학술제 수상 상장>>  
 </details>
 
 ---
@@ -260,26 +273,7 @@ VeloCore에서 핵심은 “입력은 클라에서 발생하지만, 결과는 �
 
 <details>
   <summary><b>🖼️ PPT / Slide Gallery (많은 이미지 접기)</b></summary>  
-## 이미지 순서 및 설명  
-## 1. 클래스 계층도    
-## 2. 학술제 제작 포스터    
-## 3. 한국데이터사이언스학회 동계종합학술대회 심사통과 이미지    
-## 4. 학술제 수상한 상장    
-## 5~25. 발표 PPT 내용 (개요 존재)  
-    
-  <img width="2081" height="1281" alt="Image" src="https://github.com/user-attachments/assets/5e1137fa-31e6-4e13-91b1-30eb59cecdca" />  
-                                                          
-                                                                <<클래스 계층도>>  
 
-  <img width="636" height="948" alt="Image" src="https://github.com/user-attachments/assets/52ea2b9f-335a-4c28-bd91-362af8a8a1a9" />  
-  
-                                                                <<제작 포스터>>   
-  <img width="1697" height="1055" alt="Image" src="https://github.com/user-attachments/assets/c069070d-2554-4129-9b96-3c98d7901159" />   
-  
-                                                 <<한국데이터사이언스학회 동계종합학술대회 심사통과>>  
-<img width="1417" height="2087" alt="Image" src="https://github.com/user-attachments/assets/98e7070b-4629-4cad-ad1f-80ebce48bafb" />    
-  
-                                                              <<학술제 수상 상장>>  
 <img width="1705" height="960" alt="Image" src="https://github.com/user-attachments/assets/3954655f-f591-47c1-8c64-5b72043f7b5c" />  
   
 <img width="1706" height="957" alt="Image" src="https://github.com/user-attachments/assets/2def5895-448c-4313-9c42-0fc7d859fbc8" />  
