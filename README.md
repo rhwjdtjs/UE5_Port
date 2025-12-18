@@ -259,14 +259,14 @@ VeloCore에서 핵심은 “입력은 클라에서 발생하지만, 결과는 �
 ---
 
 <details>
-  <summary><b>🖼️ PPT / Slide Gallery (많은 이미지 접기)</b></summary>
- * # 이미지 순서 및 설명  
-  * ## 1. 클래스 계층도  
-  * ## 2. 학술제 제작 포스터  
-  * ## 3. 한국데이터사이언스학회 동계종합학술대회 심사통과 이미지  
-  * ## 4. 학술제 수상한 상장  
-  * ## 5~25. 발표 PPT 내용 (개요 존재)
-  
+  <summary><b>🖼️ PPT / Slide Gallery (많은 이미지 접기)</b></summary>  
+  * # 이미지 순서 및 설명  
+  * ## 1. 클래스 계층도    
+  * ## 2. 학술제 제작 포스터    
+  * ## 3. 한국데이터사이언스학회 동계종합학술대회 심사통과 이미지    
+  * ## 4. 학술제 수상한 상장    
+  * ## 5~25. 발표 PPT 내용 (개요 존재)  
+    
   <img width="2081" height="1281" alt="Image" src="https://github.com/user-attachments/assets/5e1137fa-31e6-4e13-91b1-30eb59cecdca" />  
                                                           
                                                                 <<클래스 계층도>>  
