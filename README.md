@@ -11,6 +11,20 @@
 - 📘 Technical Doc(아래 접기 섹션): README 하단
 
 ---
+## Introduction
+VeloCore는 Velocity(속도) + Core의 합성어로 하이퍼 TPS의 본질인 속도를 중심으로 설계한 멀티플레이 TPS 게임입니다.  
+속도감이 빠른 게임진행을 핵심으로 하며, 와이어 액션과 이동 중심 버프를 통해 정신없이 빠른 템포의 전투를 경험하도록 제작했습니다.
+
+**Development**
+- **기간**: 2025.05 ~ 2025.10
+- **인원**: 1인 개발
+- **환경**: Unreal Engine 5.5.4 / Visual Studio 2022 / Windows 11
+- **역할**: Gameplay(C++/BP), 네트워크(서버-클라 구조/RPC/복제), UI·HUD, 애니메이션·사운드 연동, Firebase DB(킬 수 기록)
+
+**Motivation & Intent**
+- 팀 플레이 스트레스 없이 혼자서도 부담 없이 즐길 수 있는 TPS를 만들고 싶었습니다.
+- 기존 TPS가 가진 높은 진입장벽(정교한 에임/반동 컨트롤/초반 파밍 피로감)을 완화하고,
+  액션 기반 이동(와이어)과 템포 설계로 “플레이가 곧 재미로 이어지는” 구조를 목표로 했습니다.
 
 ## Overview
 VeloCore는 캐릭터 루트(`ATimeFractureCharacter`)에 전투 / 버프 / 와이어를 **컴포넌트 단위로 분리**하여 부착하는 구조로 설계했습니다.  
