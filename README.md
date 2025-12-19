@@ -8,7 +8,7 @@
 **Quick Links**
 - 🎮 10인 플레이 시연 영상(온라인 Steam Listen Server): https://www.youtube.com/watch?v=35-OI47LQC0&t=1s  
 - 🧩 기능 설명 영상: https://www.youtube.com/watch?v=pTvCdJSy_EI&t=1s  
-- 📘 Technical Doc(아래 접기 섹션): README 하단
+- 📘 [Technical Doc](#0-TOC): README 하단
 
 ---
 ## Introduction
@@ -95,7 +95,7 @@ VeloCore는 캐릭터 루트(`ATimeFractureCharacter`)에 전투 / 버프 / 와�
 
 <details>
   <summary><b>📘 Technical Documentation (VeloCore 기술서) (펼치기)</b></summary>
-
+<a id="0-TOC"></a>
 ## TOC
 - [1. 게임 기획](#1-game-design)
   - [1.1 핵심 시스템 요약](#11-핵심-시스템-요약)
