@@ -67,7 +67,7 @@ VeloCore는 캐릭터 루트(`ATimeFractureCharacter`)에 전투 / 버프 / 와�
 [![10-player demo](https://github.com/user-attachments/assets/0c25fdb7-c256-4e0b-8bf2-d5a5c5e78315)](https://www.youtube.com/watch?v=35-OI47LQC0&t=1s)
 
 ### Feature Walkthrough
-[![feature demo](https://github.com/user-attachments/assets/cead5c27-3767-4ef2-8184-5710b4c96c88)](https://www.youtube.com/watch?v=pTvCdJSy_EI&t=1s)
+[![feature demo](https://github.com/user-attachments/assets/9fc96bd2-958e-4ba7-894a-fc8598d0d292)](https://www.youtube.com/watch?v=pTvCdJSy_EI&t=1s)
 
 ---
 
