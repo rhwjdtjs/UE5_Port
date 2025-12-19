@@ -3,7 +3,7 @@
 
 **Awards / Publications**
 - 🏆 순천향대학교 2025 SCHU AI·SW Festival ‘SW프로젝트 경진대회’ 본선 입선 및 우수상 (작품: SW-01)  
-- 📄 논문 “UE5 리슨서버에서의 네트워크 동기화” — 한국데이터사이언스학회 동계종합학술대회(12.18~19) 심사 통과
+- 📄 논문 “UE5 리슨서버에서의 네트워크 동기화” — 한국데이터사이언스학회 동계종합학술대회(12.18~19) 심사 통과 및 발표 참가.  
 
 **Quick Links**
 - 🎮 10인 플레이 시연 영상(온라인 Steam Listen Server): https://www.youtube.com/watch?v=35-OI47LQC0&t=1s  
